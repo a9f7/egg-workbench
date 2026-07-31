@@ -375,7 +375,7 @@ function daysLeft(){
   return Math.max(0, Math.round((e-t)/864e5));
 }
 function toast(msg){ const t=$('#toast'); t.textContent=msg; t.classList.add('show'); clearTimeout(t._h); t._h=setTimeout(()=>t.classList.remove('show'),1600); }
-function speak(t){ try{ const u=new SpeechSynthesisUtterance(t); u.lang='en-US'; u.rate=.9; speechSynthesis.speak(u);}catch(e){} }
+function speak(t){ try{ speechSynthesis.cancel(); const u=new SpeechSynthesisUtterance(t); u.lang='en-US'; u.rate=.9; u.pitch=1.1; speechSynthesis.speak(u);}catch(e){} }
 
 /* ============ state ============ */
 const SKEY='egg_checkin_v1';
