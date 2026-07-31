@@ -1,0 +1,8 @@
+# Dependencies
+node_modules/
+# Local data / memory
+.workbuddy/
+# OS files
+.DS_Store
+Thumbs.db
+*.log

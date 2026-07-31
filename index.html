@@ -1,0 +1,689 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+<title>小学四年级英语拼写测试</title>
+<style>
+  :root {
+    --bg: #f3f6fb; --card: #ffffff;
+    --primary: #4f7cff; --primary-d: #3a63d8;
+    --green: #2bb673; --red: #e8553c; --orange: #f5a623;
+    --text: #1f2937; --muted: #7b8794; --line: #e6ebf2;
+    --shadow: 0 8px 28px rgba(31, 41, 55, .08);
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+    background: var(--bg); color: var(--text); min-height: 100vh; display: flex; justify-content: center;
+  }
+  .app { width: 100%; max-width: 540px; padding: 16px 16px 40px; }
+  header.top {
+    background: linear-gradient(135deg, #4f7cff, #6a8bff); color: #fff;
+    border-radius: 18px; padding: 20px 18px; box-shadow: var(--shadow);
+  }
+  header.top h1 { margin: 0; font-size: 20px; letter-spacing: .5px; }
+  header.top p { margin: 6px 0 0; font-size: 13px; opacity: .9; }
+  .best { margin-top: 12px; font-size: 12px; background: rgba(255,255,255,.18); display: inline-block; padding: 4px 10px; border-radius: 999px; }
+
+  .card {
+    background: var(--card); border-radius: 16px; padding: 18px; margin-top: 16px; box-shadow: var(--shadow);
+  }
+  .modes { display: flex; gap: 8px; }
+  .mode-btn {
+    flex: 1; border: 2px solid var(--line); background: #fff; border-radius: 14px;
+    padding: 14px 6px; cursor: pointer; text-align: center; transition: .15s; position: relative;
+  }
+  .mode-btn .ico { font-size: 26px; }
+  .mode-btn .t { font-weight: 700; margin-top: 4px; font-size: 13px; }
+  .mode-btn .d { font-size: 11px; color: var(--muted); margin-top: 2px; }
+  .mode-btn.active { border-color: var(--primary); background: #f0f5ff; }
+  .mode-btn .badge {
+    position: absolute; top: -6px; right: -6px; min-width: 22px; height: 22px;
+    border-radius: 11px; background: var(--red); color: #fff; font-size: 11px; font-weight: 800;
+    display: flex; align-items: center; justify-content: center; padding: 0 6px; box-shadow: 0 2px 6px rgba(232,85,60,.3);
+  }
+  .mode-btn .badge.hide { display: none; }
+
+  .settings { margin-top: 14px; }
+  .settings .row { display: flex; align-items: center; justify-content: space-between; margin: 12px 0; }
+  .settings label { font-size: 14px; font-weight: 600; }
+  .seg { display: flex; gap: 6px; }
+  .seg button {
+    border: 1.5px solid var(--line); background: #fff; border-radius: 10px;
+    padding: 6px 12px; font-size: 13px; cursor: pointer; color: var(--muted);
+  }
+  .seg button.on { border-color: var(--primary); color: var(--primary); background: #f0f5ff; font-weight: 700; }
+  .switch { position: relative; width: 46px; height: 26px; }
+  .switch input { display: none; }
+  .switch .sl { position: absolute; inset: 0; background: #cfd6e0; border-radius: 999px; transition: .2s; cursor: pointer; }
+  .switch .sl::before { content: ""; position: absolute; width: 20px; height: 20px; left: 3px; top: 3px; background: #fff; border-radius: 50%; transition: .2s; }
+  .switch input:checked + .sl { background: var(--primary); }
+  .switch input:checked + .sl::before { transform: translateX(20px); }
+  select.scope {
+    border: 1.5px solid var(--line); border-radius: 10px; padding: 7px 32px 7px 10px;
+    font-size: 13px; font-weight: 600; color: var(--text); background: #fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%237b8794'/%3E%3C/svg%3E") no-repeat right 10px center;
+    -webkit-appearance: none; appearance: none; cursor: pointer; max-width: 190px;
+  }
+
+  .btn {
+    width: 100%; border: none; border-radius: 12px; padding: 14px;
+    font-size: 16px; font-weight: 700; cursor: pointer; color: #fff;
+    background: var(--primary); margin-top: 8px; transition: .12s;
+  }
+  .btn:active { transform: scale(.98); }
+  .btn.ghost { background: #eef2f8; color: var(--primary); }
+  .btn.green { background: var(--green); }
+  .btn.red { background: var(--red); }
+  .btn:disabled { opacity: .5; cursor: not-allowed; }
+
+  /* Test screen */
+  .progress-wrap { margin-bottom: 12px; }
+  .progress-top { display: flex; justify-content: space-between; align-items: center; font-size: 13px; color: var(--muted); margin-bottom: 6px; }
+  #comboText { display: none; font-weight: 800; color: var(--red); font-size: 13px; background: #fff1ee; border-radius: 999px; padding: 2px 10px; }
+  #comboText.on { display: inline-block; }
+  .bar { height: 8px; background: var(--line); border-radius: 999px; overflow: hidden; }
+  .bar > i { display: block; height: 100%; width: 0; background: var(--primary); transition: width .25s; }
+
+  .q-zh { text-align: center; font-size: 30px; font-weight: 800; margin: 14px 0 4px; }
+  .q-hint { text-align: center; color: var(--muted); font-size: 13px; margin-bottom: 14px; }
+  .sound-btn {
+    display: block; margin: 0 auto 16px; width: 64px; height: 64px; border-radius: 50%;
+    border: none; background: #eef3ff; color: var(--primary); font-size: 28px; cursor: pointer;
+  }
+  .sound-btn:active { transform: scale(.94); }
+  .input-row { display: flex; gap: 10px; }
+  .input-row input {
+    flex: 1; border: 2px solid var(--line); border-radius: 12px; padding: 14px 14px;
+    font-size: 18px; outline: none; transition: .15s;
+  }
+  .input-row input:focus { border-color: var(--primary); }
+  .input-row button {
+    border: none; background: var(--primary); color: #fff; border-radius: 12px;
+    padding: 0 18px; font-size: 15px; font-weight: 700; cursor: pointer;
+  }
+
+  .feedback { margin-top: 14px; border-radius: 12px; padding: 12px 14px; font-size: 15px; display: none; }
+  .feedback.ok { display: block; background: #e9f8f0; color: #1c8a5a; }
+  .feedback.no { display: block; background: #fdecea; color: #c43c25; }
+  .feedback b { font-weight: 800; }
+  .feedback .your { text-decoration: line-through; opacity: .7; margin-right: 6px; }
+  .feedback .fex { display:block; font-size: 13px; opacity:.85; margin-top:6px; font-style: italic; }
+
+  /* result */
+  .result-score { text-align: center; font-size: 52px; font-weight: 900; color: var(--primary); }
+  .result-sub { text-align: center; color: var(--muted); margin: 4px 0 14px; }
+  .wrong-list { list-style: none; padding: 0; margin: 0; }
+  .wrong-list li { display: flex; justify-content: space-between; align-items: flex-start; padding: 10px 0; border-bottom: 1px solid var(--line); font-size: 15px; gap: 8px; }
+  .wrong-list li:last-child { border-bottom: none; }
+  .wrong-list .w-main { flex: 1; }
+  .wrong-list .w-en { font-weight: 700; }
+  .wrong-list .w-zh { color: var(--muted); }
+  .wrong-list .w-info { display:block; font-size: 12.5px; color: var(--green); margin-top: 4px; font-style: italic; line-height: 1.4; }
+  .wrong-list .w-del {
+    width: 28px; height: 28px; border-radius: 50%; border: none; background: #fdecea; color: var(--red);
+    font-size: 14px; cursor: pointer; line-height: 28px; text-align: center; padding: 0; flex-shrink: 0;
+  }
+
+  /* study */
+  .study-card { text-align: center; }
+  .study-en { font-size: 34px; font-weight: 900; margin: 10px 0 6px; letter-spacing: 1px; }
+  .study-zh { font-size: 18px; color: var(--muted); min-height: 26px; }
+  .study-zh .def { display:block; font-size: 14.5px; color: var(--text); margin-top: 10px; line-height: 1.55; text-align:left; background:#f7f9fc; border-radius:10px; padding:10px 12px; }
+  .study-zh .ex { display:block; font-size: 14px; color: var(--green); margin-top: 8px; line-height: 1.5; text-align:left; font-style: italic; }
+  .study-zh .lbl { color: var(--muted); font-weight: 700; }
+  .study-nav { display: flex; gap: 10px; margin-top: 16px; }
+  .study-nav button { flex: 1; }
+  .hidden { display: none !important; }
+  .footer-tip { text-align: center; color: var(--muted); font-size: 12px; margin-top: 18px; line-height: 1.6; }
+
+  /* wrongbook card */
+  .wb-empty { text-align: center; padding: 30px 0; color: var(--muted); }
+  .wb-empty .ico { font-size: 48px; margin-bottom: 8px; }
+  .wb-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+  .wb-header h3 { margin: 0; font-size: 16px; }
+  .wb-header span { font-size: 13px; color: var(--muted); }
+  .wb-info { display:block; font-size: 12.5px; color: var(--green); margin-top: 3px; font-style: italic; line-height: 1.4; }
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="top">
+    <h1>📝 小学四年级英语拼写测试</h1>
+    <p>看中文 / 听发音，写出正确的英文单词</p>
+    <span class="best" id="bestBox">最高分：—</span>
+  </header>
+
+  <!-- 菜单 -->
+  <div class="card" id="menuCard">
+    <div class="modes">
+      <div class="mode-btn active" data-mode="test">
+        <div class="ico">✍️</div><div class="t">拼写测试</div><div class="d">答题计分闯关</div>
+      </div>
+      <div class="mode-btn" data-mode="study">
+        <div class="ico">📚</div><div class="t">单词学习</div><div class="d">卡片反复记忆</div>
+      </div>
+      <div class="mode-btn" data-mode="wrongbook">
+        <span class="badge hide" id="wbBadge">0</span>
+        <div class="ico">📒</div><div class="t">错题本</div><div class="d">薄弱点攻克</div>
+      </div>
+    </div>
+
+    <div class="settings" id="scopeRow">
+      <div class="row">
+        <label>考查范围</label>
+        <select class="scope" id="scopeSelect"></select>
+      </div>
+    </div>
+
+    <div class="settings" id="testSettings">
+      <div class="row">
+        <label>题目数量</label>
+        <div class="seg" id="countSeg">
+          <button data-c="10" class="on">10</button>
+          <button data-c="20">20</button>
+          <button data-c="0">全部</button>
+        </div>
+      </div>
+      <div class="row">
+        <label>乱序出题</label>
+        <label class="switch"><input type="checkbox" id="shuffleChk" checked><span class="sl"></span></label>
+      </div>
+      <div class="row">
+        <label>自动朗读发音</label>
+        <label class="switch"><input type="checkbox" id="autoSpeakChk"><span class="sl"></span></label>
+      </div>
+      <div class="row">
+        <label>答题音效</label>
+        <label class="switch"><input type="checkbox" id="sfxChk" checked><span class="sl"></span></label>
+      </div>
+    </div>
+
+    <button class="btn" id="startBtn">开始测试</button>
+  </div>
+
+  <!-- 测试 -->
+  <div class="card hidden" id="testCard">
+    <div class="progress-wrap">
+      <div class="progress-top"><span id="progText">第 1 / 10 题</span><span id="comboText"></span><span id="scoreText">正确 0</span></div>
+      <div class="bar"><i id="progBar"></i></div>
+    </div>
+    <div class="q-zh" id="qZh">—</div>
+    <div class="q-hint">请写出对应的英文单词</div>
+    <button class="sound-btn" id="qSound" title="听发音">🔊</button>
+    <div class="input-row">
+      <input type="text" id="ansInput" placeholder="在这里拼写…" autocomplete="off" autocapitalize="off" spellcheck="false" />
+      <button id="submitBtn">提交</button>
+    </div>
+    <div class="feedback" id="feedback"></div>
+    <button class="btn ghost hidden" id="nextBtn">下一题 →</button>
+  </div>
+
+  <!-- 结果 -->
+  <div class="card hidden" id="resultCard">
+    <div class="result-score" id="finalScore">0%</div>
+    <div class="result-sub" id="finalSub">完成测试！</div>
+    <div id="wrongWrap"></div>
+    <button class="btn green" id="retryBtn">再来一次</button>
+    <button class="btn ghost" id="backBtn">返回首页</button>
+  </div>
+
+  <!-- 学习 -->
+  <div class="card hidden" id="studyCard">
+    <div class="study-card">
+      <div class="progress-top" style="margin-bottom:8px"><span id="studyCount">1 / 10</span><span id="studyCat"></span></div>
+      <div class="study-en" id="studyEn">—</div>
+      <div class="study-zh" id="studyZh">点击「显示释义」查看中文与英文解释</div>
+      <button class="sound-btn" id="studySound" style="margin:14px auto 0">🔊</button>
+      <div class="study-nav">
+        <button class="btn ghost" id="studyPrev">← 上一个</button>
+        <button class="btn" id="studyReveal">显示释义</button>
+        <button class="btn ghost" id="studyNext">下一个 →</button>
+      </div>
+      <button class="btn ghost" id="studyBack" style="margin-top:10px">返回首页</button>
+    </div>
+  </div>
+
+  <!-- 错题本 -->
+  <div class="card hidden" id="wrongbookCard">
+    <div class="wb-header"><h3>📒 错题本</h3><span id="wbCount">0 个单词</span></div>
+    <div id="wbList"></div>
+    <button class="btn green" id="wbPractice">只练错题（开始测试）</button>
+    <button class="btn red" id="wbClear" style="margin-top:6px">清空错题本</button>
+    <button class="btn ghost" id="wbBack" style="margin-top:6px">返回首页</button>
+  </div>
+
+  <div class="footer-tip">提示：每个单词都配有英文释义 + 英文例句，像字典一样帮助理解。<br>点击 🔊 可听到标准美式发音（需浏览器支持语音合成）。</div>
+</div>
+
+<script>
+// ========== 词汇数据（按教材单元分类，含英文释义与例句） ==========
+// 每条：[en 英文, zh 中文, def 英文释义, ex 英文例句]
+const UNITS = [
+  { id:'u1', name:'Unit 1 · 我的教室', words:[
+    ["classroom","教室","A room in a school where students have lessons.","We read books in the classroom."],
+    ["window","窗户","An opening in a wall with glass to let in light.","Please open the window."],
+    ["blackboard","黑板","A dark board to write on with chalk.","The teacher writes on the blackboard."],
+    ["light","灯","Something that makes a room bright.","Turn on the light, please."],
+    ["picture","图画","A drawing or painting of something.","I draw a picture of a cat."],
+    ["door","门","A moveable cover at the entrance of a room.","Close the door, it is cold."],
+    ["floor","地板","The bottom surface of a room to stand on.","The book is on the floor."],
+    ["wall","墙壁","The side of a room or building.","He hangs a map on the wall."],
+    ["fan","风扇","A thing that moves air to make you cool.","The fan is blowing."],
+    ["computer","计算机","A machine that helps you work and play.","I use a computer to learn."]
+  ]},
+  { id:'u2', name:'Unit 2 · 学习用品', words:[
+    ["teacher","老师","A person who helps students learn.","My teacher is very kind."],
+    ["student","学生","A person who goes to school to learn.","She is a good student."],
+    ["book","书","Pages with words and pictures you read.","I read a book every night."],
+    ["bag","书包","A container to carry your things.","Put your books in the bag."],
+    ["pen","钢笔","A tool to write with ink.","I write with a blue pen."],
+    ["pencil","铅笔","A tool to write with black lead.","May I borrow your pencil?"],
+    ["ruler","尺子","A tool to draw straight lines and measure.","Use a ruler to draw the line."],
+    ["eraser","橡皮","A tool to remove pencil marks.","I clean my mistake with an eraser."],
+    ["desk","课桌","A table where you study or work.","Keep your desk tidy."],
+    ["chair","椅子","A seat for one person.","Please sit on the chair."]
+  ]},
+  { id:'u3', name:'Unit 3 · 家人与情绪', words:[
+    ["father","父亲","A man who is a parent; your dad.","My father cooks dinner."],
+    ["mother","母亲","A woman who is a parent; your mom.","My mother reads me a story."],
+    ["brother","兄弟","A boy who has the same parents as you.","My brother plays soccer."],
+    ["sister","姐妹","A girl who has the same parents as you.","My sister likes music."],
+    ["friend","朋友","A person you like and play with.","He is my best friend."],
+    ["family","家庭","The people you live with and love.","We eat together as a family."],
+    ["happy","高兴的","Feeling good and smiling.","I am happy today."],
+    ["sad","伤心的","Feeling unhappy, like you want to cry.","The sad dog lost its ball."],
+    ["tired","疲倦的","Wanting to rest or sleep.","I am tired after running."],
+    ["angry","生气的","Feeling mad about something.","He is angry because he lost."]
+  ]},
+  { id:'u4', name:'Unit 4 · 动物王国', words:[
+    ["cat","猫","A small animal that says meow.","The cat sleeps on the sofa."],
+    ["dog","狗","A friendly animal that says woof.","My dog likes to run."],
+    ["pig","猪","A farm animal that is pink.","The pig is very big."],
+    ["duck","鸭","A bird that swims and says quack.","The duck is in the water."],
+    ["rabbit","兔子","A small animal with long ears.","The rabbit eats a carrot."],
+    ["elephant","大象","A very big animal with a long nose.","The elephant is gray."],
+    ["bird","鸟","An animal with wings that can fly.","A small bird sings in the tree."],
+    ["monkey","猴子","A clever animal that climbs trees.","The monkey eats a banana."],
+    ["panda","熊猫","A black and white animal from China.","The panda eats bamboo."],
+    ["tiger","老虎","A big cat with orange and black stripes.","The tiger is strong."],
+    ["bear","熊","A big animal with thick fur.","The bear sleeps in winter."],
+    ["horse","马","A big animal you can ride.","The horse runs fast."],
+    ["cow","奶牛","A farm animal that gives milk.","The cow eats grass."],
+    ["sheep","绵羊","A farm animal with wool.","The sheep is white."]
+  ]},
+  { id:'u5', name:'Unit 5 · 美味食物', words:[
+    ["rice","米饭","Small white grains we eat.","I eat rice with fish."],
+    ["beef","牛肉","Meat from a cow.","We have beef for dinner."],
+    ["chicken","鸡肉","Meat from a bird; also the bird.","I like chicken noodles."],
+    ["fish","鱼","An animal that lives in water; also food.","The fish swims in the sea."],
+    ["noodles","面条","Long thin food made from flour.","I eat noodles for lunch."],
+    ["soup","汤","Hot liquid food you eat with a spoon.","The soup is warm."],
+    ["vegetable","蔬菜","A healthy food like carrot or tomato.","Eat your vegetables!"],
+    ["bread","面包","Food made from flour, we make toast.","I eat bread for breakfast."],
+    ["egg","鸡蛋","A food laid by a hen; round and white.","I boil an egg."],
+    ["milk","牛奶","A white drink from cows.","Drink your milk."],
+    ["water","水","A clear drink we need every day.","I drink water after sports."],
+    ["apple","苹果","A round red or green fruit.","An apple a day keeps you well."],
+    ["banana","香蕉","A long yellow fruit.","The monkey eats a banana."],
+    ["orange","橙子","A round orange fruit.","I peel an orange."],
+    ["pear","梨","A sweet fruit shaped like a bell.","The pear is juicy."],
+    ["watermelon","西瓜","A big green fruit with red inside.","We eat cold watermelon."]
+  ]},
+  { id:'u6', name:'Unit 6 · 我的家', words:[
+    ["bedroom","卧室","A room where you sleep.","My bedroom is small but nice."],
+    ["living room","客厅","A room where the family relaxes.","We watch TV in the living room."],
+    ["kitchen","厨房","A room where you cook food.","Mom cooks in the kitchen."],
+    ["bathroom","浴室","A room where you wash and bathe.","I brush my teeth in the bathroom."],
+    ["bed","床","A thing you sleep on.","My bed is soft."],
+    ["phone","电话","A tool to call people.","Dad talks on the phone."],
+    ["table","桌子","A flat top on legs to put things.","The book is on the table."],
+    ["sofa","沙发","A long soft seat for the living room.","The cat sits on the sofa."],
+    ["fridge","冰箱","A cold box to keep food fresh.","Milk is in the fridge."],
+    ["home","家","The place where your family lives.","I love my home."]
+  ]},
+  { id:'u7', name:'Unit 7 · 颜色与衣物', words:[
+    ["red","红色","The color of an apple or fire.","I wear a red shirt."],
+    ["blue","蓝色","The color of the sky and sea.","The blue sky is clear."],
+    ["green","绿色","The color of grass and leaves.","The frog is green."],
+    ["yellow","黄色","The color of the sun and a banana.","I like the yellow duck."],
+    ["black","黑色","The darkest color.","My shoes are black."],
+    ["white","白色","The color of snow and milk.","She wears a white dress."],
+    ["shirt","衬衫","A piece of clothing for the top of the body.","He wears a blue shirt."],
+    ["skirt","裙子","Clothing girls wear, like a short dress.","She has a red skirt."],
+    ["dress","连衣裙","A piece of clothing for girls, like a gown.","The girl wears a pretty dress."],
+    ["pants","裤子","Clothing for your legs, two parts.","My pants are blue."],
+    ["shoe","鞋","Something you wear on your foot.","Put on your shoes."],
+    ["hat","帽子","Something you wear on your head.","My hat keeps me warm."],
+    ["sock","袜子","Clothing you wear on your foot inside a shoe.","My socks are white."]
+  ]},
+  { id:'u8', name:'Unit 8 · 自然与天气', words:[
+    ["school","学校","A place where children learn.","I walk to school."],
+    ["park","公园","A green place with trees to play.","We run in the park."],
+    ["library","图书馆","A place with many books to read.","I borrow a book from the library."],
+    ["hospital","医院","A place where doctors help sick people.","The hospital is near my home."],
+    ["zoo","动物园","A place with many animals to see.","We see pandas at the zoo."],
+    ["tree","树","A tall plant with a wooden trunk.","Birds live in the tree."],
+    ["flower","花","A colorful part of a plant.","She picks a red flower."],
+    ["grass","草","Green plants that cover the ground.","The dog runs on the grass."],
+    ["sun","太阳","The bright star that gives us light.","The sun is warm."],
+    ["moon","月亮","The bright thing we see at night.","The moon is round tonight."],
+    ["star","星星","A small bright light in the night sky.","I see a star."],
+    ["rain","雨","Water that falls from the sky.","Take an umbrella in the rain."],
+    ["snow","雪","White cold flakes from the sky in winter.","We play in the snow."],
+    ["wind","风","Air that moves fast outside.","The wind blows the leaves."],
+    ["spring","春天","The warm season when flowers grow.","Spring is my favorite season."],
+    ["summer","夏天","The hottest season of the year.","We swim in summer."],
+    ["autumn","秋天","The season when leaves turn yellow.","Autumn is cool."],
+    ["winter","冬天","The coldest season of the year.","We make snowmen in winter."],
+    ["hot","热的","Having a high temperature.","The soup is hot."],
+    ["cold","冷的","Having a low temperature.","Ice is cold."],
+    ["warm","温暖的","A little hot, nice and cozy.","The room is warm."],
+    ["cool","凉爽的","A little cold, fresh and nice.","The wind is cool."]
+  ]}
+];
+const WORDS = UNITS.flatMap(u => u.words);
+
+// ========== 工具 ==========
+const $ = id => document.getElementById(id);
+const speak = (text) => {
+  if (!('speechSynthesis' in window)) return;
+  try { window.speechSynthesis.cancel(); const u = new SpeechSynthesisUtterance(text); u.lang='en-US'; u.rate=0.9; u.pitch=1; window.speechSynthesis.speak(u); } catch(e){}
+};
+const norm = s => s.trim().toLowerCase().replace(/\s+/g, '');
+
+// ========== 答题音效（Web Audio 即时合成，离线可用） ==========
+let audioCtx = null;
+function getCtx() {
+  if (!audioCtx) { try { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); } catch(e) { return null; } }
+  if (audioCtx.state === 'suspended') audioCtx.resume();
+  return audioCtx;
+}
+function beep(freq, start, dur, type, vol) {
+  const ctx = getCtx(); if (!ctx) return;
+  const osc = ctx.createOscillator();
+  const gain = ctx.createGain();
+  osc.type = type || 'sine'; osc.frequency.value = freq;
+  osc.connect(gain); gain.connect(ctx.destination);
+  const t0 = ctx.currentTime + start;
+  gain.gain.setValueAtTime(0.0001, t0);
+  gain.gain.linearRampToValueAtTime(vol || 0.22, t0 + 0.012);
+  gain.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+  osc.start(t0); osc.stop(t0 + dur + 0.03);
+}
+// 答对：上行的清脆双音 🔔
+function playCorrect() { beep(660, 0, 0.12, 'sine', 0.25); beep(880, 0.11, 0.20, 'sine', 0.25); }
+// 答错：低沉的下行蜂鸣 🔕
+function playWrong() { beep(220, 0, 0.16, 'square', 0.16); beep(150, 0.13, 0.24, 'square', 0.16); }
+// 连击：上行琶音特效音，连击越高音越亮 🔥
+function playCombo(level) {
+  const base = 523.25; // C5
+  const shift = Math.min(Math.floor((level / 3 - 1)), 5); // 每过一档升高一点
+  [0, 4, 7, 12].forEach((s, i) => {
+    const f = base * Math.pow(2, (s + shift) / 12);
+    beep(f, i * 0.085, 0.17, 'triangle', 0.22);
+  });
+}
+
+// ========== 错题本持久化 ==========
+const WB_KEY = 'spell_wrongbook';
+function wbLoad() { try { return JSON.parse(localStorage.getItem(WB_KEY) || '[]'); } catch(e) { return []; } }
+function wbSave(arr) { localStorage.setItem(WB_KEY, JSON.stringify(arr)); }
+function wbHas(en) { return wbLoad().some(w => w[0] === en); }
+function wbAdd(en, zh, def, ex) {
+  let arr = wbLoad();
+  if (!arr.some(w => w[0] === en)) { arr.push([en, zh, def, ex]); wbSave(arr); }
+  refreshWbBadge();
+}
+function wbRemove(en) { let arr = wbLoad().filter(w => w[0] !== en); wbSave(arr); refreshWbBadge(); }
+function wbClear() { localStorage.removeItem(WB_KEY); refreshWbBadge(); }
+function refreshWbBadge() {
+  const arr = wbLoad();
+  const b = $('wbBadge');
+  b.textContent = arr.length;
+  b.classList.toggle('hide', arr.length === 0);
+}
+refreshWbBadge();
+
+// ========== 作用域选择器 ==========
+(function buildScope() {
+  const sel = $('scopeSelect');
+  sel.innerHTML = '<option value="all">全部词汇 (' + WORDS.length + ' 个)</option>';
+  UNITS.forEach(u => { sel.innerHTML += '<option value="' + u.id + '">' + u.name + ' (' + u.words.length + ' 个)</option>'; });
+  sel.innerHTML += '<option value="wrongbook">📒 错题本</option>';
+})();
+
+// ========== 状态 ==========
+let mode = 'test';
+let cfg = { count: 10, shuffle: true, autoSpeak: false, sfx: true, scope: 'all' };
+let testQueue = [], idx = 0, correct = 0, wrongList = [], combo = 0;
+let studyQueue = [], studyIdx = 0, studyRevealed = false;
+
+// ========== 菜单交互 ==========
+document.querySelectorAll('.mode-btn').forEach(b => {
+  b.onclick = () => {
+    document.querySelectorAll('.mode-btn').forEach(x => x.classList.remove('active'));
+    b.classList.add('active');
+    mode = b.dataset.mode;
+    $('testSettings').classList.toggle('hidden', mode !== 'test');
+    $('scopeRow').classList.toggle('hidden', mode === 'wrongbook');
+    const wbOpt = $('scopeSelect').querySelector('option[value="wrongbook"]');
+    if (wbOpt) wbOpt.style.display = mode === 'wrongbook' ? 'none' : '';
+    const btn = $('startBtn');
+    if (mode === 'test') btn.textContent = '开始测试';
+    else if (mode === 'study') btn.textContent = '开始学习';
+    else btn.textContent = '打开错题本';
+  };
+});
+$('scopeSelect').onchange = e => { cfg.scope = e.target.value; };
+$('countSeg').querySelectorAll('button').forEach(b => b.onclick = () => {
+  $('countSeg').querySelectorAll('button').forEach(x => x.classList.remove('on'));
+  b.classList.add('on'); cfg.count = +b.dataset.c;
+});
+$('shuffleChk').onchange = e => cfg.shuffle = e.target.checked;
+$('autoSpeakChk').onchange = e => cfg.autoSpeak = e.target.checked;
+$('sfxChk').onchange = e => cfg.sfx = e.target.checked;
+
+function loadBest() {
+  const b = localStorage.getItem('spell_best');
+  $('bestBox').textContent = b ? '最高分：' + b + '%' : '最高分：—';
+}
+loadBest();
+
+function getScopeWords() {
+  if (cfg.scope === 'wrongbook') return wbLoad().slice();
+  if (cfg.scope === 'all') return WORDS.slice();
+  const unit = UNITS.find(u => u.id === cfg.scope);
+  return unit ? unit.words.slice() : WORDS.slice();
+}
+function pickWords(total) {
+  let arr = getScopeWords();
+  if (arr.length === 0) return [];
+  if (cfg.shuffle) for (let i = arr.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [arr[i], arr[j]] = [arr[j], arr[i]]; }
+  if (total > 0 && total < arr.length) arr = arr.slice(0, total);
+  return arr;
+}
+
+$('startBtn').onclick = () => {
+  if (mode === 'test') startTest();
+  else if (mode === 'study') startStudy();
+  else openWrongbook();
+};
+
+// ========== 测试模式 ==========
+function startTest() {
+  testQueue = pickWords(cfg.count);
+  if (testQueue.length === 0) { alert('当前范围没有单词，请先添加错题或切换范围！'); return; }
+  idx = 0; correct = 0; wrongList = []; combo = 0;
+  updateCombo();
+  show('testCard');
+  renderQuestion();
+}
+function updateCombo() {
+  const el = $('comboText');
+  if (combo >= 2) { el.textContent = '🔥 连对 ' + combo; el.classList.add('on'); }
+  else { el.textContent = ''; el.classList.remove('on'); }
+}
+function renderQuestion() {
+  if (idx >= testQueue.length) { finishTest(); return; }
+  const [en] = testQueue[idx];
+  $('qZh').textContent = testQueue[idx][1];
+  $('progText').textContent = `第 ${idx + 1} / ${testQueue.length} 题`;
+  $('scoreText').textContent = `正确 ${correct}`;
+  $('progBar').style.width = (idx / testQueue.length * 100) + '%';
+  $('ansInput').value = ''; $('ansInput').disabled = false;
+  $('submitBtn').disabled = false;
+  $('feedback').className = 'feedback'; $('feedback').innerHTML = '';
+  $('nextBtn').classList.add('hidden');
+  $('ansInput').focus();
+  if (cfg.autoSpeak) setTimeout(() => speak(en), 250);
+}
+$('qSound').onclick = () => { if (testQueue[idx]) speak(testQueue[idx][0]); };
+function submitAnswer() {
+  const [en, zh, def, ex] = testQueue[idx];
+  const val = $('ansInput').value;
+  if (val.trim() === '') { $('ansInput').focus(); return; }
+  const ok = norm(val) === norm(en);
+  const fb = $('feedback');
+  if (ok) {
+    correct++; combo++;
+    if (cfg.sfx) { if (combo >= 3 && combo % 3 === 0) playCombo(combo); else playCorrect(); }
+    let html = '✅ 拼写正确！答案：<b>' + en + '</b>';
+    if (combo >= 3) html = '🔥 连对 ' + combo + '！<br>' + html;
+    if (wbHas(en)) html += '<br>（已从错题本中移除 ✅）';
+    if (ex) html += '<span class="fex">例句：' + ex.replace(/</g,'&lt;') + '</span>';
+    fb.className = 'feedback ok'; fb.innerHTML = html;
+    if (wbHas(en)) wbRemove(en);
+    updateCombo();
+  } else {
+    combo = 0; updateCombo();
+    if (cfg.sfx) playWrong();
+    setTimeout(() => speak(en), 350); // 答错后自动再朗读正确单词帮助记忆
+    let html = `<span class="your">${val.replace(/</g,'&lt;')}</span>❌ 正确拼写：<b>${en}</b>`;
+    if (ex) html += '<span class="fex">例句：' + ex.replace(/</g,'&lt;') + '</span>';
+    if (!wbHas(en)) html += '<br>（已加入错题本 📒）';
+    fb.className = 'feedback no'; fb.innerHTML = html;
+    wrongList.push([en, zh]);
+    wbAdd(en, zh, def, ex);
+  }
+  $('ansInput').disabled = true; $('submitBtn').disabled = true;
+  $('progBar').style.width = ((idx + 1) / testQueue.length * 100) + '%';
+  $('scoreText').textContent = `正确 ${correct}`;
+  $('nextBtn').classList.remove('hidden'); $('nextBtn').focus();
+}
+$('submitBtn').onclick = submitAnswer;
+// Enter 键 = 提交（未答题时） / 下一题（已答题时），与点击按钮效果一致
+document.addEventListener('keydown', e => {
+  if (e.key !== 'Enter') return;
+  if ($('testCard').classList.contains('hidden')) return; // 仅在测试界面生效
+  if (e.target && e.target.id === 'ansInput' && $('ansInput').disabled) {
+    if (!$('nextBtn').classList.contains('hidden')) nextQuestion();
+    return;
+  }
+  if (!$('ansInput').disabled) submitAnswer();
+  else if (!$('nextBtn').classList.contains('hidden')) nextQuestion();
+});
+function nextQuestion() { idx++; renderQuestion(); }
+$('nextBtn').onclick = nextQuestion;
+
+function finishTest() {
+  const pct = Math.round(correct / testQueue.length * 100);
+  $('finalScore').textContent = pct + '%';
+  const msg = pct === 100 ? '满分！你太厉害了 🎉' : pct >= 80 ? '表现优秀，继续加油！' : pct >= 60 ? '还不错，多练几遍更好～' : '别灰心，多背几遍就会了！';
+  $('finalSub').textContent = `共 ${testQueue.length} 题，答对 ${correct} 题 · ${msg}`;
+  const wrap = $('wrongWrap');
+  if (wrongList.length) {
+    let html = '<p style="font-weight:700;margin:14px 0 6px">本次答错的单词（' + wrongList.length + '）：</p><ul class="wrong-list">';
+    wrongList.forEach(([en, zh]) => {
+      const full = WORDS.find(w => w[0] === en) || (wbLoad().find(w => w[0] === en)) || [en, zh];
+      const ex = full[3] || '';
+      html += `<li><div class="w-main"><span class="w-en">${en}</span> <span class="w-zh">${zh}</span>` + (ex ? `<span class="w-info">例句：${ex}</span>` : '') + `</div></li>`;
+    });
+    html += '</ul><p style="font-size:12px;color:var(--muted)">这些单词已自动加入错题本，可随时复习</p>';
+    wrap.innerHTML = html;
+  } else wrap.innerHTML = '<p style="text-align:center;color:var(--green);margin-top:14px">全部正确，没有答错的单词 🌟</p>';
+  const prev = +(localStorage.getItem('spell_best') || 0);
+  if (pct > prev) localStorage.setItem('spell_best', pct);
+  loadBest();
+  show('resultCard');
+}
+$('retryBtn').onclick = () => startTest();
+$('backBtn').onclick = () => { show('menuCard'); refreshWbBadge(); };
+
+// ========== 学习模式 ==========
+function startStudy() {
+  studyQueue = getScopeWords();
+  if (studyQueue.length === 0) { alert('当前范围没有单词！'); return; }
+  if (cfg.shuffle) for (let i = studyQueue.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [studyQueue[i], studyQueue[j]] = [studyQueue[j], studyQueue[i]]; }
+  studyIdx = 0; studyRevealed = false;
+  show('studyCard');
+  renderStudy();
+}
+function renderStudy() {
+  const [en, zh, def, ex] = studyQueue[studyIdx];
+  $('studyEn').textContent = en;
+  if (studyRevealed) {
+    let html = '<span class="lbl">中文：</span>' + zh;
+    if (def) html += '<span class="def"><span class="lbl">英文释义：</span>' + def.replace(/</g,'&lt;') + '</span>';
+    if (ex) html += '<span class="ex">例句：' + ex.replace(/</g,'&lt;') + '</span>';
+    $('studyZh').innerHTML = html;
+  } else {
+    $('studyZh').textContent = '点击「显示释义」查看中文与英文解释';
+  }
+  $('studyCount').textContent = `${studyIdx + 1} / ${studyQueue.length}`;
+  $('studyCat').textContent = cfg.scope === 'all' ? '全部' : cfg.scope === 'wrongbook' ? '错题本' : (UNITS.find(u=>u.id===cfg.scope)||{}).name || '';
+}
+$('studySound').onclick = () => speak(studyQueue[studyIdx][0]);
+$('studyReveal').onclick = () => { studyRevealed = true; renderStudy(); };
+$('studyPrev').onclick = () => { if (studyIdx > 0){ studyIdx--; studyRevealed=false; renderStudy(); } };
+$('studyNext').onclick = () => { if (studyIdx < studyQueue.length-1){ studyIdx++; studyRevealed=false; renderStudy(); } else { show('menuCard'); } };
+$('studyBack').onclick = () => show('menuCard');
+
+// ========== 错题本 ==========
+function openWrongbook() { renderWb(); show('wrongbookCard'); }
+function renderWb() {
+  const arr = wbLoad();
+  $('wbCount').textContent = arr.length + ' 个单词';
+  const list = $('wbList');
+  $('wbPractice').disabled = arr.length === 0;
+  $('wbClear').disabled = arr.length === 0;
+  if (arr.length === 0) {
+    list.innerHTML = '<div class="wb-empty"><div class="ico">🎉</div><p>错题本空空如也！<br>做一次测试，答错的词就会出现在这里～</p></div>';
+    return;
+  }
+  let html = '<ul class="wrong-list">';
+  arr.forEach(([en, zh, def, ex]) => {
+    html += `<li><div class="w-main"><span class="w-en">${en}</span> <span class="w-zh">${zh}</span>` +
+      (def ? `<span class="wb-info">释义：${def}</span>` : '') +
+      `<button class="w-del" data-en="${en}" title="移除此词">✕</button></div></li>`;
+  });
+  html += '</ul>';
+  list.innerHTML = html;
+  list.querySelectorAll('.w-del').forEach(btn => { btn.onclick = () => { wbRemove(btn.dataset.en); renderWb(); }; });
+}
+$('wbPractice').onclick = () => {
+  if (wbLoad().length === 0) return;
+  cfg.scope = 'wrongbook';
+  $('scopeSelect').value = 'wrongbook';
+  mode = 'test';
+  document.querySelectorAll('.mode-btn').forEach(x => x.classList.remove('active'));
+  document.querySelector('.mode-btn[data-mode="test"]').classList.add('active');
+  $('testSettings').classList.remove('hidden');
+  $('scopeRow').classList.remove('hidden');
+  document.querySelector('#scopeSelect option[value="wrongbook"]').style.display = '';
+  $('startBtn').textContent = '开始测试';
+  startTest();
+};
+$('wbClear').onclick = () => { if (!confirm('确定要清空所有错题吗？')) return; wbClear(); renderWb(); };
+$('wbBack').onclick = () => show('menuCard');
+
+// ========== 切换画面 ==========
+function show(cardId) {
+  ['menuCard','testCard','resultCard','studyCard','wrongbookCard'].forEach(c => $(c).classList.add('hidden'));
+  $(cardId).classList.remove('hidden');
+  window.scrollTo({top:0, behavior:'smooth'});
+}
+</script>
+</body>
+</html>
