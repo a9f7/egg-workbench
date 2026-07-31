@@ -740,10 +740,11 @@ function renderEx(){
   const todayEx=S.exDone[todayStr()]||{};
   EX_ITEMS.forEach(it=>{
     const done=!!todayEx[it.id];
+    const added=todayEx[it.id]&&todayEx[it.id].add||0;
     const d=document.createElement('div'); d.className='ex-card';
     d.innerHTML=`<div class="ei">${it.icon}</div>
       <div class="et"><div class="t">${it.name}</div><div class="s">${it.desc}</div>
-      ${done?'<div class="addpick"><button data-add="1">+1☀️</button><button data-add="2">+2☀️</button><button data-add="3">+3☀️</button></div>':''}
+      ${done?(added?`<div class="addpick" style="opacity:.5;pointer-events:none"><span style="color:#e67e22;font-weight:bold">已加 ☀️+${added}</span></div>`:`<div class="addpick"><button data-add="1">+1☀️</button><button data-add="2">+2☀️</button><button data-add="3">+3☀️</button></div>`):''}
       </div>
       <button class="chk ${done?'on':''}" data-id="${it.id}">${done?'已完成✓':'打卡'}</button>`;
     box.appendChild(d);
@@ -755,7 +756,12 @@ function renderEx(){
     save(); renderEx(); renderHome(); toast('运动打卡成功！🎉 选择加阳光吧');
   });
   $$('#exList [data-add]').forEach(b=>b.onclick=()=>{
-    const n=+b.dataset.add; S.sun+=n; save(); renderHome(); toast('🎉 表扬蛋蛋！☀️+'+n);
+    const n=+b.dataset.add;
+    const card=b.closest('.ex-card');
+    const chk=card.querySelector('.chk');
+    const id=chk.dataset.id;
+    if((S.exDone[todayStr()]||{})[id]&&S.exDone[todayStr()][id].add){ return; }
+    S.sun+=n; S.exDone[todayStr()][id].add=n; save(); renderEx(); renderHome(); toast('🎉 表扬蛋蛋！☀️+'+n);
   });
 }
 
