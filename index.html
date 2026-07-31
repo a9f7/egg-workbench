@@ -579,12 +579,12 @@ function renderMath(){
     <div class="feedback" id="mFb"></div>`;
   const sub=()=>{
     const v=$('#mA').value.trim(); if(v===''){toast('写一下答案吧');return;}
-    const ok=Number(v)===mathQ.q.a;
+    const ok=Number(v)===mathQ.a;
     const fb=$('#mFb');
     if(ok){ S.mathCorrect++; S.total.m++; S.today.m++; const got=maybeMathSun();
       fb.className='feedback ok'; fb.innerHTML='✅ 正确！'+(got?' 🌟☀️+1':''); }
-    else { fb.className='feedback no'; fb.innerHTML=`❌ 正确答案：<b>${mathQ.q.a}</b>`;
-      if(!S.wrong.find(w=>w.q===mathQ.q)) S.wrong.push({q:mathQ.q,a:mathQ.q.a}); }
+    else { fb.className='feedback no'; fb.innerHTML=`❌ 正确答案：<b>${mathQ.a}</b>`;
+      if(!S.wrong.find(w=>w.q===mathQ.q)) S.wrong.push({q:mathQ.q,a:mathQ.a}); }
     save(); renderHome();
     mathQ={_mental:true, ...genMath()};
     setTimeout(renderMath, 650);
