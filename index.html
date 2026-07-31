@@ -531,12 +531,62 @@ function genMath(){
   }
 }
 const UNIT_MATH=[
-  {q:'25 × 4 = ?', a:100, tip:'末尾有0的乘法'},
-  {q:'125 × 8 = ?', a:1000, tip:'常用凑整'},
-  {q:'360 ÷ 9 = ?', a:40, tip:'除法口算'},
-  {q:'一个三角形的内角和是？', a:180, tip:'几何基础', free:true},
-  {q:'0.7 + 0.3 = ?', a:1, tip:'小数加法'},
-  {q:'1000 - 1 = ?', a:999, tip:'退位减法'},
+  // ── 第一单元：大数的认识 ──
+  {q:'10 个一万是（    ）', a:'十万', tip:'大数的认识'},
+  {q:'10 个一千万是（    ）', a:'一亿', tip:'大数的认识'},
+  {q:'从右边起，第（    ）位是万位', a:5, tip:'数位顺序表'},
+  {q:'从右边起，第（    ）位是亿位', a:9, tip:'数位顺序表'},
+  {q:'350400 读作（用汉字）？答：三十五万零四百', a:'三十五万零四百', free:true, tip:'大数读法'},
+  {q:'7006000 读作（用汉字）？答：七百万六千', a:'七百万六千', free:true, tip:'大数读法'},
+  {q:'五万零三百写作（数字）？', a:'50300', free:true, tip:'大数写法'},
+  {q:'把 840000 改写成用"万"作单位的数', a:'84万', free:true, tip:'改写单位'},
+  {q:'把 30700000 改写成用"亿"作单位的数', a:'3070万', free:true, tip:'改写单位'},
+  {q:'省略万位后面的尾数：849000 ≈ ？', a:'85万', free:true, tip:'四舍五入'},
+  {q:'省略亿位后面的尾数：996000000 ≈ ？', a:'10亿', free:true, tip:'四舍五入'},
+
+  // ── 第二单元：公顷和平方千米 ──
+  {q:'1 公顷 = （    ）平方米', a:10000, tip:'面积单位换算'},
+  {q:'1 平方千米 = （    ）公顷', a:100, tip:'面积单位换算'},
+  {q:'边长（    ）米的正方形面积是 1 公顷', a:100, tip:'1公顷的概念'},
+  {q:'一个足球场面积约 7000（    ）', a:'平方米', free:true, tip:'面积感知'},
+  {q:'北京市面积约 16000（    ）', a:'平方千米', free:true, tip:'面积感知'},
+
+  // ── 第三单元：角的度量 ──
+  {q:'一个直角是（    ）度', a:90, tip:'角的分类'},
+  {q:'一个平角是（    ）度', a:180, tip:'角的分类'},
+  {q:'一个周角是（    ）度', a:360, tip:'角的分类'},
+  {q:'1 个周角 = （    ）个直角', a:4, tip:'角度关系'},
+  {q:'1 个平角 = （    ）个直角', a:2, tip:'角度关系'},
+  {q:'一个三角形的内角和是（    ）度', a:180, tip:'几何基础'},
+  {q:'两条直线相交成直角，这两条直线互相（    ）', a:'垂直', free:true, tip:'垂直概念'},
+  {q:'同一平面内不相交的两条直线互相（    ）', a:'平行', free:true, tip:'平行概念'},
+
+  // ── 第四单元：三位数乘两位数 ──
+  {q:'125 × 16 = ?', a:2000, tip:'凑整巧算'},
+  {q:'25 × 32 = ?', a:800, tip:'末尾有0的乘法'},
+  {q:'140 × 20 = ?', a:2800, tip:'因数末尾有0'},
+  {q:'306 × 24 = ?', a:7344, tip:'中间有0的乘法'},
+  {q:'估算：198 × 41 ≈ ？（取整十数）', a:'8000', free:true, tip:'估算'},
+
+  // ── 第五单元：平行四边形与梯形 ──
+  {q:'平行四边形的对边（    ）且（    ）', a:'平行 相等', free:true, tip:'平行四边形性质'},
+  {q:'梯形有（    ）条高', a:'无数', free:true, tip:'梯形的高'},
+  {q:'只有一组对边平行的四边形叫（    ）', a:'梯形', free:true, tip:'梯形定义'},
+
+  // ── 第六单元：除数是两位数的除法 ──
+  {q:'360 ÷ 12 = ?', a:30, tip:'除法口算'},
+  {q:'480 ÷ 24 = ?', a:20, tip:'除法口算'},
+  {q:'720 ÷ 80 = ?', a:9, tip:'除数整十数'},
+  {q:'验算有余数的除法：（    ）× 除数 + 余数 = 被除数', a:'商', free:true, tip:'除法验算'},
+  {q:'25 × (    ) < 240，括号里最大能填几？', a:9, tip:'最大填几'},
+
+  // ── 第七单元：条形统计图 ──
+  {q:'条形统计图中，一格表示（    ）可以表示 1、2、5 或 10 等数量', a:'1', free:true, tip:'条形统计图'},
+  {q:'要清楚地看出数量的多少，适合用（    ）统计图', a:'条形', free:true, tip:'统计图选择'},
+
+  // ── 第八单元：数学广角（优化） ──
+  {q:'烙饼问题：烙 3 张饼，每次最多烙 2 张，每面 3 分钟，最少需要（    ）分钟', a:18, tip:'优化问题'},
+  {q:'沏茶问题：合理安排时间可以（    ）时间', a:'节省', free:true, tip:'优化思想'},
 ];
 function renderMath(){
   const box=$('#mathBox');
@@ -557,15 +607,34 @@ function renderMath(){
       <div class="feedback" id="mFb"></div>`;
     const sub=()=>{
       const v=$('#mA').value.trim(); if(v===''){toast('写一下答案吧');return;}
-      const ok=Number(v)===item.a;
+      // 文字题直接比较字符串，数字题转数字比较
+      const ok = item.free ? v===String(item.a) : Number(v)===item.a;
       const fb=$('#mFb');
       if(ok){ S.mathCorrect++; S.total.m++; S.today.m++; maybeMathSun(); fb.className='feedback ok'; fb.innerHTML='✅ 正确！'; }
       else { fb.className='feedback no'; fb.innerHTML=`❌ 正确答案：<b>${item.a}</b>`;
         if(!S.wrong.find(w=>w.q===item.q)) S.wrong.push({q:item.q,a:item.a}); }
       save(); renderHome();
       mathQ.idx++;
-      setTimeout(()=>{ if(mathQ.idx>=mathQ.list.length){ toast('单元题做完啦！'); mathQ=null; renderMath(); } else renderMath(); }, 900);
-    };
+      setTimeout(()=>{
+        if(mathQ.idx>=mathQ.list.length){
+          // 做完了，显示完成页，不重复
+          mathQ=null;
+          box.innerHTML=`<div style="text-align:center;padding:30px 0">
+            <div style="font-size:48px;margin-bottom:8px">🎉</div>
+            <h3 style="margin:0 0 8px">单元重点题全部做完！</h3>
+            <p class="muted" style="margin-bottom:16px">共 ${UNIT_MATH.length} 道题，太棒了！</p>
+            <button class="btn mint" id="mRetry" style="margin-right:8px">🔄 再做一遍</button>
+            <button class="btn" id="mBack">🔢 回到口算</button>
+          </div>`;
+          $('#mRetry').onclick=()=>{ mathMode='unit'; renderMath(); };
+          $('#mBack').onclick=()=>{
+            mathMode='mental';
+            $$('#mathSeg button').forEach(x=>x.classList.remove('on'));
+            document.querySelector('[data-mode=mental]').classList.add('on');
+            renderMath();
+          };
+        } else renderMath();
+      });
     $('#mSub').onclick=sub;
     $('#mA').addEventListener('keydown',e=>{if(e.key==='Enter')sub();});
     return;
@@ -577,7 +646,7 @@ function renderMath(){
     <input type="text" id="mA" placeholder="输入答案" inputmode="numeric" autocomplete="off">
     <button class="btn block" id="mSub">提交</button>
     <div class="feedback" id="mFb"></div>`;
-  const sub=()=>{
+  const sub2=()=>{
     const v=$('#mA').value.trim(); if(v===''){toast('写一下答案吧');return;}
     const ok=Number(v)===mathQ.a;
     const fb=$('#mFb');
@@ -589,9 +658,10 @@ function renderMath(){
     mathQ={_mental:true, ...genMath()};
     setTimeout(renderMath, 650);
   };
-  $('#mSub').onclick=sub;
-  $('#mA').addEventListener('keydown',e=>{if(e.key==='Enter')sub();});
+  $('#mSub').onclick=sub2;
+  $('#mA').addEventListener('keydown',e=>{if(e.key==='Enter')sub2();});
   setTimeout(()=>$('#mA')&&$('#mA').focus(),50);
+}
 }
 function maybeMathSun(){
   if(S.mathCorrect>0 && S.mathCorrect%30===0){ S.sun+=1; toast('🎉 数学答对30题，☀️阳光+1！'); return true; }
