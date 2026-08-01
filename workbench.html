@@ -583,6 +583,7 @@
       <div class="seg" id="mathSeg">
         <button class="on" data-mode="mental">口算刷题</button>
         <button data-mode="unit">单元重点题</button>
+        <button data-mode="star">★ 星级口算</button>
         <button data-mode="wrong">错题本</button>
       </div>
       <div id="mathBox"></div>
@@ -1555,7 +1556,54 @@ const UNIT_MATH=[
   {q:'吃药问题：找杯子倒开水1分、等开水降温6分（同时找感冒药、量体温）。最少需要（    ）分钟。', a:'7', free:true, tip:'统筹安排'},
   {q:'双人游戏玩1局5分钟，小东和爸妈3人每人玩2局（双人玩），至少需要（    ）分钟。', a:'15', free:true, tip:'统筹'},
   {q:'田忌赛马中，田忌用（    ）等马对齐王的上等马，最终以弱胜强。', a:'下', free:true, tip:'策略'},
-  {q:'排队打水时，合理安排可以（    ）总等待时间。（填“减少”或“增加”）', a:'减少', free:true, tip:'优化思想'},
+    {q:'排队打水时，合理安排可以（    ）总等待氮时间。（填“减少”或“增加”）', a:'减少', free:true, tip:'优化思想'},
+];
+
+/* ═══════════ ★ 星级口算天天练（人教版四上·教材原题） ═══════════ */
+/* 题目全部取自 IMA 知识库「蛋蛋教学」文件夹中的《26秋 4上数学 星级口算天天练》（荣德基主编·安徽教育出版社）PDF 原文 */
+const STAR_MATH=[
+  /* —— 第一单元 大数的认识 —— */
+  {q:'23 × 3 =', a:'69', free:true, tip:'口算乘法'},
+  {q:'120 ÷ 6 =', a:'20', free:true, tip:'口算除法'},
+  {q:'96 ÷ 3 =', a:'32', free:true, tip:'口算除法'},
+  {q:'31 × 2 =', a:'62', free:true, tip:'口算乘法'},
+  {q:'550 - 380 =', a:'170', free:true, tip:'口算减法'},
+  {q:'400 × 5 =', a:'2000', free:true, tip:'口算乘法'},
+  {q:'40 ÷ 4 =', a:'10', free:true, tip:'口算除法'},
+  {q:'800 × 4 =', a:'3200', free:true, tip:'口算乘法'},
+  {q:'2000 × 4 =', a:'8000', free:true, tip:'口算乘法'},
+  {q:'46 ÷ 2 =', a:'23', free:true, tip:'口算除法'},
+  {q:'240 ÷ 4 =', a:'60', free:true, tip:'口算除法'},
+  {q:'32 × 3 =', a:'96', free:true, tip:'口算乘法'},
+  {q:'360 ÷ 9 =', a:'40', free:true, tip:'口算除法'},
+  {q:'42 × 2 =', a:'84', free:true, tip:'口算乘法'},
+  {q:'105 ÷ 5 =', a:'21', free:true, tip:'口算除法'},
+  {q:'2400 ÷ 6 =', a:'400', free:true, tip:'口算除法'},
+  {q:'30 × 5 =', a:'150', free:true, tip:'口算乘法'},
+  {q:'540 ÷ 9 =', a:'60', free:true, tip:'口算除法'},
+  /* —— 第二单元 公顷和平方千米 —— */
+  {q:'7公顷 = （    ）平方米。', a:'70000', free:true, tip:'面积换算'},
+  /* —— 第三单元 角的度量 —— */
+  {q:'850 + 80 =', a:'930', free:true, tip:'口算加法'},
+  {q:'130 - 90 =', a:'40', free:true, tip:'口算减法'},
+  {q:'96 ÷ 3 =', a:'32', free:true, tip:'口算除法'},
+  {q:'200 × 5 =', a:'1000', free:true, tip:'口算乘法'},
+  {q:'350 - 70 =', a:'280', free:true, tip:'口算减法'},
+  {q:'224 + 66 =', a:'290', free:true, tip:'口算加法'},
+  {q:'248 ÷ 8 =', a:'31', free:true, tip:'口算除法'},
+  {q:'270 ÷ 9 =', a:'30', free:true, tip:'口算除法'},
+  {q:'166 ÷ 2 =', a:'83', free:true, tip:'口算除法'},
+  {q:'600 ÷ 5 =', a:'120', free:true, tip:'口算除法'},
+  {q:'2700 ÷ 3 =', a:'900', free:true, tip:'口算除法'},
+  {q:'410 ÷ 5 =', a:'82', free:true, tip:'口算除法'},
+  {q:'9 × 700 =', a:'6300', free:true, tip:'口算乘法'},
+  {q:'211 × 4 =', a:'844', free:true, tip:'口算乘法'},
+  /* —— 角的关系 —— */
+  {q:'1周角 = （    ）直角。', a:'4', free:true, tip:'角度关系'},
+  {q:'1平角 = （    ）直角。', a:'2', free:true, tip:'角度关系'},
+  {q:'1周角 = （    ）平角。', a:'2', free:true, tip:'角度关系'},
+  {q:'2直角 = （    ）平角。', a:'2', free:true, tip:'角度关系'},
+  {q:'1平角 + （    ）直角 = 1周角。', a:'2', free:true, tip:'角度计算'},
 ];
 function renderMath(){
   const box=$('#mathBox');
@@ -1621,6 +1669,55 @@ function renderMath(){
       console.error('renderMath unit error:',err);
       return;
     }
+  }
+  /* ── ★ 星级口算模式（教材原题） ── */
+  if(mathMode==='star'){
+    if(!mathQ||mathQ._star!==true){ mathQ={_star:true, idx:0, list:shuffle(STAR_MATH.slice())}; }
+    const item=mathQ.list[mathQ.idx];
+    if(!item){ box.innerHTML='<p class="muted">⚠️ 题目加载失败</p>'; return; }
+    box.innerHTML='<div class="quiz-top"><span>★ 星级口算 '+(mathQ.idx+1)+'/'+mathQ.list.length+'</span><span style="font-size:12px">'+(item.tip||'')+'</span></div>'+
+      '<div class="qprompt" style="font-size:17px;font-weight:600">'+item.q+'</div>'+
+      '<div class="qhint">'+(item.free?'💡 输入文字或数字答案':'💡 输入数字答案')+'</div>'+
+      '<input type="text" id="mA" placeholder="输入答案" '+(item.free?'':'inputmode="numeric"')+' autocomplete="off">'+
+      '<button class="btn block" id="mSub" style="margin-top:12px">✅ 提交答案</button>'+
+      '<div class="feedback" id="mFb"></div>';
+    const sub=function(){
+      const v=document.getElementById('mA').value.trim();
+      if(!v){toast('✏️ 写一下答案吧');return;}
+      const ok = item.free ? v===String(item.a) : Number(v)===item.a;
+      const fb=document.getElementById('mFb');
+      if(ok){
+        S.mathCorrect++; S.total.m++; S.today.m++; maybeMathSun();
+        fb.className='feedback ok'; fb.innerHTML='🎉 正确！太棒了！';
+      } else {
+        fb.className='feedback no'; fb.innerHTML='❌ 正确答案：<b>'+item.a+'</b>';
+        if(!S.wrong.find(w=>w.q===item.q)) S.wrong.push({q:item.q,a:item.a});
+      }
+      save(); renderHome();
+      mathQ.idx++;
+      setTimeout(function(){
+        if(!mathQ||mathQ.idx>=mathQ.list.length){
+          mathQ=null;
+          box.innerHTML='<div style="text-align:center;padding:30px 0">'+
+            '<div style="font-size:48px">🏆</div>'+
+            '<h3 style="margin:8px 0">星级口算全部做完！</h3>'+
+            '<p class="muted" style="margin-bottom:16px">共 '+STAR_MATH.length+' 道教材原题</p>'+
+            '<button class="btn mint" id="mRetry" style="margin-right:8px">🔄 再做一遍</button>'+
+            '<button class="btn" id="mBack">🔢 回到口算</button></div>';
+          document.getElementById('mRetry').onclick=function(){ mathMode='star'; mathQ=null; renderMath(); };
+          document.getElementById('mBack').onclick=function(){
+            mathMode='mental'; mathQ=null;
+            var btns=document.querySelectorAll('#mathSeg button');
+            btns.forEach(function(x){x.classList.remove('on');});
+            btns[0].classList.add('on'); renderMath();
+          };
+        } else { renderMath(); }
+      }, ok?500:1200);
+    };
+    document.getElementById('mSub').onclick=sub;
+    document.getElementById('mA').addEventListener('keydown',function(e){if(e.key==='Enter')sub();});
+    setTimeout(function(){var el=document.getElementById('mA');if(el)el.focus();},100);
+    return;
   }
   /* ── 口算练习模式（默认） ── */
   if(!mathQ||mathQ._mental!==true){ mathQ={_mental:true, ...genMath()}; }
