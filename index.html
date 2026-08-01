@@ -168,313 +168,28 @@
   @keyframes breathe{0%,100%{transform:scaleY(1) translateY(0)}50%{transform:scaleY(1.05) translateY(-2px)}}
   .dog.jump{animation:jump .6s ease}
   @keyframes jump{0%{transform:translateY(0)}25%{transform:translateY(-46px)}50%{transform:translateY(0)}75%{transform:translateY(-18px)}100%{transform:translateY(0)}}
-  .dog .body{width:92px;height:74px;background:#cdd4e4;border-radius:48% 48% 44% 44%;position:relative;margin:0 auto}
-  .dog .head{width:76px;height:68px;background:#cdd4e4;border-radius:50% 50% 46% 46%;position:absolute;top:-46px;left:8px}
-  .dog .ear{position:absolute;top:-15px;width:0;height:0;border-left:14px solid transparent;border-right:14px solid transparent;border-bottom:26px solid #cdd4e4}
-  .dog .ear::after{content:'';position:absolute;top:11px;left:-6px;border-left:6px solid transparent;border-right:6px solid transparent;border-bottom:12px solid #ffb6c9}
-  .dog .ear.l{left:1px}.dog .ear.r{right:1px}
-  .dog .eye{position:absolute;top:22px;width:13px;height:16px;background:#5a8f3c;border-radius:50% 50% 50% 50%/60% 60% 40% 40%;animation:blink 4.2s infinite}
-  .dog .eye.l{left:18px}.dog .eye.r{right:18px}
-  @keyframes blink{0%,93%,100%{transform:scaleY(1)}96%{transform:scaleY(.1)}}
-  .dog .nose{position:absolute;top:38px;left:50%;transform:translateX(-50%);width:10px;height:8px;background:#ff9bb3;border-radius:50% 50% 50% 50%/70% 70% 40% 40%}
-  .dog .mouth{position:absolute;top:47px;left:50%;transform:translateX(-50%);width:16px;height:8px;border-bottom:2px solid #6a5a64;border-radius:0 0 10px 10px}
-  .dog .whisker{position:absolute;top:37px;height:2px;background:#fff;opacity:.85;width:22px;border-radius:2px}
-  .dog .whisker.l{left:-20px}.dog .whisker.r{right:-20px}
-  .dog .tail{position:absolute;bottom:6px;right:-18px;width:11px;height:56px;background:#cdd4e4;border-radius:50%;transform-origin:top center;animation:wag 1.1s ease-in-out infinite}
-  @keyframes wag{0%,100%{transform:rotate(-20deg)}50%{transform:rotate(22deg)}}
-  .dog .bow{position:absolute;top:-60px;left:50%;transform:translateX(-50%);font-size:18px;display:none}
-  .dog.lv1 .body{width:106px;height:86px}.dog.lv1 .head{width:88px;height:80px;top:-52px}
-  .dog.lv2 .body{width:124px;height:100px}.dog.lv2 .head{width:102px;height:92px;top:-58px}
-  .dog.lv2 .bow{display:block}
-  .dog.lv3 .body{width:146px;height:118px;background:#f6c177}.dog.lv3 .head{width:120px;height:108px;top:-66px;background:#ffd98f}
-  .dog.lv3 .ear{border-bottom-color:#ffd98f}.dog.lv3 .tail{background:#f6c177}
-  .dog.lv3 .bow{display:block}
-  /* ═══ 换装系统：每件衣服 = 一只完整的小猫角色 ═══ */
-  /* 切换动画 */
-  .dog{transition:all .45s cubic-bezier(.4,0,.2,1)}
-  .dog.char-switching{opacity:0;transform:scale(.85)}
-  .dog .body,.dog .head,.dog .ear,.dog .tail,.dog .bow{transition:all .45s cubic-bezier(.4,0,.2,1)}
-
-  /* ===== 通用：衣服装饰层（用于额外元素） ===== */
-  .cat-outfit{position:absolute;top:-10px;left:-20px;right:-20px;bottom:-20px;pointer-events:none;z-index:6;overflow:visible}
-
-  /* ══════════════════════════════════════
-     c1 🧥 红白条纹T恤 — 休闲运动小猫
-     ══════════════════════════════════════ */
-  .dog.outfit-c1 .body{
-    width:100px;height:80px;
-    background:repeating-linear-gradient(0deg,#e74c3c 0,#e74c3c 8px,#fff 8px,#fff 16px);
-    border-radius:46% 46% 50% 50%;
-    box-shadow:inset 0 -6px 14px rgba(0,0,0,.12),0 4px 12px rgba(231,76,60,.15);
+  /* ═══ 小猫形象：AI 插画资源（参考「豆包」风格） ═══ */
+  .dog{transition:transform .35s ease, opacity .35s ease}
+  .dog .cat-img{
+    display:block; width:104px; height:auto;
+    filter:drop-shadow(0 8px 10px rgba(80,60,90,.18));
+    transition:width .45s cubic-bezier(.34,1.4,.5,1), opacity .35s ease;
+    user-select:none; -webkit-user-drag:none; pointer-events:none;
   }
-  .dog.outfit-c1 .body::before{content:'';position:absolute;top:14px;left:50%;transform:translateX(-50%);
-    width:20px;height:18px;background:#fff;border-radius:6px;border:2.5px solid #c0392b;z-index:5}
-  .dog.outfit-c1 .body::after{content:'';position:absolute;top:-2px;left:50%;transform:translateX(-50%);
-    width:26px;height:9px;background:#fff;border-radius:0 0 14px 14px;border-top:2px solid #e74c3c;z-index:5}
-  .dog.outfit-c1 .head{background:#f0f0f0}
-  .dog.outfit-c1 .ear{border-bottom-color:#f0f0f0}
-  .dog.outfit-c1 .tail{background:#e74c3c;width:13px;height:58px}
-
-  /* ══════════════════════════════════════
-     c2 👖 蓝色背带裤 — 工装小猫
-     ══════════════════════════════════════ */
-  .dog.outfit-c2 .body{
-    width:98px;height:84px;background:#2980b9;border-radius:44% 44% 52% 52%;
-    box-shadow:inset 0 -8px 16px rgba(0,0,0,.15),0 4px 12px rgba(41,128,185,.2);
-  }
-  .dog.outfit-c2 .body::before{content:'';position:absolute;top:6px;left:50%;transform:translateX(-50%);
-    width:28px;height:22px;background:#3498db;border-radius:6px;border:2px solid #1a5276;z-index:5}
-  .dog.outfit-c2 .body::after{content:'';position:absolute;top:-16px;left:10px;
-    width:9px;height:42px;background:#2980b9;border-radius:4px;z-index:2}
-  .dog.outfit-c2 .strap-r{position:absolute;top:-16px;right:10px;width:9px;height:42px;
-    background:#2980b9;border-radius:4px;z-index:2}
-  .dog.outfit-c2 .buckle-l{position:absolute;top:-17px;left:9px;width:11px;height:7px;
-    background:#f1c40f;border-radius:2px;z-index:4}
-  .dog.outfit-c2 .buckle-r{position:absolute;top:-17px;right:9px;width:11px;height:7px;
-    background:#f1c40f;border-radius:2px;z-index:4}
-  .dog.outfit-c2 .head{background:#e8e8e8}
-  .dog.outfit-c2 .ear{border-bottom-color:#e8e8e8}
-  .dog.outfit-c2 .tail{background:#2980b9}
-
-  /* ══════════════════════════════════════
-     c3 👗 粉色裙子 — 萌萌裙装小猫
-     ══════════════════════════════════════ */
-  .dog.outfit-c3 .body{
-    width:96px;height:72px;background:linear-gradient(180deg,#ffccd5,#ff85a2);
-    border-radius:48% 48% 45% 45%;box-shadow:inset 0 -4px 10px rgba(232,74,127,.15);
-  }
-  .dog.outfit-c3 .body::before{content:'';position:absolute;top:4px;left:50%;transform:translateX(-50%);
-    width:0;height:0;border-left:9px solid transparent;border-right:9px solid transparent;
-    border-top:14px solid #fff;z-index:5}
-  .dog.outfit-c3 .skirt-layer{position:absolute;top:56%;left:-18px;right:-18px;bottom:-30px;
-    background:linear-gradient(180deg,#ff85a2,#ff5c8d,#e84a7f);border-radius:0 0 50% 50%;
-    z-index:2;box-shadow:0 6px 18px rgba(232,74,127,.25)}
-  .dog.outfit-c3 .skirt-layer::before{content:'';position:absolute;top:0;left:4px;right:4px;height:4px;
-    background:rgba(255,255,255,.35);border-radius:50%}
-  .dog.outfit-c3 .head{background:#fce4ec}
-  .dog.outfit-c3 .ear{border-bottom-color:#fce4ec}
-  .dog.outfit-c3 .bow-text{position:absolute;top:-54px;left:50%;transform:translateX(-50%);
-    font-size:16px;z-index:7}
-  .dog.outfit-c3 .tail{background:#ff85a2}
-
-  /* ══════════════════════════════════════
-     c4 🦸 超人披风 — 英雄小猫
-     ══════════════════════════════════════ */
-  .dog.outfit-c4 .body{
-    width:94px;height:76px;background:linear-gradient(135deg,#e74c3c,#c0392b);
-    border-radius:46% 46% 48% 48%;box-shadow:inset 0 -6px 14px rgba(0,0,0,.2),0 4px 16px rgba(192,57,43,.3);
-  }
-  .dog.outfit-c4 .cape-wrap{position:absolute;top:-40px;left:-36px;right:-36px;bottom:-16px;z-index:0;
-    background:linear-gradient(180deg,#e74c3c,#c0392b,#a93226);
-    clip-path:polygon(26% 0%,74% 0%,100% 100%,73% 95%,50% 100%,27% 95%,0% 100%);
-    animation:capeWave 1.6s ease-in-out infinite alternate}
-  @keyframes capeWave{from{transform:skewX(-3deg) scaleX(.97)}to{transform:skewX(3deg) scaleX(1.03)}}
-  .dog.outfit-c4 .s-emblem{position:absolute;top:4px;left:50%;transform:translateX(-50%);
-    width:24px;height:24px;background:linear-gradient(135deg,#f1c40f,#f39c12);border-radius:50%;
-    z-index:7;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:900;color:#c0392b;
-    box-shadow:0 2px 8px rgba(0,0,0,.25),inset 0 -2px 4px rgba(0,0,0,.15)}
-  .dog.outfit-c4 .head{background:#f5d6d6}
-  .dog.outfit-c4 .ear{border-bottom-color:#f5d6d6}
-  .dog.outfit-c4 .tail{background:#c0392b}
-  .dog.outfit-c4 .boot-l,.dog.outfit-c4 .boot-r{position:absolute;bottom:-10px;width:15px;height:19px;
-    background:linear-gradient(180deg,#e74c3c,#a93226);border-radius:4px 4px 7px 7px;z-index:5}
-  .dog.outfit-c4 .boot-l{left:6px;transform:rotate(-8deg)}.dog.outfit-c4 .boot-r{right:6px;transform:rotate(8deg)}
-
-  /* ══════════════════════════════════════
-     c5 🎄 圣诞毛衣 — 温馨圣诞小猫
-     ══════════════════════════════════════ */
-  .dog.outfit-c5 .body{
-    width:102px;height:82px;background:#c0392b;
-    border-radius:48% 48% 46% 46%;box-shadow:inset 0 -6px 14px rgba(0,0,0,.18);
-  }
-  .dog.outfit-c5 .body::before{content:'';position:absolute;top:0;left:0;right:0;bottom:0;
-    background:repeating-radial-gradient(circle at 50% 50%,transparent 0,transparent 7px,rgba(0,0,0,.05) 7px,rgba(0,0,0,.05) 9px);
-    border-radius:inherit}
-  .dog.outfit-c5 .x-collar{position:absolute;top:-5px;left:50%;transform:translateX(-50%);
-    width:32px;height:13px;background:#27ae60;border-radius:0 0 10px 10px;z-index:6;
-    border-bottom:2.5px solid #fff}
-  .dog.outfit-c5 .x-cuff-l,.dog.outfit-c5 .x-cuff-r{position:absolute;bottom:3px;
-    width:20px;height:11px;background:#27ae60;border-radius:5px;z-index:6}
-  .dog.outfit-c5 .x-cuff-l{left:-7px}.dog.outfit-c5 .x-cuff-r{right:-7px}
-  .dog.outfit-c5 .snow-flakes span{position:absolute;font-size:10px;color:#fff;
-    text-shadow:0 0 5px rgba(255,255,255,.7);z-index:7;animation:snowFloat 2.5s ease-in-out infinite}
-  .dog.outfit-c5 .snow-flakes span:nth-child(1){top:6px;left:10px;animation-delay:0s}
-  .dog.outfit-c5 .snow-flakes span:nth-child(2){top:18px;right:8px;font-size:8px;animation-delay:.8s}
-  .dog.outfit-c5 .snow-flakes span:nth-child(3){top:30px;left:22px;font-size:7px;animation-delay:1.6s}
-  @keyframes snowFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-4px)}}
-  .dog.outfit-c5 .head{background:#faf0e6}
-  .dog.outfit-c5 .ear{border-bottom-color:#faf0e6}
-  .dog.outfit-c5 .tail{background:#c0392b}
-  .dog.outfit-c5 .hat-santa{position:absolute;top:-72px;left:50%;transform:translateX(-50%);
-    width:40px;height:28px;z-index:7}
-  .dog.outfit-c5 .hat-santa::before{content:'';position:absolute;top:0;left:50%;transform:translateX(-50%);
-    width:34px;height:20px;background:#c0392b;border-radius:50% 50% 0 0}
-  .dog.outfit-c5 .hat-santa::after{content:'';position:absolute;top:14px;left:50%;transform:translateX(-50%);
-    width:38px;height:8px;background:#fff;border-radius:4px}
-
-  /* ══════════════════════════════════════
-     c6 🦕 恐龙连体衣 — 可爱恐龙小猫
-     ══════════════════════════════════════ */
-  .dog.outfit-c6 .body{
-    width:100px;height:80px;background:linear-gradient(180deg,#2ecc71,#27ae60);
-    border-radius:46% 46% 48% 48%;box-shadow:inset 0 -6px 12px rgba(0,0,0,.12)}
-  .dog.outfit-c6 .body::before{content:'';position:absolute;top:10px;left:50%;transform:translateX(-50%);
-    width:38px;height:28px;background:#abebc6;border-radius:50%;z-index:5;opacity:.65}
-  .dog.outfit-c6 .dino-spikes-row{position:absolute;top:-68px;left:50%;transform:translateX(-50%);
-    display:flex;gap:3px;z-index:1}
-  .dog.outfit-c6 .dino-spikes-row span{width:0;height:0;
-    border-left:6px solid transparent;border-right:6px solid transparent;border-bottom:15px solid #2ecc71}
-  .dog.outfit-c6 .dino-spikes-row span:nth-child(odd){border-bottom-color:#58d68d}
-  .dog.outfit-c6 .dino-tail-tip{position:absolute;bottom:2px;right:-10px;
-    width:0;height:0;border-left:9px solid transparent;border-right:9px solid transparent;
-    border-top:18px solid #2ecc71;z-index:3;transform:rotate(-25deg)}
-  .dog.outfit-c6 .head{background:#a9dfbf}
-  .dog.outfit-c6 .ear{border-bottom-color:#a9dfbf}
-  .dog.outfit-c6 .tail{display:none}/* 隐藏原尾巴，用恐龙尾代替 */
-
-  /* ══════════════════════════════════════
-     c7 👸 公主蓬蓬裙（传说）— 华丽公主小猫
-     ══════════════════════════════════════ */
-  .dog.outfit-c7 .body{
-    width:98px;height:70px;background:linear-gradient(160deg,#ffeef4,#fd79a8 40%,#e84393 80%,#c44569);
-    border-radius:48% 48% 46% 46%;box-shadow:inset 0 -4px 10px rgba(196,69,105,.15),
-      0 0 20px rgba(253,121,168,.2)}
-  .dog.outfit-c7 .gown-skirt{position:absolute;top:52%;left:-24px;right:-24px;bottom:-42px;z-index:1}
-  .dog.outfit-c7 .gown-skirt-inner{position:absolute;top:0;left:0;right:0;bottom:0;
-    background:linear-gradient(180deg,#fd79a8 0%,#f78fb3 25%,#e84393 55%,#c44569 90%);
-    border-radius:0 0 50% 50%;
-    box-shadow:0 8px 24px rgba(196,69,105,.35),inset 0 -12px 24px rgba(0,0,0,.08)}
-  .dog.outfit-c7 .gown-skirt-shine{position:absolute;top:6px;left:6px;right:6px;bottom:0;
-    background:linear-gradient(180deg,rgba(255,255,255,.25),transparent 35%);border-radius:0 0 48% 48%}
-  .dog.outfit-c7 .gown-gold-line{position:absolute;top:52%;left:-20px;right:-20px;height:3px;
-    background:linear-gradient(90deg,transparent,#f1c40f 15%,#f39c12 50%,#f1c40f 85%,transparent);z-index:4}
-  .dog.outfit-c7 .gown-bow{position:absolute;top:48%;left:50%;transform:translateX(-50%);
-    font-size:17px;z-index:7;filter:drop-shadow(0 2px 4px rgba(0,0,0,.15))}
-  .dog.outfit-c7 .gown-corset{position:absolute;top:3px;left:50%;transform:translateX(-50%);
-    width:38px;height:30px;background:linear-gradient(180deg,#c44569,#e84393);
-    border-radius:8px;z-index:5;display:flex;flex-direction:column;align-items:center;gap:3px;padding:3px 0}
-  .dog.outfit-c7 .corset-stitch{width:26px;height:1.5px;background:rgba(255,255,255,.22);border-radius:1px}
-  .dog.outfit-c7 .puff-sl,.dog.outfit-c7 .puff-sr{position:absolute;top:47%;width:26px;height:19px;
-    background:linear-gradient(180deg,#f78fb3,#fd79a8);border-radius:50%;z-index:4}
-  .dog.outfit-c7 .puff-sl{left:-22px;transform:rotate(-12deg)}.dog.outfit-c7 .puff-sr{right:-22px;transform:rotate(12deg)}
-  /* 皇冠 SVG */
-  .dog.outfit-c7 .crown-svg{position:absolute;top:-78px;left:50%;transform:translateX(-50%);z-index:8}
-  .dog.outfit-c7 .crown-svg svg{width:40px;height:28px;filter:drop-shadow(0 3px 6px rgba(241,196,15,.5))}
-  /* 宝石光晕 */
-  .dog.outfit-c7 .jewel-glow{position:absolute;top:-8px;left:50%;transform:translateX(-50%);
-    width:10px;height:10px;background:radial-gradient(circle at 35% 35%,#ff6b9d,#c44569);
-    border-radius:50%;z-index:9;
-    box-shadow:0 0 8px #ff6b9d,0 0 18px rgba(255,107,157,.4);
-    animation:jewelPulse 2s ease-in-out infinite alternate}
-  @keyframes jewelPulse{from{box-shadow:0 0 8px #ff6b9d,0 0 18px rgba(255,107,157,.4)}
-    to{box-shadow:0 0 16px #ff6b9d,0 0 30px rgba(255,107,157,.65)}}
-  /* 星星闪烁 */
-  .dog.outfit-c7 .star-twinkle{position:absolute;font-size:9px;z-index:7;
-    animation:starBlink 1.6s ease-in-out infinite alternate}
-  .dog.outfit-c7 .star-twinkle.sl{top:-24px;left:-10px;animation-delay:0s}
-  .dog.outfit-c7 .star-twinkle.sr{top:-20px;right:-10px;animation-delay:.8s}
-  @keyframes starBlink{from{opacity:.3;transform:scale(.7)}to{opacity:1;transform:scale(1.25)}}
-  .dog.outfit-c7 .head{background:#fff0f5}
-  .dog.outfit-c7 .ear{border-bottom-color:#fff0f5}
-  .dog.outfit-c7 .tail{background:#e84393}
-  .dog.outfit-c7 .princess-glow{position:absolute;top:-40px;left:50%;transform:translateX(-50%);
-    width:80px;height:60px;background:radial-gradient(ellipse,rgba(255,107,157,.12),transparent 70%);
-    z-index:0;pointer-events:none;animation:glowPulse 3s ease-in-out infinite alternate}
-  @keyframes glowPulse{from{opacity:.6;transform:translateX(-50%) scale(1)}to{opacity:1;transform:translateX(-50%) scale(1.1)}}
-
-  /* ══════════════════════════════════════
-     c8 🧑‍🚀 宇航员套装（传说）— 太空探险小猫
-     ══════════════════════════════════════ */
-  .dog.outfit-c8 .body{
-    width:100px;height:80px;background:linear-gradient(180deg,#fff 0%,#ecf0f1 40%,#bdc3c7 100%);
-    border-radius:48% 48% 44% 44%;border:2.5px solid #95a5a6;
-    box-shadow:inset 0 -6px 12px rgba(0,0,0,.08),0 4px 14px rgba(149,165,166,.2)}
-  .dog.outfit-c8 .helmet-shell{position:absolute;top:-56px;left:50%;transform:translateX(-50%);
-    width:60px;height:54px;background:radial-gradient(circle at 50% 35%,rgba(255,255,255,.92),rgba(236,240,241,.75));
-    border-radius:50%;border:3.5px solid #7f8c8d;z-index:8;
-    box-shadow:0 4px 14px rgba(0,0,0,.18),inset 0 -8px 16px rgba(0,0,0,.06)}
-  .dog.outfit-c8 .visor-glass{position:absolute;top:14px;left:11px;width:30px;height:20px;
-    background:linear-gradient(140deg,rgba(149,165,166,.2),rgba(127,140,141,.4));
-    border-radius:50%;border:2px solid #95a5a6;z-index:9;
-    box-shadow:inset 0 2px 8px rgba(0,0,0,.12)}
-  .dog.outfit-c8 .visor-glass::after{content:'';position:absolute;top:4px;left:5px;width:10px;height:7px;
-    background:rgba(255,255,255,.45);border-radius:50%}
-  .dog.outfit-c8 .nasa-badge{position:absolute;top:5px;left:50%;transform:translateX(-50%);
-    padding:2px 8px;background:linear-gradient(135deg,#e74c3c,#c0392b);color:#fff;
-    font-size:7px;font-weight:800;border-radius:3px;z-index:7;letter-spacing:.8px}
-  .dog.outfit-c8 .ctrl-panel{position:absolute;top:16px;left:50%;transform:translateX(-50%);
-    width:22px;height:16px;background:#2c3e50;border-radius:4px;z-index:7;
-    display:flex;flex-wrap:wrap;gap:2px;padding:3px;justify-content:center}
-  .dog.outfit-c8 .ctrl-panel b{width:5px;height:5px;background:#e74c3c;border-radius:50%}
-  .dog.outfit-c8 .space-boot-l,.dog.outfit-c8 .space-boot-r{position:absolute;bottom:-12px;
-    width:17px;height:22px;background:linear-gradient(180deg,#fff,#bdc3c7);
-    border-radius:5px 5px 8px 8px;z-index:6;border:2px solid #95a5a6}
-  .dog.outfit-c8 .space-boot-l{left:4px}.dog.outfit-c8 .space-boot-r{right:4px}
-  .dog.outfit-c8 .head{background:#dfe6e9}
-  .dog.outfit-c8 .ear{border-bottom-color:#dfe6e9}
-  .dog.outfit-c8 .tail{background:#bdc3c7}
-
-  /* ══════════════════════════════════════
-     c9 🦞 小龙虾斗篷（传说）— 搞怪龙虾小猫
-     ══════════════════════════════════════ */
-  .dog.outfit-c9 .body{
-    width:96px;height:76px;background:linear-gradient(160deg,#e67e22,#d35400);
-    border-radius:46% 46% 48% 48%;box-shadow:inset 0 -6px 14px rgba(0,0,0,.18)}
-  .dog.outfit-c9 .lobster-cape{position:absolute;top:-32px;left:-30px;right:-30px;bottom:-12px;z-index:0;
-    background:linear-gradient(180deg,#e67e22,#d35400,#ba4a00);
-    clip-path:polygon(32% 0%,68% 0%,96% 92%,70% 98%,50% 100%,30% 98%,4% 92%);
-    animation:lobsterCape 1.3s ease-in-out infinite alternate}
-  @keyframes lobsterCape{from{transform:skewX(-4deg) scaleX(.96)}to{transform:skewX(4deg) scaleX(1.04)}}
-  .dog.outfit-c9 .lobster-cape::before{content:'';position:absolute;top:0;left:0;right:0;bottom:0;
-    background:repeating-linear-gradient(0deg,transparent 0,transparent 5px,rgba(0,0,0,.04) 5px,rgba(0,0,0,.04) 10px)}
-  .dog.outfit-c9 .shell-plaque{position:absolute;top:3px;left:50%;transform:translateX(-50%);
-    width:34px;height:28px;background:linear-gradient(145deg,#e67e22,#d35400);
-    border-radius:50% 50% 44% 44%;z-index:7;border:2.5px solid #ba4a00;
-    box-shadow:inset 0 -5px 10px rgba(0,0,0,.18),0 2px 6px rgba(0,0,0,.1)}
-  .dog.outfit-c9 .shell-plaque::before{content:'';position:absolute;top:5px;left:5px;right:5px;bottom:5px;
-    background:repeating-linear-gradient(45deg,transparent,transparent 4px,rgba(255,255,255,.1) 4px,rgba(255,255,255,.1) 8px);
-    border-radius:inherit}
-  .dog.outfit-claw-big{position:absolute;top:6px;z-index:8;font-size:20px;
-    filter:drop-shadow(0 3px 4px rgba(0,0,0,.2));animation:clawSwing 2.2s ease-in-out infinite alternate}
-  .dog.outfit-claw-big.cl{left:-20px;transform-origin:right center;animation-name:clawSwingL}
-  .dog.outfit-claw-big.cr{right:-20px;transform-origin:left center;animation-name:clawSwingR}
-  @keyframes clawSwingL{from{transform:rotate(-8deg)}to{transform:rotate(10deg)}}
-  @keyframes clawSwingR{from{transform:rotate(8deg)}to{transform:rotate(-10deg)}}
-  .dog.outfit-c9 .antenna-l,.dog.outfit-c9 .antenna-r{position:absolute;top:-20px;
-    width:2.5px;height:18px;background:#e67e22;z-index:3}
-  .dog.outfit-c9 .antenna-l{left:22px;transform:rotate(-18deg)}.dog.outfit-c9 .antenna-r{right:22px;transform:rotate(18deg)}
-  .dog.outfit-c9 .head{background:#fdebd0}
-  .dog.outfit-c9 .ear{border-bottom-color:#fdebd0}
-  .dog.outfit-c9 .tail{background:#d35400}
-
-  /* ══════════════════════════════════════
-     c10 🌈 彩虹衣（传说）— 魔法彩虹小猫
-     ══════════════════════════════════════ */
-  .dog.outfit-c10 .body{
-    width:100px;height:80px;background:linear-gradient(135deg,
-      #e74c3c 0%,#e74c3c 14%,#f39c12 14%,#f39c12 28%,#f1c40f 28%,#f1c40f 42%,
-      #2ecc71 42%,#2ecc71 56%,#3498db 56%,#3498db 70%,#9b59b6 70%,#9b59b6 100%);
-    border-radius:48% 48% 46% 46%;box-shadow:inset 0 -6px 14px rgba(0,0,0,.1),0 0 20px rgba(155,89,182,.15)}
-  .dog.outfit-c10 .body::after{content:'';position:absolute;top:0;left:0;right:0;bottom:0;
-    background:linear-gradient(180deg,rgba(255,255,255,.22) 0%,transparent 45%,rgba(0,0,0,.06) 100%);
-    border-radius:inherit}
-  .dog.outfit-c10 .rainbow-arc-wrap{position:absolute;top:-30px;left:50%;transform:translateX(-50%);
-    width:70px;height:32px;z-index:5;overflow:hidden}
-  .dog.outfit-c10 .rainbow-arc-wrap svg{width:70px;height:32px}
-  .dog.outfit-c10 .cloud-deco{position:absolute;top:-20px;z-index:6;font-size:17px;
-    animation:cloudDrift 3.5s ease-in-out infinite alternate}
-  .dog.outfit-c10 .cloud-deco.cl{left:-8px;animation-delay:0s}.dog.outfit-c10 .cloud-deco.cr{right:-8px;animation-delay:1.7s}
-  @keyframes cloudDrift{from{transform:translateY(0) translateX(0)}to{transform:translateY(-6px) translateX(4px)}}
-  .dog.outfit-c10 .sparkle-magic{position:absolute;font-size:9px;z-index:8;
-    animation:magicSpark 1.8s ease-in-out infinite alternate}
-  .dog.outfit-c10 .sparkle-magic:nth-of-type(1){top:-6px;left:6px;animation-delay:0s}
-  .dog.outfit-c10 .sparkle-magic:nth-of-type(2){top:10px;right:4px;animation-delay:.6s}
-  .dog.outfit-c10 .sparkle-magic:nth-of-type(3){top:22px;left:18px;animation-delay:1.2s}
-  .dog.outfit-c10 .sparkle-magic:nth-of-type(4){top:4px;right:16px;animation-delay:1.5s}
-  @keyframes magicSpark{from{opacity:.25;transform:scale(.55) rotate(0deg)}to{opacity:1;transform:scale(1.3) rotate(25deg)}}
-  .dog.outfit-c10 .head{background:#f3e5f5}
-  .dog.outfit-c10 .ear{border-bottom-color:#f3e5f5}
-  .dog.outfit-c10 .tail{background:linear-gradient(180deg,#e74c3c,#f39c12,#9b59b6)}
+  /* 成长阶段：基础小猫尺寸（幼崽 / 可爱 / 帅气 / 神猫） */
+  .dog.lv0 .cat-img{width:104px}
+  .dog.lv1 .cat-img{width:128px}
+  .dog.lv2 .cat-img{width:154px}
+  .dog.lv3 .cat-img{width:186px}
+  /* 换装：整体略放大以容纳服饰 */
+  .dog.lv0.has-outfit .cat-img{width:130px}
+  .dog.lv1.has-outfit .cat-img{width:158px}
+  .dog.lv2.has-outfit .cat-img{width:188px}
+  .dog.lv3.has-outfit .cat-img{width:222px}
+  /* 切换淡入 */
+  .dog.switching .cat-img{opacity:0; transform:scale(.86)}
+  /* 衣柜缩略图 */
+  .wardrobe .wi img{width:46px;height:46px;object-fit:contain;display:block;margin:0 auto 4px;border-radius:8px}
 
   /* 衣柜样式 */
   .wardrobe{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:8px}
@@ -632,17 +347,7 @@
       <div class="dog-stage" id="dogStage">
         <div class="ground"></div>
         <div class="dog" id="dog">
-          <div class="body">
-            <div class="tail"></div>
-            <div class="head">
-              <div class="ear l"></div><div class="ear r"></div>
-              <div class="eye l"></div><div class="eye r"></div>
-              <div class="nose"></div><div class="mouth"></div>
-              <div class="whisker l"></div><div class="whisker r"></div>
-            </div>
-            <div class="bow">🎀</div>
-            <div class="cat-outfit" id="catOutfit"></div>
-          </div>
+          <img class="cat-img" id="catImg" src="assets/cat-lv0.png" alt="蛋蛋的小猫">
         </div>
       </div>
       <div style="text-align:center">
@@ -2043,102 +1748,19 @@ function renderDog(){
   $('#dogGrow').textContent='成长值 '+g;
   const next=[30,80,150,9999][lv];
   $('#dogBar').style.width=Math.min(100, g/next*100)+'%';
-  // ═══ 换装系统：角色整体替换（带过渡动画） ═══
+  // ═══ 换装系统：切换 AI 插画资源 ═══
   const dogEl=$('#dog');
-  const prevOutfit = dogEl.className.match(/outfit-(\S+)/);
-  const prevId = prevOutfit ? prevOutfit[1] : null;
-  
-  // 清除旧衣服的额外DOM元素
-  dogEl.querySelectorAll('.outfit-extra').forEach(e=>e.remove());
-  const outfitEl=$('#catOutfit'); outfitEl.innerHTML='';
-  
-  // 重置基础类名，再添加新衣服类名
-  dogEl.className='dog lv'+lv;
-  
+  const catImg=$('#catImg');
+  dogEl.className='dog lv'+lv;                 // 重置类名，仅保留成长阶段
+  let catSrc='assets/cat-lv'+lv+'.png';        // 默认按成长阶段显示基础小猫
   if(S.dog.equipped){
     const eq=CLOTHES_POOL.find(c=>c.id===S.dog.equipped);
-    if(eq){
-      dogEl.classList.add('outfit-'+eq.id);
-      const bodyEl=dogEl.querySelector('.body');
-      
-      // 只构建CSS无法实现的元素（SVG、复杂装饰等）
-      if(eq.id==='c3'){ // 粉色裙子 — 裙摆层
-        const sk=el('div','skirt-layer');
-        sk.appendChild(el('div','gown-skirt-inner'));
-        sk.appendChild(el('div','gown-skirt-shine'));
-        bodyEl.appendChild(sk);
-        const bt=el('div','bow-text'); bt.textContent='🎀'; bodyEl.appendChild(bt);
-      }
-      if(eq.id==='c4'){ // 超人披风
-        const cape=el('div','cape-wrap outfit-extra'); dogEl.insertBefore(cape, bodyEl);
-        const em=el('div','s-emblem'); em.textContent='S'; bodyEl.appendChild(em);
-        bodyEl.appendChild(el('div','boot-l'));
-        bodyEl.appendChild(el('div','boot-r'));
-      }
-      if(eq.id==='c5'){ // 圣诞毛衣
-        bodyEl.appendChild(el('div','x-collar'));
-        const snows=el('div','snow-flakes');
-        '❄❄❄'.split('').forEach(s=>{const sp=document.createElement('span');sp.textContent=s;snows.appendChild(sp);});
-        bodyEl.appendChild(snows);
-        bodyEl.appendChild(el('div','x-cuff-l'));
-        bodyEl.appendChild(el('div','x-cuff-r'));
-        // 圣诞帽
-        const hat=el('div','hat-santa outfit-extra'); dogEl.insertBefore(hat, bodyEl);
-      }
-      if(eq.id==='c6'){ // 恐龙衣
-        const sp=el('div','dino-spikes-row outfit-extra');
-        for(let i=0;i<5;i++) sp.appendChild(document.createElement('span'));
-        dogEl.insertBefore(sp, bodyEl);
-        bodyEl.appendChild(el('div','dino-tail-tip'));
-      }
-      if(eq.id==='c7'){ // 公主裙（传说）
-        const sk=el('div','gown-skirt');
-        sk.appendChild(el('div','gown-skirt-inner'));
-        sk.appendChild(el('div','gown-skirt-shine'));
-        bodyEl.appendChild(sk);
-        bodyEl.appendChild(el('div','gown-gold-line'));
-        const bw=el('div','gown-bow'); bw.textContent='🎀'; bodyEl.appendChild(bw);
-        const co=el('div','gown-corset');
-        for(let i=0;i<3;i++) co.appendChild(el('div','corset-stitch'));
-        bodyEl.appendChild(co);
-        bodyEl.appendChild(el('div','puff-sl'));
-        bodyEl.appendChild(el('div','puff-sr'));
-        // SVG皇冠
-        const crown=el('div','crown-svg outfit-extra');
-        crown.innerHTML='<svg viewBox="0 0 40 28" fill="none"><path d="M2 26L7 6L14 18L20 3L26 18L33 6L38 26H2Z" fill="url(#cg2)" stroke="#f39c12" stroke-width="1.5"/><circle cx="20" cy="6" r="3" fill="#e74c3c"/><circle cx="11" cy="10" r="2.2" fill="#3498db"/><circle cx="29" cy="10" r="2.2" fill="#2ecc71"/><defs><linearGradient id="cg2" x1="20" y1="3" x2="20" y2="26"><stop stop-color="#f1c40f"/><stop offset="1" stop-color="#f39c12"/></linearGradient></defs></svg>';
-        dogEl.appendChild(crown);
-        bodyEl.appendChild(el('div','jewel-glow'));
-        const sl=el('div','star-twinkle sl'); sl.textContent='✦'; bodyEl.appendChild(sl);
-        const sr=el('div','star-twinkle sr'); sr.textContent='✦'; bodyEl.appendChild(sr);
-        const glow=el('div','princess-glow outfit-extra'); dogEl.insertBefore(glow, bodyEl);
-      }
-      if(eq.id==='c8'){ // 宇航员（传说）
-        const helm=el('div','helmet-shell outfit-extra');
-        helm.appendChild(el('div','visor-glass')); dogEl.appendChild(helm);
-        const bd=el('div','nasa-badge'); bd.textContent='NASA'; bodyEl.appendChild(bd);
-        const ctrl=el('div','ctrl-panel');
-        for(let i=0;i<4;i++){const b=document.createElement('b');ctrl.appendChild(b);}
-        bodyEl.appendChild(ctrl);
-        bodyEl.appendChild(el('div','space-boot-l'));
-        bodyEl.appendChild(el('div','space-boot-r'));
-      }
-      if(eq.id==='c9'){ // 小龙虾（传说）
-        const cape=el('div','lobster-cape outfit-extra'); dogEl.insertBefore(cape, bodyEl);
-        bodyEl.appendChild(el('div','shell-plaque'));
-        const cl=el('div','outfit-claw-big cl'); cl.textContent='🦞'; outfitEl.appendChild(cl);
-        const cr=el('div','outfit-claw-big cr'); cr.textContent='🦞'; outfitEl.appendChild(cr);
-        bodyEl.appendChild(el('div','antenna-l'));
-        bodyEl.appendChild(el('div','antenna-r'));
-      }
-      if(eq.id==='c10'){ // 彩虹衣（传说）
-        const arc=el('div','rainbow-arc-wrap');
-        arc.innerHTML='<svg viewBox="0 0 70 32"><path d="M5 32 A30 30 0 0 1 65 32" stroke="#e74c3c" stroke-width="3.5" fill="none" stroke-linecap="round"/><path d="M8 32 A27 27 0 0 1 62 32" stroke="#f39c12" stroke-width="3.5" fill="none" stroke-linecap="round"/><path d="M11 32 A24 24 0 0 1 59 32" stroke="#f1c40f" stroke-width="3.5" fill="none" stroke-linecap="round"/><path d="M14 32 A21 21 0 0 1 56 32" stroke="#2ecc71" stroke-width="3.5" fill="none" stroke-linecap="round"/><path d="M17 32 A18 18 0 0 1 53 32" stroke="#3498db" stroke-width="3.5" fill="none" stroke-linecap="round"/><path d="M20 32 A15 15 0 0 1 50 32" stroke="#9b59b6" stroke-width="3.5" fill="none" stroke-linecap="round"/></svg>';
-        outfitEl.appendChild(arc);
-        const ccl=el('div','cloud-deco cl'); ccl.textContent='☁️'; outfitEl.appendChild(ccl);
-        const ccr=el('div','cloud-deco cr'); ccr.textContent='☁️'; outfitEl.appendChild(ccr);
-        ['✨','⭐','💫','✦'].forEach(s=>{const sp=el('div','sparkle-magic');sp.textContent=s;outfitEl.appendChild(sp);});
-      }
-    }
+    if(eq){ catSrc='assets/outfit-'+eq.id+'.png'; dogEl.classList.add('has-outfit'); }
+  }
+  if(catImg.getAttribute('src')!==catSrc){
+    catImg.src=catSrc;                          // 14 张图会被浏览器缓存，切换即时
+    const eqName=(CLOTHES_POOL.find(c=>c.id===S.dog.equipped)||{}).name||'';
+    catImg.alt=DOG_NAMES[lv]+(S.dog.equipped?'（'+eqName+'）':'');
   }
 
   // shop
@@ -2189,7 +1811,7 @@ function renderDog(){
       const isEq=S.dog.equipped===w.id;
       const rc=RARITY_COLOR[w.rarity]||'#95a5a6';
       const d=document.createElement('div'); d.className='wc'+(isEq?' equipped':'');
-      d.innerHTML=`<div class="wi">${w.icon}</div>
+      d.innerHTML=`<div class="wi"><img src="assets/outfit-${w.id}.png" alt="${w.name}"></div>
         <div class="wn">${w.name}</div>
         <div class="wr" style="background:${rc}">${w.rarity}</div>
         ${isEq?'<div class="weq">✓</div>':''}`;
