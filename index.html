@@ -186,50 +186,128 @@
   .dog.lv3 .body{width:146px;height:118px;background:#f6c177}.dog.lv3 .head{width:120px;height:108px;top:-66px;background:#ffd98f}
   .dog.lv3 .ear{border-bottom-color:#ffd98f}.dog.lv3 .tail{background:#f6c177}
   .dog.lv3 .bow{display:block}
-  /* ═══ 衣服系统：CSS 绘制的衣服造型 ═══ */
-  .cat-outfit{position:absolute;top:0;left:0;right:0;bottom:0;pointer-events:none;z-index:4;overflow:hidden}
-  /* c1 红白条纹T恤 */
-  .dog.outfit-c1 .cat-outfit::before{content:'';position:absolute;top:-4px;left:-6px;right:-6px;bottom:6px;background:repeating-linear-gradient(0deg,#e74c3c 0px,#e74c3c 8px,#fff 8px,#fff 16px);border-radius:48% 48% 44% 44%;z-index:4}
-  .dog.outfit-c1 .cat-outfit::after{content:'';position:absolute;top:18px;left:50%;transform:translateX(-50%);width:16px;height:16px;background:#fff;border-radius:50%;border:2px solid #e74c3c;z-index:5}
-  /* c2 蓝色背带裤 */
-  .dog.outfit-c2 .cat-outfit::before{content:'';position:absolute;top:2px;left:-4px;right:-4px;bottom:8px;background:#3498db;border-radius:42% 42% 50% 50%;z-index:4}
-  .dog.outfit-c2 .cat-outfit::after{content:'';position:absolute;top:-10px;left:12px;width:10px;height:40px;background:#3498db;border-radius:4px;z-index:3}
-  .dog.outfit-c2 .cat-outfit2{position:absolute;top:-10px;right:12px;width:10px;height:40px;background:#3498db;border-radius:4px;z-index:3}
-  /* c3 粉色小裙子 */
-  .dog.outfit-c3 .cat-outfit::before{content:'';position:absolute;top:0;left:-8px;right:-8px;bottom:4px;background:linear-gradient(180deg,#ff9ff3 60%,#f368e0 100%);border-radius:48% 48% 55% 55%;z-index:4}
-  .dog.outfit-c3 .cat-outfit::after{content:'♥';position:absolute;top:4px;left:50%;transform:translateX(-50%);font-size:12px;color:#fff;z-index:5}
-  /* c4 超人披风 */
-  .dog.outfit-c4 .cat-outfit::before{content:'';position:absolute;top:-30px;left:-30px;right:-30px;bottom:-10px;background:linear-gradient(180deg,#e74c3c,#c0392b);clip-path:polygon(30% 0%,70% 0%,100% 100%,0% 100%);z-index:2;animation:capeWave 1.5s ease-in-out infinite alternate}
-  .dog.outfit-c4 .cat-outfit::after{content:'S';position:absolute;top:2px;left:50%;transform:translateX(-50%);font-size:14px;font-weight:900;color:#f1c40f;text-shadow:1px 1px 0 #c0392b;z-index:6}
-  @keyframes capeWave{from{transform:skewX(-2deg)}to{transform:skewX(2deg)}}
-  /* c5 圣诞小毛衣 */
-  .dog.outfit-c5 .cat-outfit::before{content:'';position:absolute;top:-4px;left:-6px;right:-6px;bottom:6px;background:#c0392b;border-radius:48% 48% 44% 44%;z-index:4}
-  .dog.outfit-c5 .cat-outfit::after{content:'❄';position:absolute;top:6px;left:8px;font-size:11px;color:#fff;z-index:5}
-  .dog.outfit-c5 .snow2{position:absolute;top:14px;right:10px;font-size:9px;color:#fff;z-index:5}
-  .dog.outfit-c5 .snow3{position:absolute;top:24px;left:22px;font-size:8px;color:#ecf0f1;z-index:5}
-  /* c6 恐龙连体衣 */
-  .dog.outfit-c6 .cat-outfit::before{content:'';position:absolute;top:-4px;left:-6px;right:-6px;bottom:6px;background:#27ae60;border-radius:48% 48% 44% 44%;z-index:4}
-  .dog.outfit-c6 .dino-spikes{position:absolute;top:-20px;left:50%;transform:translateX(-50%);display:flex;gap:2px;z-index:3}
-  .dog.outfit-c6 .dino-spikes span{width:0;height:0;border-left:6px solid transparent;border-right:6px solid transparent;border-bottom:12px solid #2ecc71}
-  .dog.outfit-c6 .cat-outfit::after{content:'🦕';position:absolute;top:4px;left:50%;transform:translateX(-50%);font-size:13px;z-index:5}
-  /* c7 公主蓬蓬裙 */
-  .dog.outfit-c7 .cat-outfit::before{content:'';position:absolute;top:0;left:-12px;right:-12px;bottom:0;background:linear-gradient(180deg,#fd79a8,#e84393);border-radius:48% 48% 60% 60%;z-index:4}
-  .dog.outfit-c7 .cat-outfit::after{content:'👑';position:absolute;top:-24px;left:50%;transform:translateX(-50%);font-size:20px;z-index:6}
-  .dog.outfit-c7 .tiara-glow{position:absolute;top:-28px;left:50%;transform:translateX(-50%);width:30px;height:10px;background:radial-gradient(ellipse,rgba(255,215,0,.5),transparent);z-index:5}
-  /* c8 宇航员套装 */
-  .dog.outfit-c8 .cat-outfit::before{content:'';position:absolute;top:-6px;left:-8px;right:-8px;bottom:6px;background:#ecf0f1;border-radius:48% 48% 44% 44%;z-index:4;border:2px solid #bdc3c7}
-  .dog.outfit-c8 .helmet{position:absolute;top:-28px;left:50%;transform:translateX(-50%);width:52px;height:46px;background:rgba(236,240,241,.85);border-radius:50%;border:3px solid #95a5a6;z-index:6}
-  .dog.outfit-c8 .helmet::after{content:'';position:absolute;top:10px;left:10px;width:26px;height:16px;background:rgba(149,165,166,.3);border-radius:50%}
-  .dog.outfit-c8 .cat-outfit::after{content:'🚀';position:absolute;top:8px;left:50%;transform:translateX(-50%);font-size:10px;z-index:5}
-  /* c9 小龙虾斗篷 */
-  .dog.outfit-c9 .cat-outfit::before{content:'';position:absolute;top:-25px;left:-25px;right:-25px;bottom:-8px;background:linear-gradient(180deg,#e67e22,#d35400);clip-path:polygon(35% 0%,65% 0%,100% 95%,0% 95%);z-index:2;animation:capeWave 1.2s ease-in-out infinite alternate}
-  .dog.outfit-c9 .claw-l{position:absolute;top:10px;left:-14px;font-size:16px;z-index:5}
-  .dog.outfit-c9 .claw-r{position:absolute;top:10px;right:-14px;font-size:16px;z-index:5;transform:scaleX(-1)}
-  .dog.outfit-c9 .cat-outfit::after{content:'🦞';position:absolute;top:2px;left:50%;transform:translateX(-50%);font-size:11px;z-index:6}
-  /* c10 彩虹衣 */
-  .dog.outfit-c10 .cat-outfit::before{content:'';position:absolute;top:-4px;left:-6px;right:-6px;bottom:6px;background:linear-gradient(135deg,#e74c3c,#f39c12,#f1c40f,#2ecc71,#3498db,#9b59b6);border-radius:48% 48% 44% 44%;z-index:4}
-  .dog.outfit-c10 .cat-outfit::after{content:'🌈';position:absolute;top:-22px;left:50%;transform:translateX(-50%);font-size:18px;z-index:6;animation:rainbowBounce 1s ease-in-out infinite alternate}
-  @keyframes rainbowBounce{from{transform:translateX(-50%) translateY(0)}to{transform:translateX(-50%) translateY(-4px)}}
+  /* ═══ 衣服系统：多层CSS绘制的真实服装造型 ═══ */
+  /* 基础：衣服容器覆盖整个猫身 */
+  .cat-outfit{position:absolute;top:0;left:0;right:0;bottom:0;pointer-events:none;z-index:4;overflow:visible}
+  /* 通用：衣服主体 — 精确贴合猫身体轮廓 */
+  .og{position:absolute;border-radius:48% 48% 44% 44%;z-index:4;box-shadow:inset 0 -4px 12px rgba(0,0,0,.1)}
+  /* 通用：裙摆层 */
+  .oskirt{position:absolute;top:60%;left:-14px;right:-14px;bottom:-20px;z-index:3;pointer-events:none}
+  /* 通用：领口 */
+  .ocollar{position:absolute;top:-2px;left:50%;transform:translateX(-50%);width:28px;height:10px;z-index:5}
+  
+  /* ══ c1 红白条纹T恤 ══ */
+  .dog.outfit-c1 .o-main{top:-4px;left:-5px;right:-5px;bottom:6px;background:repeating-linear-gradient(0deg,#e74c3c 0px,#e74c3c 7px,#fff 7px,#fff 14px)}
+  .dog.outfit-c1 .o-pocket{position:absolute;top:16px;left:50%;transform:translateX(-50%);width:18px;height:15px;background:#fff;border-radius:6px 6px 8px 8px;border:2px solid #c0392b;z-index:5;box-shadow:inset 0 2px 4px rgba(0,0,0,.08)}
+  .dog.outfit-c1 .o-collar{position:absolute;top:-3px;left:50%;transform:translateX(-50%);width:24px;height:8px;background:#fff;border-radius:0 0 12px 12px;z-index:5;border:1.5px solid #e74c3c;border-top:none}
+  .dog.outfit-c1 .o-sleeve-l,.dog.outfit-c1 .o-sleeve-r{position:absolute;top:2px;width:14px;height:22px;background:repeating-linear-gradient(90deg,#e74c3c 0px,#e74c3c 5px,#fff 5px,#fff 10px);border-radius:6px;z-index:3}
+  .dog.outfit-c1 .o-sleeve-l{left:-12px;transform:rotate(15deg)}
+  .dog.outfit-c1 .o-sleeve-r{right:-12px;transform:rotate(-15deg)}
+
+  /* ══ c2 蓝色背带裤 ══ */
+  .dog.outfit-c2 .o-main{top:2px;left:-4px;right:-4px;bottom:8px;background:#2980b9;border-radius:42% 42% 50% 50%}
+  .dog.outfit-c2 .o-strap-l{position:absolute;top:-14px;left:14px;width:8px;height:36px;background:#2980b9;border-radius:4px;z-index:3;transform:rotate(-8deg)}
+  .dog.outfit-c2 .o-strap-r{position:absolute;top:-14px;right:14px;width:8px;height:36px;background:#2980b9;border-radius:4px;z-index:3;transform:rotate(8deg)}
+  .dog.outfit-c2 .o-buckle-l{position:absolute;top:-14px;left:13px;width:10px;height:6px;background:#f1c40f;border-radius:2px;z-index:4}
+  .dog.outfit-c2 .o-buckle-r{position:absolute;top:-14px;right:13px;width:10px;height:6px;background:#f1c40f;border-radius:2px;z-index:4}
+  .dog.outfit-c2 .o-pocket-f{position:absolute;top:12px;left:50%;transform:translateX(-50%);width:22px;height:16px;background:#3498db;border-radius:4px;z-index:5;border:1.5px solid #1a5276}
+
+  /* ══ c3 粉色小裙子 ══ */
+  .dog.outfit-c3 .o-main{top:0;left:-6px;right:-6px;bottom:4px;background:linear-gradient(180deg,#ffccd5 0%,#ff85a2 50%,#ff5c8d 100%);border-radius:48% 48% 45% 45%}
+  .dog.outfit-c3 .o-skirt{position:absolute;top:55%;left:-16px;right:-16px;bottom:-26px;background:linear-gradient(180deg,#ff85a2,#ff5c8d,#e84a7f);border-radius:0 0 50% 50%;z-index:3;box-shadow:0 4px 12px rgba(232,74,127,.25)}
+  .dog.outfit-c3 .o-ribbon{position:absolute;top:4px;left:50%;transform:translateX(-50%);width:0;height:0;border-left:8px solid transparent;border-right:8px solid transparent;border-top:12px solid #fff;z-index:5}
+  .dog.outfit-c3 .o-heart{position:absolute;top:8px;left:50%;transform:translateX(-50%);font-size:11px;z-index:6;filter:drop-shadow(0 1px 2px rgba(0,0,0,.2))}
+  .dog.outfit-c3 .o-frill-l,.dog.outfit-c3 .o-frill-r{position:absolute;top:52%;width:20px;height:10px;background:#ffb6c1;border-radius:50%;z-index:4}
+  .dog.outfit-c3 .o-frill-l{left:-18px;transform:rotate(-20deg)}
+  .dog.outfit-c3 .o-frill-r{right:-18px;transform:rotate(20deg)}
+
+  /* ══ c4 超人披风 ══ */
+  .dog.outfit-c4 .o-cape{position:absolute;top:-35px;left:-32px;right:-32px;bottom:-12px;background:linear-gradient(180deg,#e74c3c 0%,#c0392b 40%,#a93226 100%);clip-path:polygon(28% 0%,72% 0%,100% 100%,75% 95%,50% 100%,25% 95%,0% 100%);z-index:2;animation:capeWave 1.8s ease-in-out infinite alternate}
+  .dog.outfit-c4 .o-cape::after{content:'';position:absolute;top:0;left:0;right:0;bottom:0;background:linear-gradient(90deg,transparent 0%,rgba(255,255,255,.08) 45%,rgba(255,255,255,.15) 50%,rgba(255,255,255,.08) 55%,transparent 100%)}
+  @keyframes capeWave{from{transform:skewX(-3deg) scaleX(.98)}to{transform:skewX(3deg) scaleX(1.02)}}
+  .dog.outfit-c4 .o-emblem{position:absolute;top:2px;left:50%;transform:translateX(-50%);width:22px;height:22px;background:linear-gradient(135deg,#f1c40f,#f39c12);border-radius:50%;z-index:6;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:900;color:#c0392b;text-shadow:0 1px 0 rgba(0,0,0,.2);box-shadow:0 2px 6px rgba(0,0,0,.2),inset 0 -2px 4px rgba(0,0,0,.15)}
+  .dog.outfit-c4 .o-boots-l,.dog.outfit-c4 .o-boots-r{position:absolute;bottom:-8px;width:14px;height:18px;background:#c0392b;border-radius:4px 4px 6px 6px;z-index:5}
+  .dog.outfit-c4 .o-boots-l{left:6px;transform:rotate(-10deg)}
+  .dog.outfit-c4 .o-boots-r{right:6px;transform:rotate(10deg)}
+
+  /* ══ c5 圣诞小毛衣 ══ */
+  .dog.outfit-c5 .o-main{top:-4px;left:-5px;right:-5px;bottom:6px;background:#c0392b;border-radius:48% 48% 44% 44%}
+  .dog.outfit-c5 .o-main::after{content:'';position:absolute;top:0;left:0;right:0;bottom:0;background:repeating-radial-gradient(circle at 50% 50%,transparent 0px,transparent 8px,rgba(0,0,0,.06) 8px,rgba(0,0,0,.06) 10px);border-radius:inherit}
+  .dog.outfit-c5 .o-collar-xmas{position:absolute;top:-4px;left:50%;transform:translateX(-50%);width:30px;height:12px;background:#27ae60;border-radius:0 0 8px 8px;z-index:5;border-bottom:2px solid #fff}
+  .dog.outfit-c5 .o-snows span{position:absolute;color:#fff;text-shadow:0 0 4px rgba(255,255,255,.8),0 0 8px rgba(255,255,255,.4);z-index:6;font-size:10px;animation:snowFloat 3s ease-in-out infinite}
+  .dog.outfit-c5 .o-snows span:nth-child(1){top:6px;left:8px;font-size:11px;animation-delay:0s}
+  .dog.outfit-c5 .o-snows span:nth-child(2){top:16px;right:10px;font-size:9px;animation-delay:1s}
+  .dog.outfit-c5 .o-snows span:nth-child(3){top:28px;left:20px;font-size:8px;animation-delay:2s}
+  @keyframes snowFloat{0%,100%{transform:translateY(0) rotate(0deg)}50%{transform:translateY(-3px) rotate(10deg)}}
+  .dog.outfit-c5 .o-cuff-l,.dog.outfit-c5 .o-cuff-r{position:absolute;bottom:4px;width:18px;height:10px;background:#27ae60;border-radius:4px;z-index:5}
+  .dog.outfit-c5 .o-cuff-l{left:-6px}.dog.outfit-c5 .o-cuff-r{right:-6px}
+
+  /* ══ c6 恐龙连体衣 ══ */
+  .dog.outfit-c6 .o-main{top:-4px;left:-5px;right:-5px;bottom:6px;background:linear-gradient(180deg,#2ecc71 0%,#27ae60 100%);border-radius:48% 48% 44% 44%}
+  .dog.outfit-c6 .o-spikes{position:absolute;top:-22px;left:50%;transform:translateX(-50%);display:flex;gap:3px;z-index:2}
+  .dog.outfit-c6 .o-spikes span{width:0;height:0;border-left:5px solid transparent;border-right:5px solid transparent;border-bottom:14px solid #2ecc71}
+  .dog.outfit-c6 .o-spikes span:nth-child(odd){border-bottom-color:#58d68d}
+  .dog.outfit-c6 .o-belly{position:absolute;top:10px;left:50%;transform:translateX(-50%);width:40px;height:30px;background:#abebc6;border-radius:50%;z-index:5;opacity:.7}
+  .dog.outfit-c6 .o-tail-spike{position:absolute;bottom:4px;right:-8px;width:0;height:0;border-left:8px solid transparent;border-right:8px solid transparent;border-top:16px solid #2ecc71;z-index:3;transform:rotate(-30deg)}
+
+  /* ══ c7 公主蓬蓬裙（传说级） ══ */
+  .dog.outfit-c7 .o-main{top:0;left:-8px;right:-8px;bottom:2px;background:linear-gradient(135deg,#ffe0ec 0%,#fd79a8 30%,#e84393 70%,#c44569 100%);border-radius:48% 48% 46% 46%}
+  .dog.outfit-c7 .o-skirt7{position:absolute;top:54%;left:-22px;right:-22px;bottom:-38px;z-index:3}
+  .dog.outfit-c7 .o-skirt7-inner{position:absolute;top:0;left:0;right:0;bottom:0;background:linear-gradient(180deg,#fd79a8 0%,#f78fb3 30%,#e84393 60%,#c44569 100%);border-radius:0 0 50% 50%;box-shadow:0 6px 20px rgba(196,69,105,.3),inset 0 -10px 20px rgba(0,0,0,.08)}
+  .dog.outfit-c7 .o-skirt7-layer{position:absolute;top:8px;left:4px;right:4px;bottom:0;background:linear-gradient(180deg,rgba(255,255,255,.2),transparent 40%);border-radius:0 0 48% 48%}
+  .dog.outfit-c7 .o-skirt7::before{content:'';position:absolute;top:-4px;left:50%;transform:translateX(-50%);width:60%;height:6px;background:rgba(255,255,255,.3);border-radius:50%;filter:blur(2px)}
+  .dog.outfit-c7 .o-gold-trim{position:absolute;top:54%;left:-18px;right:-18px;height:3px;background:linear-gradient(90deg,transparent,#f1c40f,#f39c12,#f1c40f,transparent);z-index:4}
+  .dog.outfit-c7 .o-bow-waist{position:absolute;top:50%;left:50%;transform:translateX(-50%);font-size:16px;z-index:6;filter:drop-shadow(0 2px 3px rgba(0,0,0,.2))}
+  .dog.outfit-c7 .o-corset{position:absolute;top:4px;left:50%;transform:translateX(-50%);width:36px;height:28px;background:linear-gradient(180deg,#c44569,#e84393);border-radius:8px;z-index:5;display:flex;flex-direction:column;align-items:center;gap:3px;padding:2px 0}
+  .dog.outfit-c7 .o-corset-line{width:24px;height:1.5px;background:rgba(255,255,255,.25);border-radius:1px}
+  .dog.outfit-c7 .o-puff-l,.dog.outfit-c7 .o-puff-r{position:absolute;top:48%;width:24px;height:18px;background:linear-gradient(180deg,#f78fb3,#fd79a8);border-radius:50%;z-index:4}
+  .dog.outfit-c7 .o-puff-l{left:-20px;transform:rotate(-15deg)}.dog.outfit-c7 .o-puff-r{right:-20px;transform:rotate(15deg)}
+  .dog.outfit-c7 .o-crown{position:absolute;top:-30px;left:50%;transform:translateX(-50%);z-index:7}
+  .dog.outfit-c7 .o-crown svg{width:36px;height:24px;filter:drop-shadow(0 2px 4px rgba(241,196,15,.5))}
+  .dog.outfit-c7 .o-jewel{position:absolute;top:-6px;left:50%;transform:translateX(-50%);width:8px;height:8px;background:radial-gradient(circle at 30% 30%,#ff6b9d,#c44569);border-radius:50%;z-index:8;box-shadow:0 0 6px #ff6b9d,0 0 12px rgba(255,107,157,.4);animation:jewelGlow 2s ease-in-out infinite alternate}
+  @keyframes jewelGlow{from{box-shadow:0 0 6px #ff6b9d,0 0 12px rgba(255,107,157,.4)}to{box-shadow:0 0 12px #ff6b9d,0 0 24px rgba(255,107,157,.6)}}
+  .dog.outfit-c7 .o-star-l,.dog.outfit-c7 .o-star-r{position:absolute;font-size:8px;z-index:6;animation:starTwinkle 1.5s ease-in-out infinite alternate}
+  .dog.outfit-c7 .o-star-l{top:-22px;left:-8px;animation-delay:0s}.dog.outfit-c7 .o-star-r{top:-18px;right:-8px;animation-delay:.7s}
+  @keyframes starTwinkle{from{opacity:.4;transform:scale(.8)}to{opacity:1;transform:scale(1.2)}}
+
+  /* ══ c8 宇航员套装（传说级） ══ */
+  .dog.outfit-c8 .o-main{top:-6px;left:-7px;right:-7px;bottom:6px;background:linear-gradient(180deg,#fff 0%,#ecf0f1 50%,#bdc3c7 100%);border-radius:48% 48% 44% 44%;border:2px solid #95a5a6}
+  .dog.outfit-c8 .o-helmet{position:absolute;top:-34px;left:50%;transform:translateX(-50%);width:56px;height:50px;background:radial-gradient(circle at 50% 40%,rgba(255,255,255,.9),rgba(236,240,241,.7));border-radius:50%;border:3px solid #7f8c8d;z-index:7;box-shadow:0 4px 12px rgba(0,0,0,.15),inset 0 -6px 12px rgba(0,0,0,.06)}
+  .dog.outfit-c8 .o-visr{position:absolute;top:12px;left:10px;width:28px;height:18px;background:linear-gradient(135deg,rgba(149,165,166,.25),rgba(127,140,141,.35));border-radius:50%;border:1.5px solid #95a5a6;box-shadow:inset 0 2px 6px rgba(0,0,0,.1)}
+  .dog.outfit-c8 .o-visr::after{content:'';position:absolute;top:3px;left:4px;width:8px;height:6px;background:rgba(255,255,255,.4);border-radius:50%}
+  .dog.outfit-c8 .o-badge{position:absolute;top:4px;left:50%;transform:translateX(-50%);padding:1px 6px;background:linear-gradient(135deg,#e74c3c,#c0392b);color:#fff;font-size:7px;font-weight:700;border-radius:3px;z-index:6;letter-spacing:.5px}
+  .dog.outfit-c8 .o-control{position:absolute;top:14px;left:50%;transform:translateX(-50%);width:20px;height:14px;background:#34495e;border-radius:3px;z-index:6;display:flex;flex-wrap:wrap;gap:1px;padding:2px;justify-content:center;align-items:center}
+  .dog.outfit-c8 .o-control span{width:4px;height:4px;background:#e74c3c;border-radius:50%}
+  .dog.outfit-c8 .o-boot-a{position:absolute;bottom:-10px;width:16px;height:20px;background:linear-gradient(180deg,#fff,#bdc3c7);border-radius:4px 4px 6px 6px;z-index:5;border:1.5px solid #95a5a6}
+  .dog.outfit-c8 .o-boot-a.l{left:4px}.dog.outfit-c8 .o-boot-a.r{right:4px}
+
+  /* ══ c9 小龙虾斗篷（传说级） ══ */
+  .dog.outfit-c9 .o-cape9{position:absolute;top:-28px;left:-28px;right:-28px;bottom:-10px;background:linear-gradient(180deg,#e67e22 0%,#d35400 40%,#ba4a00 100%);clip-path:polygon(33% 0%,67% 0%,96% 92%,70% 98%,50% 100%,30% 98%,4% 92%);z-index:2;animation:capeWave9 1.4s ease-in-out infinite alternate}
+  .dog.outfit-c9 .o-cape9::before{content:'';position:absolute;top:0;left:0;right:0;bottom:0;background:repeating-linear-gradient(0deg,transparent 0px,transparent 4px,rgba(0,0,0,.04) 4px,rgba(0,0,0,.04) 8px)}
+  @keyframes capeWave9{from{transform:skewX(-4deg) scaleX(.97)}to{transform:skewX(4deg) scaleX(1.03)}}
+  .dog.outfit-c9 .o-shell{position:absolute;top:2px;left:50%;transform:translateX(-50%);width:32px;height:26px;background:linear-gradient(135deg,#e67e22,#d35400);border-radius:50% 50% 45% 45%;z-index:6;border:2px solid #ba4a00;box-shadow:inset 0 -4px 8px rgba(0,0,0,.15),0 2px 6px rgba(0,0,0,.1)}
+  .dog.outfit-c9 .o-shell::before{content:'';position:absolute;top:4px;left:4px;right:4px;bottom:4px;background:repeating-linear-gradient(45deg,transparent,transparent 3px,rgba(255,255,255,.08) 3px,rgba(255,255,255,.08) 6px);border-radius:inherit}
+  .dog.outfit-c9 .o-claw9-l,.dog.outfit-c9 .o-claw9-r{position:absolute;top:8px;z-index:5;font-size:18px;filter:drop-shadow(0 2px 3px rgba(0,0,0,.2));animation:clawWave 2s ease-in-out infinite alternate}
+  .dog.outfit-c9 .o-claw9-l{left:-18px;transform-origin:right center;animation-name:clawL}
+  .dog.outfit-c9 .o-claw9-r{right:-18px;transform-origin:left center;animation-name:clawR}
+  @keyframes clawL{from{transform:rotate(-5deg)}to{transform:rotate(8deg)}}
+  @keyframes clawR{from{transform:rotate(5deg)}to{transform:rotate(-8deg)}}
+  .dog.outfit-c9 .o-antenna-l,.dog.outfit-c9 .o-antenna-r{position:absolute;top:-18px;width:2px;height:16px;background:#e67e22;z-index:3}
+  .dog.outfit-c9 .o-antenna-l{left:20px;transform:rotate(-20deg)}.dog.outfit-c9 .o-antenna-r{right:20px;transform:rotate(20deg)}
+
+  /* ══ c10 彩虹衣（传说级） ══ */
+  .dog.outfit-c10 .o-main{top:-4px;left:-5px;right:-5px;bottom:6px;background:linear-gradient(135deg,#e74c3c 0%,#e74c3c 14%,#f39c12 14%,#f39c12 28%,#f1c40f 28%,#f1c40f 42%,#2ecc71 42%,#2ecc71 56%,#3498db 56%,#3498db 70%,#9b59b6 70%,#9b59b6 100%);border-radius:48% 48% 44% 44%}
+  .dog.outfit-c10 .o-main::after{content:'';position:absolute;top:0;left:0;right:0;bottom:0;background:linear-gradient(180deg,rgba(255,255,255,.2) 0%,transparent 50%,rgba(0,0,0,.08) 100%);border-radius:inherit}
+  .dog.outfit-c10 .o-cloud-l,.dog.outfit-c10 .o-cloud-r{position:absolute;top:-18px;z-index:6;font-size:16px;animation:cloudFloat 3s ease-in-out infinite alternate}
+  .dog.outfit-c10 .o-cloud-l{left:-6px;animation-delay:0s}.dog.outfit-c10 .o-cloud-r{right:-6px;animation-delay:1.5s}
+  @keyframes cloudFloat{from{transform:translateY(0) translateX(0)}to{transform:translateY(-5px) translateX(3px)}}
+  .dog.outfit-c10 .o-rainbow-arc{position:absolute;top:-26px;left:50%;transform:translateX(-50%);width:64px;height:28px;z-index:5;overflow:hidden}
+  .dog.outfit-c10 .o-rainbow-arc svg{width:64px;height:28px}
+  .dog.outfit-c10 .o-sparkle{position:absolute;font-size:8px;z-index:7;animation:sparkle 1.8s ease-in-out infinite alternate}
+  .dog.outfit-c10 .o-sparkle:nth-child(1){top:-4px;left:4px;animation-delay:0s}
+  .dog.outfit-c10 .o-sparkle:nth-child(2){top:8px;right:2px;animation-delay:.6s}
+  .dog.outfit-c10 .o-sparkle:nth-child(3){top:20px;left:16px;animation-delay:1.2s}
+  @keyframes sparkle{from{opacity:.3;transform:scale(.6) rotate(0deg)}to{opacity:1;transform:scale(1.2) rotate(20deg)}}
 
   /* 衣柜样式 */
   .wardrobe{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:8px}
@@ -423,6 +501,7 @@
 /* ============ utils ============ */
 const $ = s => document.querySelector(s);
 const $$ = s => [...document.querySelectorAll(s)];
+const el = (tag, cls) => { const d=document.createElement(tag); if(cls) d.className=cls; return d; };
 const pad = n => n<10?'0'+n:''+n;
 const todayStr = () => { const d=new Date(); return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate()); };
 const yestStr = () => { const d=new Date(Date.now()-864e5); return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate()); };
@@ -854,49 +933,113 @@ function renderDog(){
   $('#dogGrow').textContent='成长值 '+g;
   const next=[30,80,150,9999][lv];
   $('#dogBar').style.width=Math.min(100, g/next*100)+'%';
-  // ═══ 衣服渲染：CSS 类名 + 动态元素 ═══
+  // ═══ 衣服渲染：多层DOM元素构建真实服装 ═══
   const dogEl=$('#dog');
-  // 清除所有 outfit 类
   dogEl.className=dogEl.className.replace(/\boutfit-\S+/g,'').replace(/\s+/g,' ')+' lv'+lv;
   const outfitEl=$('#catOutfit');
-  outfitEl.innerHTML=''; // 清空衣服附加元素
-  // 移除之前注入的额外元素
+  outfitEl.innerHTML='';
   dogEl.querySelectorAll('.outfit-extra').forEach(e=>e.remove());
   if(S.dog.equipped){
     const eq=CLOTHES_POOL.find(c=>c.id===S.dog.equipped);
     if(eq){
       dogEl.classList.add('outfit-'+eq.id);
-      // 每件衣服的附加 DOM 元素
-      const extras={
-        c2:[], // 背带裤右肩带
-        c5:[], // 圣诞雪花
-        c6:[], // 恐龙刺
-        c7:[], // 公主皇冠光晕
-        c8:[], // 宇航员头盔
-        c9:[], // 小龙虾钳子
-      };
-      if(eq.id==='c2'){
-        const s=document.createElement('div');s.className='cat-outfit2 outfit-extra';dogEl.querySelector('.body').appendChild(s);
+      const bodyEl=dogEl.querySelector('.body');
+      
+      // 每件衣服的完整DOM结构
+      if(eq.id==='c1'){ // 红白条纹T恤
+        const m=el('div','o-main og'); bodyEl.appendChild(m);
+        bodyEl.appendChild(el('div','o-pocket'));
+        bodyEl.appendChild(el('div','o-collar'));
+        bodyEl.appendChild(el('div','o-sleeve-l'));
+        bodyEl.appendChild(el('div','o-sleeve-r'));
       }
-      if(eq.id==='c5'){
-        ['snow2','snow3'].forEach(cls=>{
-          const s=document.createElement('div');s.className=cls+' outfit-extra';outfitEl.appendChild(s);
-        });
+      if(eq.id==='c2'){ // 蓝色背带裤
+        const m=el('div','o-main og'); bodyEl.appendChild(m);
+        bodyEl.appendChild(el('div','o-strap-l'));
+        bodyEl.appendChild(el('div','o-strap-r'));
+        bodyEl.appendChild(el('div','o-buckle-l'));
+        bodyEl.appendChild(el('div','o-buckle-r'));
+        bodyEl.appendChild(el('div','o-pocket-f'));
       }
-      if(eq.id==='c6'){
-        const sp=document.createElement('div');sp.className='dino-spikes outfit-extra';
-        for(let i=0;i<5;i++){const s=document.createElement('span');sp.appendChild(s);}
-        dogEl.querySelector('.body').appendChild(sp);
+      if(eq.id==='c3'){ // 粉色小裙子
+        const m=el('div','o-main og'); bodyEl.appendChild(m);
+        const sk=el('div','o-skirt oskirt'); sk.appendChild(el('div')); bodyEl.appendChild(sk);
+        bodyEl.appendChild(el('div','o-ribbon'));
+        const h=el('div','o-heart'); h.textContent='♥'; bodyEl.appendChild(h);
+        bodyEl.appendChild(el('div','o-frill-l'));
+        bodyEl.appendChild(el('div','o-frill-r'));
       }
-      if(eq.id==='c7'){
-        const tg=document.createElement('div');tg.className='tiara-glow outfit-extra';outfitEl.appendChild(tg);
+      if(eq.id==='c4'){ // 超人披风
+        const cape=el('div','o-cape'); dogEl.insertBefore(cape, bodyEl);
+        const em=el('div','o-emblem'); em.textContent='S'; bodyEl.appendChild(em);
+        bodyEl.appendChild(el('div','o-boots-l'));
+        bodyEl.appendChild(el('div','o-boots-r'));
       }
-      if(eq.id==='c8'){
-        const h=document.createElement('div');h.className='helmet outfit-extra';dogEl.appendChild(h);
+      if(eq.id==='c5'){ // 圣诞毛衣
+        const m=el('div','o-main og'); bodyEl.appendChild(m);
+        bodyEl.appendChild(el('div','o-collar-xmas'));
+        const snows=el('div','o-snows');
+        '❄❄❄'.split('').forEach(s=>{const sp=document.createElement('span');sp.textContent=s;snows.appendChild(sp);});
+        bodyEl.appendChild(snows);
+        bodyEl.appendChild(el('div','o-cuff-l'));
+        bodyEl.appendChild(el('div','o-cuff-r'));
       }
-      if(eq.id==='c9'){
-        const cl=document.createElement('div');cl.className='claw-l outfit-extra';cl.textContent='🦞';outfitEl.appendChild(cl);
-        const cr=document.createElement('div');cr.className='claw-r outfit-extra';cr.textContent='🦞';outfitEl.appendChild(cr);
+      if(eq.id==='c6'){ // 恐龙连体衣
+        const m=el('div','o-main og'); bodyEl.appendChild(m);
+        const sp=el('div','o-spikes');
+        for(let i=0;i<5;i++) sp.appendChild(document.createElement('span'));
+        dogEl.insertBefore(sp, bodyEl);
+        bodyEl.appendChild(el('div','o-belly'));
+        bodyEl.appendChild(el('div','o-tail-spike'));
+      }
+      if(eq.id==='c7'){ // 公主蓬蓬裙
+        const m=el('div','o-main og'); bodyEl.appendChild(m);
+        const sk=el('div','o-skirt7 oskirt');
+        sk.appendChild(el('div','o-skirt7-inner'));
+        sk.appendChild(el('div','o-skirt7-layer'));
+        bodyEl.appendChild(sk);
+        bodyEl.appendChild(el('div','o-gold-trim'));
+        const bw=el('div','o-bow-waist'); bw.textContent='🎀'; bodyEl.appendChild(bw);
+        const co=el('div','o-corset');
+        for(let i=0;i<3;i++) co.appendChild(el('div','o-corset-line'));
+        bodyEl.appendChild(co);
+        bodyEl.appendChild(el('div','o-puff-l'));
+        bodyEl.appendChild(el('div','o-puff-r'));
+        // SVG皇冠
+        const crown=el('div','o-crown');
+        crown.innerHTML='<svg viewBox="0 0 36 24" fill="none"><path d="M2 22L6 6L12 16L18 4L24 16L30 6L34 22H2Z" fill="url(#cg)" stroke="#f39c12" stroke-width="1.2"/><circle cx="18" cy="5" r="2.5" fill="#e74c3c"/><circle cx="10" cy="8" r="2" fill="#3498db"/><circle cx="26" cy="8" r="2" fill="#2ecc71"/><defs><linearGradient id="cg" x1="18" y1="4" x2="18" y2="22"><stop stop-color="#f1c40f"/><stop offset="1" stop-color="#f39c12"/></linearGradient></defs></svg>';
+        dogEl.appendChild(crown);
+        bodyEl.appendChild(el('div','o-jewel'));
+        const sl=el('div','o-star-l'); sl.textContent='✦'; bodyEl.appendChild(sl);
+        const sr=el('div','o-star-r'); sr.textContent='✦'; bodyEl.appendChild(sr);
+      }
+      if(eq.id==='c8'){ // 宇航员套装
+        const m=el('div','o-main og'); bodyEl.appendChild(m);
+        const helm=el('div','o-helmet'); helm.appendChild(el('div','o-visr')); dogEl.appendChild(helm);
+        const bd=el('div','o-badge'); bd.textContent='NASA'; bodyEl.appendChild(bd);
+        const ctrl=el('div','o-control');
+        for(let i=0;i<4;i++){ctrl.appendChild(document.createElement('span'));}
+        bodyEl.appendChild(ctrl);
+        const bl=el('div','o-boot-a l'); bodyEl.appendChild(bl);
+        const br=el('div','o-boot-a r'); bodyEl.appendChild(br);
+      }
+      if(eq.id==='c9'){ // 小龙虾斗篷
+        const cape=el('div','o-cape9'); dogEl.insertBefore(cape, bodyEl);
+        bodyEl.appendChild(el('div','o-shell'));
+        const cl=el('div','o-claw9-l'); cl.textContent='🦞'; outfitEl.appendChild(cl);
+        const cr=el('div','o-claw9-r'); cr.textContent='🦞'; outfitEl.appendChild(cr);
+        bodyEl.appendChild(el('div','o-antenna-l'));
+        bodyEl.appendChild(el('div','o-antenna-r'));
+      }
+      if(eq.id==='c10'){ // 彩虹衣
+        const m=el('div','o-main og'); bodyEl.appendChild(m);
+        const cl=el('div','o-cloud-l'); cl.textContent='☁️'; outfitEl.appendChild(cl);
+        const cr=el('div','o-cloud-r'); cr.textContent='☁️'; outfitEl.appendChild(cr);
+        // SVG彩虹弧
+        const arc=el('div','o-rainbow-arc');
+        arc.innerHTML='<svg viewBox="0 0 64 28"><path d="M4 28 A30 30 0 0 1 60 28" stroke="#e74c3c" stroke-width="3" fill="none" stroke-linecap="round"/><path d="M7 28 A27 27 0 0 1 57 28" stroke="#f39c12" stroke-width="3" fill="none" stroke-linecap="round"/><path d="M10 28 A24 24 0 0 1 54 28" stroke="#f1c40f" stroke-width="3" fill="none" stroke-linecap="round"/><path d="M13 28 A21 21 0 0 1 51 28" stroke="#2ecc71" stroke-width="3" fill="none" stroke-linecap="round"/><path d="M16 28 A18 18 0 0 1 48 28" stroke="#3498db" stroke-width="3" fill="none" stroke-linecap="round"/><path d="M19 28 A15 15 0 0 1 45 28" stroke="#9b59b6" stroke-width="3" fill="none" stroke-linecap="round"/></svg>';
+        outfitEl.appendChild(arc);
+        ['✨','⭐','💫'].forEach((s,i)=>{const sp=el('div','o-sparkle');sp.textContent=s;outfitEl.appendChild(sp);});
       }
     }
   }
