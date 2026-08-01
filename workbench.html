@@ -767,7 +767,7 @@ function renderEx(){
   $$('#exList .chk').forEach(b=>b.onclick=()=>{
     const id=b.dataset.id;
     if((S.exDone[todayStr()]||{})[id]){ toast('今天已经打过卡啦～'); return; }
-    S.exDone[todayStr()]=S.exDone[todayStr()]||{}; S.exDone[todayStr()][id]=true;
+    S.exDone[todayStr()]=S.exDone[todayStr()]||{}; S.exDone[todayStr()][id]={done:true};
     save(); renderEx(); renderHome(); toast('运动打卡成功！🎉 选择加阳光吧');
   });
   $$('#exList [data-add]').forEach(b=>b.onclick=()=>{
@@ -775,7 +775,10 @@ function renderEx(){
     const card=b.closest('.ex-card');
     const chk=card.querySelector('.chk');
     const id=chk.dataset.id;
-    if((S.exDone[todayStr()]||{})[id]&&S.exDone[todayStr()][id].add){ return; }
+    const rec=S.exDone[todayStr()]&&S.exDone[todayStr()][id];
+    if(rec && rec.add){ return; }
+    // 兼容旧数据：如果存的是 true，转成对象
+    if(rec===true){ S.exDone[todayStr()][id]={done:true}; }
     S.sun+=n; S.exDone[todayStr()][id].add=n; save(); renderEx(); renderHome(); toast('🎉 表扬蛋蛋！☀️+'+n);
   });
 }
