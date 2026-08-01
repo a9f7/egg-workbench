@@ -583,8 +583,9 @@
       <div class="seg" id="mathSeg">
         <button class="on" data-mode="mental">口算刷题</button>
         <button data-mode="unit">单元重点题</button>
-        <button data-mode="star">★ 星级口算</button>
-        <button data-mode="wrong">错题本</button>
+      <button data-mode="star">★ 星级口算</button>
+      <button data-mode="book">📘 教材习题</button>
+      <button data-mode="wrong">错题本</button>
       </div>
       <div id="mathBox"></div>
     </div>
@@ -1605,6 +1606,53 @@ const STAR_MATH=[
   {q:'2直角 = （    ）平角。', a:'2', free:true, tip:'角度关系'},
   {q:'1平角 + （    ）直角 = 1周角。', a:'2', free:true, tip:'角度计算'},
 ];
+/* 《数学四年级上册》教材课后「练习」原题：计算 / 比较大小 / 单位与数的运算 */
+const MATH_BOOK = [
+  {q:'92504○103600', a:'<', free:true, tip:'大数的认识·比较大小'},
+  {q:'50140○63140', a:'<', free:true, tip:'大数的认识·比较大小'},
+  {q:'28906○28890', a:'>', free:true, tip:'大数的认识·比较大小'},
+  {q:'620300○307300', a:'>', free:true, tip:'大数的认识·比较大小'},
+  {q:'98965○100000', a:'<', free:true, tip:'大数的认识·比较大小'},
+  {q:'70060○70201', a:'<', free:true, tip:'大数的认识·比较大小'},
+  {q:'120×20○12×200', a:'=', free:true, tip:'大数的认识·比较大小'},
+  {q:'500×10○10×550', a:'<', free:true, tip:'大数的认识·比较大小'},
+  {q:'16×400○210×4', a:'>', free:true, tip:'大数的认识·比较大小'},
+  {q:'19×300○30×180', a:'>', free:true, tip:'大数的认识·比较大小'},
+  {q:'66280×23', a:'1524440', free:true, tip:'三位数乘两位数'},
+  {q:'6908×37', a:'255596', free:true, tip:'三位数乘两位数'},
+  {q:'45×77', a:'3465', free:true, tip:'三位数乘两位数'},
+  {q:'11 × 11', a:'121', free:true, tip:'三位数乘两位数'},
+  {q:'145 × 12', a:'1740', free:true, tip:'三位数乘两位数'},
+  {q:'305×50', a:'15250', free:true, tip:'三位数乘两位数'},
+  {q:'164×32', a:'5248', free:true, tip:'三位数乘两位数'},
+  {q:'254×36', a:'9144', free:true, tip:'三位数乘两位数'},
+  {q:'54×145', a:'7830', free:true, tip:'三位数乘两位数'},
+  {q:'537×45', a:'24165', free:true, tip:'三位数乘两位数'},
+  {q:'217×83', a:'18011', free:true, tip:'三位数乘两位数'},
+  {q:'328×25', a:'8200', free:true, tip:'三位数乘两位数'},
+  {q:'43×139', a:'5977', free:true, tip:'三位数乘两位数'},
+  {q:'87×165', a:'14355', free:true, tip:'三位数乘两位数'},
+  {q:'111105 ÷ 9', a:'12345', free:true, tip:'除数是两位数的除法'},
+  {q:'371÷7', a:'53', free:true, tip:'除数是两位数的除法'},
+  {q:'2150 ÷ 50', a:'43', free:true, tip:'除数是两位数的除法'},
+  {q:'320÷80', a:'4', free:true, tip:'除数是两位数的除法'},
+  {q:'84 ÷ 21', a:'4', free:true, tip:'除数是两位数的除法'},
+  {q:'81÷27', a:'3', free:true, tip:'除数是两位数的除法'},
+  {q:'171÷19', a:'9', free:true, tip:'除数是两位数的除法'},
+  {q:'130÷26', a:'5', free:true, tip:'除数是两位数的除法'},
+  {q:'902÷22', a:'41', free:true, tip:'除数是两位数的除法'},
+  {q:'312÷52', a:'6', free:true, tip:'除数是两位数的除法'},
+  {q:'900÷45', a:'20', free:true, tip:'除数是两位数的除法'},
+  {q:'247÷19', a:'13', free:true, tip:'除数是两位数的除法'},
+  {q:'55846+7646', a:'63492', free:true, tip:'大数的认识'},
+  {q:'13027-8934', a:'4093', free:true, tip:'大数的认识'},
+  {q:'395412+10589', a:'406001', free:true, tip:'大数的认识'},
+  {q:'128+284', a:'412', free:true, tip:'条形统计图'},
+  {q:'532-178', a:'354', free:true, tip:'条形统计图'},
+  {q:'497+498+499+500+501+502+503', a:'3500', free:true, tip:'条形统计图'},
+  {q:'72-48', a:'24', free:true, tip:'条形统计图'},
+  {q:'360+90', a:'450', free:true, tip:'条形统计图'},
+];
 function renderMath(){
   const box=$('#mathBox');
   if(!box)return;
@@ -1705,6 +1753,55 @@ function renderMath(){
             '<button class="btn mint" id="mRetry" style="margin-right:8px">🔄 再做一遍</button>'+
             '<button class="btn" id="mBack">🔢 回到口算</button></div>';
           document.getElementById('mRetry').onclick=function(){ mathMode='star'; mathQ=null; renderMath(); };
+          document.getElementById('mBack').onclick=function(){
+            mathMode='mental'; mathQ=null;
+            var btns=document.querySelectorAll('#mathSeg button');
+            btns.forEach(function(x){x.classList.remove('on');});
+            btns[0].classList.add('on'); renderMath();
+          };
+        } else { renderMath(); }
+      }, ok?500:1200);
+    };
+    document.getElementById('mSub').onclick=sub;
+    document.getElementById('mA').addEventListener('keydown',function(e){if(e.key==='Enter')sub();});
+    setTimeout(function(){var el=document.getElementById('mA');if(el)el.focus();},100);
+    return;
+  }
+  /* ── 📘 教材习题模式（教材课后练习原题） ── */
+  if(mathMode==='book'){
+    if(!mathQ||mathQ._book!==true){ mathQ={_book:true, idx:0, list:shuffle(MATH_BOOK.slice())}; }
+    const item=mathQ.list[mathQ.idx];
+    if(!item){ box.innerHTML='<p class="muted">⚠️ 题目加载失败</p>'; return; }
+    box.innerHTML='<div class="quiz-top"><span>📘 教材习题 '+(mathQ.idx+1)+'/'+mathQ.list.length+'</span><span style="font-size:12px">'+(item.tip||'')+'</span></div>'+
+      '<div class="qprompt" style="font-size:17px;font-weight:600">'+item.q+'</div>'+
+      '<div class="qhint">'+(item.free?'💡 输入文字或数字答案（比较大小填 &lt; &gt; 或 =）':'💡 输入数字答案')+'</div>'+
+      '<input type="text" id="mA" placeholder="输入答案" '+(item.free?'':'inputmode="numeric"')+' autocomplete="off">'+
+      '<button class="btn block" id="mSub" style="margin-top:12px">✅ 提交答案</button>'+
+      '<div class="feedback" id="mFb"></div>';
+    const sub=function(){
+      const v=document.getElementById('mA').value.trim();
+      if(!v){toast('✏️ 写一下答案吧');return;}
+      const ok = item.free ? v===String(item.a) : Number(v)===item.a;
+      const fb=document.getElementById('mFb');
+      if(ok){
+        S.mathCorrect++; S.total.m++; S.today.m++; maybeMathSun();
+        fb.className='feedback ok'; fb.innerHTML='🎉 正确！太棒了！';
+      } else {
+        fb.className='feedback no'; fb.innerHTML='❌ 正确答案：<b>'+item.a+'</b>';
+        if(!S.wrong.find(w=>w.q===item.q)) S.wrong.push({q:item.q,a:item.a});
+      }
+      save(); renderHome();
+      mathQ.idx++;
+      setTimeout(function(){
+        if(!mathQ||mathQ.idx>=mathQ.list.length){
+          mathQ=null;
+          box.innerHTML='<div style="text-align:center;padding:30px 0">'+
+            '<div style="font-size:48px">🏆</div>'+
+            '<h3 style="margin:8px 0">教材习题全部做完！</h3>'+
+            '<p class="muted" style="margin-bottom:16px">共 '+MATH_BOOK.length+' 道教材课后原题</p>'+
+            '<button class="btn mint" id="mRetry" style="margin-right:8px">🔄 再做一遍</button>'+
+            '<button class="btn" id="mBack">🔢 回到口算</button></div>';
+          document.getElementById('mRetry').onclick=function(){ mathMode='book'; mathQ=null; renderMath(); };
           document.getElementById('mBack').onclick=function(){
             mathMode='mental'; mathQ=null;
             var btns=document.querySelectorAll('#mathSeg button');
