@@ -186,6 +186,18 @@
   .dog.lv3 .body{width:146px;height:118px;background:#f6c177}.dog.lv3 .head{width:120px;height:108px;top:-66px;background:#ffd98f}
   .dog.lv3 .ear{border-bottom-color:#ffd98f}.dog.lv3 .tail{background:#f6c177}
   .dog.lv3 .bow{display:block}
+  /* 衣服穿在小猫身上 */
+  .cat-clothes{position:absolute;top:-8px;left:50%;transform:translateX(-50%);font-size:28px;z-index:5;pointer-events:none;transition:all .3s ease}
+  .cat-clothes.empty{display:none}
+  /* 衣柜样式 */
+  .wardrobe{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:8px}
+  .wardrobe .wc{background:#fff;border-radius:14px;padding:10px;text-align:center;box-shadow:var(--shadow);cursor:pointer;transition:transform .15s;position:relative;border:2px solid transparent}
+  .wardrobe .wc:hover{transform:translateY(-3px)}
+  .wardrobe .wc.equipped{border-color:var(--pink);background:#fff7fb}
+  .wardrobe .wc .wi{font-size:32px}
+  .wardrobe .wc .wn{font-size:11px;font-weight:700;margin:4px 0 2px}
+  .wardrobe .wc .wr{font-size:10px;border-radius:6px;display:inline-block;padding:1px 6px;color:#fff}
+  .wardrobe .wc .weq{position:absolute;top:4px;right:4px;font-size:14px;background:var(--pink);border-radius:50%;width:20px;height:20px;line-height:18px}
   .heart{position:absolute;font-size:22px;animation:floatUp 1s ease forwards;pointer-events:none}
   @keyframes floatUp{0%{opacity:1;transform:translateY(0) scale(1)}100%{opacity:0;transform:translateY(-90px) scale(1.4)}}
   .burst{position:absolute;font-size:20px;animation:burst 1.1s ease forwards;pointer-events:none}
@@ -328,6 +340,7 @@
               <div class="whisker l"></div><div class="whisker r"></div>
             </div>
             <div class="bow">🎀</div>
+            <div class="cat-clothes" id="catClothes"></div>
           </div>
         </div>
       </div>
@@ -344,9 +357,11 @@
       <h3>🛒 阳光兑换超市</h3>
       <p class="muted">用 ☀️ 阳光兑换物资，喂养小猫积攒成长值</p>
       <div class="shop" id="shop"></div>
-      <div style="margin-top:12px;font-weight:700">我的背包</div>
-      <div class="inv" id="inv"></div>
-      <p class="muted" style="margin-top:8px">点背包里的物品即可喂养小猫 ❤️</p>
+      <div style="margin-top:12px;font-weight:700">👕 我的衣柜</div>
+      <div class="wardrobe" id="wardrobe"></div>
+      <div style="margin-top:12px;font-weight:700">🎒 背包</div>
+      <div class="inv" id="inv2"></div>
+      <p class="muted" style="margin-top:8px">衣柜里点衣服可穿在小猫身上，背包里点物品可喂养 ❤️</p>
     </div>
   </section>
 
@@ -393,7 +408,7 @@ function load(){
   s.today = s.today||{date:'',c:0,m:0,e:0,ex:[]};
   s.wrong = s.wrong||[];            // 数学错题
   s.exDone = s.exDone||{};          // 运动完成(按日期)
-  s.dog = s.dog||{growth:0, inv:{food:0,clothes:0,medicine:0}};
+  s.dog = s.dog||{growth:0, inv:{food:0,clothes:0,medicine:0}, wardrobe:[], equipped:null};
   if(s.today.date!==todayStr()){
     s.today={date:todayStr(),c:0,m:0,e:0,ex:[]};
     s.exDone[s.today.date]=s.exDone[s.today.date]||{};
@@ -766,9 +781,23 @@ function renderEx(){
 }
 
 /* ============ dog ============ */
+// 衣服池 — 每次兑换小衣服随机抽一件
+const CLOTHES_POOL=[
+  {id:'c1', name:'红白条纹T恤', icon:'👕', css:'striped-red', rarity:'普通'},
+  {id:'c2', name:'蓝色背带裤', icon:'👖', css:'overalls-blue', rarity:'普通'},
+  {id:'c3', name:'粉色小裙子', icon:'👗', css:'dress-pink', rarity:'稀有'},
+  {id:'c4', name:'超人披风', icon:'🦸', css:'cape-hero', rarity:'稀有'},
+  {id:'c5', name:'圣诞小毛衣', icon:'🧥', css:'sweater-xmas', rarity:'稀有'},
+  {id:'c6', name:'恐龙连体衣', icon:'🦕', css:'onesie-dino', rarity:'史诗'},
+  {id:'c7', name:'公主蓬蓬裙', icon:'👸', css:'dress-princess', rarity:'史诗'},
+  {id:'c8', name:'宇航员套装', icon:'🧑‍🚀', css:'suit-space', rarity:'传说'},
+  {id:'c9', name:'小龙虾斗篷', icon:'🦞', css:'cape-lobster', rarity:'传说'},
+  {id:'c10',name:'彩虹彩虹衣', icon:'🌈', css:'rainbow-coat',  rarity:'传说'},
+];
+const RARITY_COLOR={'普通':'#95a5a6','稀有':'#9b59b6','史诗':'#e67e22','传说':'#e74c3c'};
 const SHOP=[
   {key:'food',icon:'🐟',name:'猫粮',price:10,grow:12,desc:'喂养+12成长'},
-  {key:'clothes',icon:'👕',name:'小衣服',price:20,grow:6,desc:'喂养+6成长'},
+  {key:'clothes',icon:'👕',name:'小衣服',price:20,grow:0,desc:'随机抽一件衣服'},
   {key:'medicine',icon:'💊',name:'药品',price:15,grow:9,desc:'喂养+9成长'},
 ];
 function dogLevel(g){ if(g>=150)return 3; if(g>=80)return 2; if(g>=30)return 1; return 0; }
@@ -780,6 +809,14 @@ function renderDog(){
   $('#dogGrow').textContent='成长值 '+g;
   const next=[30,80,150,9999][lv];
   $('#dogBar').style.width=Math.min(100, g/next*100)+'%';
+  // 显示穿在身上的衣服
+  const cc=$('#catClothes');
+  if(S.dog.equipped){
+    const eq=CLOTHES_POOL.find(c=>c.id===S.dog.equipped);
+    if(eq){ cc.textContent=eq.icon; cc.className='cat-clothes'; }
+    else{ cc.textContent=''; cc.className='cat-clothes empty'; }
+  } else { cc.textContent=''; cc.className='cat-clothes empty'; }
+
   // shop
   const shop=$('#shop'); shop.innerHTML='';
   SHOP.forEach(s=>{
@@ -793,22 +830,82 @@ function renderDog(){
   $$('#shop [data-buy]').forEach(b=>b.onclick=()=>{
     const k=b.dataset.buy, item=SHOP.find(x=>x.key===k);
     if(S.sun<item.price){ toast('阳光不够哦，多做习题赚阳光☀️'); return; }
-    S.sun-=item.price; S.dog.inv[k]=(S.dog.inv[k]||0)+1;
-    save(); renderDog(); renderHome(); toast('兑换成功：'+item.name+' 🎁');
-  });
-  // inventory
-  const inv=$('#inv'); inv.innerHTML='';
-  let empty=true;
-  SHOP.forEach(s=>{
-    const n=S.dog.inv[s.key]||0;
-    if(n>0){ empty=false;
-      const d=document.createElement('div'); d.className='ib';
-      d.innerHTML=`${s.icon} ${s.name}×${n} <button class="btn sm mint" data-feed="${s.key}" style="margin-left:6px">喂养</button>`;
-      inv.appendChild(d);
+    S.sun-=item.price;
+    if(k==='clothes'){
+      // 随机抽一件衣服（排除已拥有的）
+      const owned=(S.dog.wardrobe||[]).map(w=>w.id);
+      const available=CLOTHES_POOL.filter(c=>!owned.includes(c.id));
+      const pool=available.length>0?available:CLOTHES_POOL; // 全集了就允许重复
+      const drawn=pool[Math.floor(Math.random()*pool.length)];
+      S.dog.wardrobe=S.dog.wardrobe||[];
+      S.dog.wardrobe.push({id:drawn.id,name:drawn.name,icon:drawn.icon,rarity:drawn.rarity,time:Date.now()});
+      save(); renderDog(); renderHome();
+      toast('🎁 抽到了「'+drawn.name+'」！去衣柜穿上吧～');
+    } else {
+      S.dog.inv[k]=(S.dog.inv[k]||0)+1;
+      save(); renderDog(); renderHome(); toast('兑换成功：'+item.name+' 🎁');
     }
   });
-  if(empty) inv.innerHTML='<span class="muted">背包空空，去超市兑换吧～</span>';
-  $$('#inv [data-feed]').forEach(b=>b.onclick=()=>{
+
+  // 衣柜
+  const wrd=$('#wardrobe')||document.getElementById('wardrobe');
+  if(!wrd){
+    // 首次创建衣柜容器，替换原来的 inv 区域
+    const invEl=document.getElementById('inv');
+    if(invEl){
+      invEl.outerHTML='<div class="wardrobe" id="wardrobe"></div>';
+    }
+  }
+  const ward=document.getElementById('wardrobe'); ward.innerHTML='';
+  const wardrobe=S.dog.wardrobe||[];
+  if(wardrobe.length===0){
+    ward.innerHTML='<span class="muted" style="grid-column:1/-1;text-align:center;padding:16px">👕 衣柜空空的，去超市抽衣服吧～</span>';
+  } else {
+    wardrobe.forEach((w,idx)=>{
+      const isEq=S.dog.equipped===w.id;
+      const rc=RARITY_COLOR[w.rarity]||'#95a5a6';
+      const d=document.createElement('div'); d.className='wc'+(isEq?' equipped':'');
+      d.innerHTML=`<div class="wi">${w.icon}</div>
+        <div class="wn">${w.name}</div>
+        <div class="wr" style="background:${rc}">${w.rarity}</div>
+        ${isEq?'<div class="weq">✓</div>':''}`;
+      d.onclick=()=>{ equipClothes(w.id); };
+      ward.appendChild(d);
+    });
+    // 脱下按钮
+    if(S.dog.equipped){
+      const ub=document.createElement('div'); ub.className='wc';
+      ub.style.gridColumn='1/-1'; ub.style.background='#fff0f5';
+      ub.innerHTML='<div style="font-size:20px;margin-bottom:4px">🚫</div><div class="wn">脱下衣服</div>';
+      ub.onclick=()=>{ equipClothes(null); };
+      ward.appendChild(ub);
+    }
+  }
+
+  // 背包（非衣服物品）
+  const inv=$('#inv2')||document.getElementById('inv2');
+  if(!inv){
+    const afterWard=document.getElementById('wardrobe');
+    if(afterWard){
+      const invDiv=document.createElement('div');
+      invDiv.className='inv'; invDiv.id='inv2';
+      afterWard.parentNode.insertBefore(invDiv, afterWard.nextSibling);
+    }
+  }
+  const invEl2=document.getElementById('inv2'); if(invEl2) invEl2.innerHTML='';
+  let hasInv=false;
+  ['food','medicine'].forEach(k=>{
+    const item=SHOP.find(x=>x.key===k);
+    const n=S.dog.inv[k]||0;
+    if(n>0){ hasInv=true;
+      const d=document.createElement('div'); d.className='ib';
+      d.innerHTML=`${item.icon} ${item.name}×${n} <button class="btn sm mint" data-feed="${k}" style="margin-left:6px">喂养</button>`;
+      (invEl2||document.getElementById('inv2')).appendChild(d);
+    }
+  });
+  if(!hasInv && invEl2) invEl2.innerHTML='<span class="muted">背包空空</span>';
+
+  $$('#inv2 [data-feed]').forEach(b=>b.onclick=()=>{
     const k=b.dataset.feed, item=SHOP.find(x=>x.key===k);
     if((S.dog.inv[k]||0)<=0) return;
     const before=dogLevel(S.dog.growth);
@@ -818,6 +915,15 @@ function renderDog(){
     if(after>before) dogBurst();
     else toast('喂养成功，小猫成长值+'+item.grow+' ❤️');
   });
+}
+function equipClothes(id){
+  S.dog.equipped=id; save(); renderDog();
+  if(id){
+    const c=CLOTHES_POOL.find(x=>x.id===id);
+    toast('👔 换上了「'+c.name+'」！');
+  } else {
+    toast('脱下了衣服 🙀');
+  }
 }
 $('#dog').addEventListener('click',()=>{
   const dog=$('#dog'); dog.classList.remove('jump'); void dog.offsetWidth; dog.classList.add('jump');
