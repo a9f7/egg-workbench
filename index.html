@@ -569,6 +569,17 @@
         <button data-go="dog">🐱 小猫</button>
       </div>
     </div>
+
+    <div class="card" id="dataCard">
+      <h3>💾 数据备份与恢复</h3>
+      <p class="muted">进度保存在本机浏览器。可导出备份文件，换设备或清理缓存后用「导入备份」恢复。</p>
+      <div class="seg" style="margin:0">
+        <button id="btnExport">⬇️ 导出备份</button>
+        <button id="btnImport">⬆️ 导入备份</button>
+        <button id="btnReset" style="color:#e74c3c">🗑️ 清空数据</button>
+      </div>
+      <input type="file" id="fileImport" accept="application/json,.json" style="display:none">
+    </div>
   </section>
 
   <!-- CHINESE -->
@@ -685,28 +696,42 @@ function speak(t){ try{ speechSynthesis.cancel(); const u=new SpeechSynthesisUtt
 
 /* ============ state ============ */
 const SKEY='egg_checkin_v1';
+const SVER=1;                       // 数据 schema 版本，便于日后迁移
 let S = load();
-function load(){
-  let s; try{ s=JSON.parse(localStorage.getItem(SKEY)); }catch(e){}
-  if(!s) s={};
+function normalize(s){
+  if(!s || typeof s!=='object') s={};
+  s.v = SVER;
   s.sun = s.sun||0;                 // 累计阳光
   s.lastSign = s.lastSign||'';      // 上次签到日期
   s.streak = s.streak||0;           // 连续打卡
-  s.cnDone = s.cnDone||[];          // 已背语文id
+  s.cnDone = Array.isArray(s.cnDone)?s.cnDone:[];            // 已背语文id
   s.mathCorrect = s.mathCorrect||0; // 累计口算正确
   s.engCorrect = s.engCorrect||0;   // 累计英语正确
   s.total = s.total||{c:0,m:0,e:0}; // 累计各科完成
   s.today = s.today||{date:'',c:0,m:0,e:0,ex:[]};
-  s.wrong = s.wrong||[];            // 数学错题
+  s.wrong = Array.isArray(s.wrong)?s.wrong:[];              // 数学错题
   s.exDone = s.exDone||{};          // 运动完成(按日期)
   s.dog = s.dog||{growth:0, inv:{food:0,clothes:0,medicine:0}, wardrobe:[], equipped:null};
+  return s;
+}
+function load(raw){
+  if(raw===undefined){ try{ raw=JSON.parse(localStorage.getItem(SKEY)); }catch(e){ raw=null; } }
+  const s=normalize(raw);
   if(s.today.date!==todayStr()){
     s.today={date:todayStr(),c:0,m:0,e:0,ex:[]};
     s.exDone[s.today.date]=s.exDone[s.today.date]||{};
   }
   return s;
 }
-function save(){ localStorage.setItem(SKEY, JSON.stringify(S)); }
+function save(){
+  try{
+    localStorage.setItem(SKEY, JSON.stringify(S));
+  }catch(e){
+    // 隐私模式 / 存储已满：提示但不让页面崩溃
+    console.warn('save failed', e);
+    toast('⚠️ 进度保存失败（浏览器存储不可用或已满）');
+  }
+}
 
 /* ============ content ============ */
 /* 以下数学/英语/语文内容均依据 IMA「文武宝贝的知识库 · 蛋蛋教学」文件夹中
@@ -2248,6 +2273,41 @@ function dogBurst(){
 /* ============ init ============ */
 function shuffle(a){ a=a.slice(); for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];} return a; }
 renderHome();
+
+/* ============ data backup ============ */
+function exportData(){
+  try{
+    const blob=new Blob([JSON.stringify(S,null,2)],{type:'application/json'});
+    const a=document.createElement('a');
+    a.href=URL.createObjectURL(blob);
+    a.download='egg_checkin_backup_'+todayStr()+'.json';
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(()=>URL.revokeObjectURL(a.href),2000);
+    toast('✅ 已导出备份文件');
+  }catch(e){ toast('导出失败'); }
+}
+function importData(file){
+  const r=new FileReader();
+  r.onload=()=>{
+    try{
+      const data=JSON.parse(r.result);
+      S=load(data);              // 走 normalize + 每日重置，保证字段完整
+      save();
+      toast('✅ 备份已恢复，马上刷新…');
+      setTimeout(()=>location.reload(),600);
+    }catch(e){ toast('❌ 备份文件无效'); }
+  };
+  r.readAsText(file);
+}
+$('#btnExport').onclick=exportData;
+$('#btnImport').onclick=()=>$('#fileImport').click();
+$('#fileImport').onchange=e=>{ const f=e.target.files&&e.target.files[0]; if(f) importData(f); if(e.target) e.target.value=''; };
+$('#btnReset').onclick=()=>{
+  if(confirm('确定清空所有打卡进度、阳光和小猫数据吗？\n此操作不可撤销，建议先「导出备份」。')){
+    try{ localStorage.removeItem(SKEY); }catch(e){}
+    location.reload();
+  }
+};
 window.addEventListener('beforeinstallprompt',e=>e.preventDefault());
 </script>
 </body>
