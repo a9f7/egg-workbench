@@ -58,8 +58,8 @@
     .nav button .ni{font-size:26px}
     /* shop 4 列 */
     .shop{grid-template-columns:repeat(3,1fr)}
-    /* 运动卡片横排 */
-    #exList{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+    /* 运动/家务列表容器 */
+    #exList{display:block}
   }
   /* ====== 中等屏幕 600-899px ====== */
   @media (min-width:600px) and (max-width:899px){
@@ -148,7 +148,7 @@
   .speak{background:none;border:none;font-size:24px;cursor:pointer}
   /* exercise */
   .ex-card{display:flex;align-items:center;gap:12px;padding:14px;border-radius:16px;background:#fff;
-    box-shadow:var(--shadow);margin-bottom:10px}
+    box-shadow:var(--shadow)}
   .ex-card .ei{font-size:34px}
   .ex-card .et{flex:1}
   .ex-card .et .t{font-weight:800;font-size:16px}
@@ -156,6 +156,9 @@
   .addpick{display:flex;gap:6px;margin-top:8px}
   .addpick button{flex:1;border:none;background:var(--yellow);color:#7a5b00;font-weight:800;
     border-radius:12px;padding:8px 0;cursor:pointer;font-family:inherit}
+  .ex-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:16px}
+  .ex-group-title{font-weight:800;font-size:15px;color:#e67e22;margin:6px 0 10px;
+    padding-left:10px;border-left:4px solid var(--mint)}
   /* cat */
   .dog-stage{height:230px;position:relative;display:flex;align-items:flex-end;justify-content:center;
     background:linear-gradient(180deg,#eaf6ff,#dff0ff);border-radius:20px;overflow:hidden;margin-bottom:12px}
@@ -551,6 +554,7 @@
     </div>
     <div class="mini-stat" style="margin-top:10px">
       <div class="m" data-go="exercise"><b id="mEx">0</b><span>运动打卡</span></div>
+      <div class="m" data-go="exercise"><b id="mCh">0</b><span>家务打卡</span></div>
       <div class="m" data-go="home"><b id="mDay">0</b><span>假期剩余天</span></div>
       <div class="m" data-go="dog"><b id="mSun">0</b><span>累计阳光</span></div>
     </div>
@@ -604,8 +608,8 @@
   <!-- EXERCISE -->
   <section class="view" id="v-exercise">
     <div class="card">
-      <h3>🏃 运动打卡</h3>
-      <p class="muted">完成任意运动即可打卡，还能自选给蛋蛋加阳光次数哦！</p>
+      <h3>🏃 运动 & 🧹 家务打卡</h3>
+      <p class="muted">运动和家务分开打卡，完成任意一项都能自选加阳光次数哦！</p>
       <div id="exList"></div>
     </div>
   </section>
@@ -1329,11 +1333,36 @@ const EN_UNITS = [
 ];
 const EN_ALL_WORDS = EN_UNITS.reduce((a,u)=>a+u.words.length,0);
 
-const EX_ITEMS = [
-  {id:'rope',icon:'🪢',name:'跳绳',desc:'每天跳绳 100 下'},
-  {id:'express',icon:'📦',name:'取快递',desc:'帮家人取一次快递'},
-  {id:'run',icon:'🏃',name:'操场1000米',desc:'操场慢跑 1000 米'},
-  {id:'jack',icon:'⭐',name:'开合跳500个',desc:'开合跳 500 下'},
+/* 运动打卡项目（与家务分开） */
+const EX_SPORTS = [
+  {id:'sp_rope',icon:'🪢',name:'跳绳',desc:'每天跳绳 100 下'},
+  {id:'sp_run',icon:'🏃',name:'慢跑/快走',desc:'操场慢跑或快走 800 米'},
+  {id:'sp_jack',icon:'⭐',name:'开合跳',desc:'开合跳 50 个'},
+  {id:'sp_sit',icon:'🤸',name:'仰卧起坐',desc:'仰卧起坐 30 个'},
+  {id:'sp_ball',icon:'🏀',name:'拍篮球',desc:'连续拍篮球 100 下'},
+  {id:'sp_swim',icon:'🏊',name:'游泳',desc:'游泳游 100 米'},
+  {id:'sp_bike',icon:'🚲',name:'骑自行车',desc:'骑车出去 15 分钟'},
+  {id:'sp_shuttle',icon:'🪶',name:'踢毽子',desc:'踢毽子 50 下'},
+  {id:'sp_bad',icon:'🏸',name:'羽毛球',desc:'和爸妈对打 10 分钟'},
+  {id:'sp_plank',icon:'💪',name:'平板支撑',desc:'平板支撑 30 秒'},
+  {id:'sp_stretch',icon:'🧘',name:'拉伸体操',desc:'做广播体操 5 分钟'},
+  {id:'sp_skip',icon:'🦘',name:'花样跳绳',desc:'花样跳绳 20 下'},
+];
+
+/* 家务打卡项目（与运动分开） */
+const EX_CHORES = [
+  {id:'ch_express',icon:'📦',name:'取快递',desc:'帮家人取一次快递'},
+  {id:'ch_bag',icon:'🎒',name:'整理书包',desc:'把书包整理干净'},
+  {id:'ch_dish',icon:'🍽️',name:'洗碗',desc:'把自己的碗筷洗干净'},
+  {id:'ch_sweep',icon:'🧹',name:'扫地拖地',desc:'扫一次地或拖一次地'},
+  {id:'ch_fold',icon:'👕',name:'叠衣服',desc:'把自己的衣服叠整齐'},
+  {id:'ch_water',icon:'🌿',name:'浇花',desc:'给家里的花草浇水'},
+  {id:'ch_trash',icon:'🗑️',name:'倒垃圾',desc:'帮忙把垃圾扔掉'},
+  {id:'ch_wipe',icon:'🧽',name:'擦桌子',desc:'擦干净饭桌或书桌'},
+  {id:'ch_bed',icon:'🛏️',name:'整理床铺',desc:'起床后把被子铺好'},
+  {id:'ch_set',icon:'🥢',name:'摆碗筷',desc:'饭前帮忙摆碗筷'},
+  {id:'ch_sock',icon:'🧦',name:'洗小袜子',desc:'洗自己的小袜子'},
+  {id:'ch_pet',icon:'🐾',name:'喂宠物',desc:'给小猫/小狗喂食'},
 ];
 
 /* ============ nav ============ */
@@ -1367,7 +1396,11 @@ function renderHome(){
   $('#pbM').style.width=(pctM*100)+'%'; $('#pvM').textContent=S.total.m;
   $('#pbE').style.width=(pctE*100)+'%'; $('#pvE').textContent=S.total.e;
   $('#mC').textContent=S.total.c; $('#mM').textContent=S.total.m; $('#mE').textContent=S.total.e;
-  $('#mEx').textContent=S.exDone[todayStr()]?Object.keys(S.exDone[todayStr()]).length:0;
+  const todayDone=S.exDone[todayStr()]||{};
+  let spCount=0, chCount=0;
+  Object.keys(todayDone).forEach(k=>{ if(k.indexOf('sp_')===0) spCount++; else if(k.indexOf('ch_')===0) chCount++; });
+  $('#mEx').textContent=spCount;
+  $('#mCh').textContent=chCount;
   $('#mDay').textContent=daysLeft();
   $('#slogan').textContent=SLOGANS[new Date().getDate()%SLOGANS.length];
   const sb=$('#signBtn');
@@ -1914,22 +1947,32 @@ function maybeEngSun(){
 function renderEx(){
   const box=$('#exList'); box.innerHTML='';
   const todayEx=S.exDone[todayStr()]||{};
-  EX_ITEMS.forEach(it=>{
-    const done=!!todayEx[it.id];
-    const added=todayEx[it.id]&&todayEx[it.id].add||0;
-    const d=document.createElement('div'); d.className='ex-card';
-    d.innerHTML=`<div class="ei">${it.icon}</div>
-      <div class="et"><div class="t">${it.name}</div><div class="s">${it.desc}</div>
-      ${done?(added?`<div class="addpick" style="opacity:.5;pointer-events:none"><span style="color:#e67e22;font-weight:bold">已加 ☀️+${added}</span></div>`:`<div class="addpick"><button data-add="1">+1☀️</button><button data-add="2">+2☀️</button><button data-add="3">+3☀️</button></div>`):''}
-      </div>
-      <button class="chk ${done?'on':''}" data-id="${it.id}">${done?'已完成✓':'打卡'}</button>`;
-    box.appendChild(d);
+  const groups=[
+    {title:'🏃 运动打卡', items:EX_SPORTS},
+    {title:'🧹 家务打卡', items:EX_CHORES},
+  ];
+  groups.forEach(g=>{
+    const title=document.createElement('div'); title.className='ex-group-title'; title.textContent=g.title;
+    box.appendChild(title);
+    const grid=document.createElement('div'); grid.className='ex-grid';
+    g.items.forEach(it=>{
+      const done=!!todayEx[it.id];
+      const added=todayEx[it.id]&&todayEx[it.id].add||0;
+      const d=document.createElement('div'); d.className='ex-card';
+      d.innerHTML=`<div class="ei">${it.icon}</div>
+        <div class="et"><div class="t">${it.name}</div><div class="s">${it.desc}</div>
+        ${done?(added?`<div class="addpick" style="opacity:.5;pointer-events:none"><span style="color:#e67e22;font-weight:bold">已加 ☀️+${added}</span></div>`:`<div class="addpick"><button data-add="1">+1☀️</button><button data-add="2">+2☀️</button><button data-add="3">+3☀️</button></div>`):''}
+        </div>
+        <button class="chk ${done?'on':''}" data-id="${it.id}">${done?'已完成✓':'打卡'}</button>`;
+      grid.appendChild(d);
+    });
+    box.appendChild(grid);
   });
   $$('#exList .chk').forEach(b=>b.onclick=()=>{
     const id=b.dataset.id;
     if((S.exDone[todayStr()]||{})[id]){ toast('今天已经打过卡啦～'); return; }
     S.exDone[todayStr()]=S.exDone[todayStr()]||{}; S.exDone[todayStr()][id]={done:true};
-    save(); renderEx(); renderHome(); toast('运动打卡成功！🎉 选择加阳光吧');
+    save(); renderEx(); renderHome(); toast('打卡成功！🎉 选择加阳光吧');
   });
   $$('#exList [data-add]').forEach(b=>b.onclick=()=>{
     const n=+b.dataset.add;
