@@ -1,16 +1,5 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="default">
-<meta name="apple-mobile-web-app-title" content="蛋蛋打卡">
-<meta name="theme-color" content="#ff8fb8">
-<link rel="manifest" href="data:application/manifest+json,%7B%22name%22:%22%E8%9B%8B%E8%9B%8B%E7%9A%84%E5%81%87%E6%9C%9F%E9%A2%84%E4%B9%A0%E6%89%93%E5%8D%A1%22,%22short_name%22:%22%E8%9B%8B%E8%9B%8B%E6%89%93%E5%8D%A1%22,%22start_url%22:%22.%22,%22display%22:%22standalone%22,%22background_color%22:%22%23fff7fb%22,%22theme_color%22:%22%23ff8fb8%22%7D">
-<meta name="description" content="蛋蛋的假期预习打卡工作台：语文背诵、数学口算、英语拼写、运动打卡、阳光值与小猫养成，三升四年级假期预习好帮手。">
-<title>蛋蛋的假期预习打卡工作台</title>
-<style>
+<html><head><meta charset='utf-8'><style>body{font-family:sans-serif;padding:20px}.btn{padding:8px 16px;margin:2px;border:1px solid #ccc;background:#fff;cursor:pointer}.btn.on{background:#ff8fb8;color:#fff}#mathBox{margin-top:10px;padding:15px;border:2px solid #ff8fb8;border-radius:8px;min-height:100px}
   :root{
     --pink:#ff8fb8; --pink-d:#ff6fa3; --mint:#5ec9b8; --sky:#6db4ff; --lav:#a98bff;
     --yellow:#ffc94d; --bg1:#fff1f8; --bg2:#eaf4ff; --bg3:#eafff5;
@@ -512,156 +501,17 @@
   .mini-stat .m{cursor:pointer;transition:transform .15s, box-shadow .15s}
   .mini-stat .m:hover{transform:translateY(-3px);box-shadow:0 10px 28px rgba(170,120,160,.22)}
   .mini-stat .m:active{transform:translateY(0)}
-</style>
-</head>
-<body>
-<div class="app">
-  <div class="topbar">
-    <div class="logo">🌈</div>
-    <div class="ttl">蛋蛋的假期预习打卡<small>三升四年级 · 加油鸭！</small></div>
-    <div class="sun-badge">☀️ <span id="sunTop">0</span></div>
-    <button class="sign-btn" id="signBtn">签到+1</button>
-  </div>
-
-  <!-- HOME -->
-  <section class="view on" id="v-home">
-    <div class="hero">
-      <div class="slogan" id="slogan">今天也要元气满满地打卡哦！🌟</div>
-      <div class="sunbig">☀️ <b id="sunHero">0</b><span>今日阳光值</span></div>
-      <div class="statgrid">
-        <div class="s"><b id="stDone">0</b><span>今日打卡</span></div>
-        <div class="s"><b id="stPct">0%</b><span>整体完成</span></div>
-        <div class="s"><b id="stStreak">0</b><span>连续天数</span></div>
-      </div>
-    </div>
-
-    <div class="card">
-      <h3>📚 今日语数英进度</h3>
-      <div class="progress3">
-        <div class="prow"><div class="pn">语文</div><div class="pbar"><div class="pfill ic-c" id="pbC" style="width:0"></div></div><div class="pv" id="pvC">0</div></div>
-        <div class="prow"><div class="pn">数学</div><div class="pbar"><div class="pfill ic-m" id="pbM" style="width:0"></div></div><div class="pv" id="pvM">0</div></div>
-        <div class="prow"><div class="pn">英语</div><div class="pbar"><div class="pfill ic-e" id="pbE" style="width:0"></div></div><div class="pv" id="pvE">0</div></div>
-      </div>
-    </div>
-
-    <div class="mini-stat">
-      <div class="m" data-go="chinese"><b id="mC">0</b><span>语文背诵</span></div>
-      <div class="m" data-go="math"><b id="mM">0</b><span>数学口算</span></div>
-      <div class="m" data-go="english"><b id="mE">0</b><span>英语习题</span></div>
-    </div>
-    <div class="mini-stat" style="margin-top:10px">
-      <div class="m" data-go="exercise"><b id="mEx">0</b><span>运动打卡</span></div>
-      <div class="m" data-go="home"><b id="mDay">0</b><span>假期剩余天</span></div>
-      <div class="m" data-go="dog"><b id="mSun">0</b><span>累计阳光</span></div>
-    </div>
-
-    <div class="card">
-      <h3>🚀 去哪里玩？</h3>
-      <div class="seg" style="margin:0">
-        <button data-go="chinese">📖 语文</button>
-        <button data-go="math">➗ 数学</button>
-        <button data-go="english">🔤 英语</button>
-        <button data-go="exercise">🏃 运动</button>
-        <button data-go="dog">🐱 小猫</button>
-      </div>
-    </div>
-  </section>
-
-  <!-- CHINESE -->
-  <section class="view" id="v-chinese">
-    <div class="card">
-      <h3>📖 语文专区 · 四年级上册必背</h3>
-      <p class="muted">假期每天背几段，点「我背会了」记录进度～</p>
-      <div id="cnList"></div>
-    </div>
-  </section>
-
-  <!-- MATH -->
-  <section class="view" id="v-math">
-    <div class="card">
-      <h3>➗ 数学专区 · 口算练习</h3>
-      <div class="seg" id="mathSeg">
-        <button class="on" data-mode="mental">口算刷题</button>
-        <button data-mode="unit">单元重点题</button>
-        <button data-mode="wrong">错题本</button>
-      </div>
-      <div id="mathBox"></div>
-    </div>
-  </section>
-
-  <!-- ENGLISH -->
-  <section class="view" id="v-english">
-    <div class="card">
-      <h3>🔤 英语专区 · 人教版四上</h3>
-      <p class="muted">选单元自测：看汉字拼单词 / 英译中朗读，自动判对错，答对30题得 ☀️+1</p>
-      <div class="seg" id="enUnitSeg"></div>
-      <div id="enBox"></div>
-    </div>
-  </section>
-
-  <!-- EXERCISE -->
-  <section class="view" id="v-exercise">
-    <div class="card">
-      <h3>🏃 运动打卡</h3>
-      <p class="muted">完成任意运动即可打卡，还能自选给蛋蛋加阳光次数哦！</p>
-      <div id="exList"></div>
-    </div>
-  </section>
-
-  <!-- CAT -->
-  <section class="view" id="v-dog">
-    <div class="card">
-      <h3>🐱 蛋蛋的小猫</h3>
-      <div class="dog-stage" id="dogStage">
-        <div class="ground"></div>
-        <div class="dog" id="dog">
-          <div class="body">
-            <div class="tail"></div>
-            <div class="head">
-              <div class="ear l"></div><div class="ear r"></div>
-              <div class="eye l"></div><div class="eye r"></div>
-              <div class="nose"></div><div class="mouth"></div>
-              <div class="whisker l"></div><div class="whisker r"></div>
-            </div>
-            <div class="bow">🎀</div>
-            <div class="cat-outfit" id="catOutfit"></div>
-          </div>
-        </div>
-      </div>
-      <div style="text-align:center">
-        <div style="font-weight:800;font-size:16px" id="dogName">幼崽小猫</div>
-        <div class="muted" id="dogGrow">成长值 0</div>
-        <div class="pbar" style="height:14px;background:#ffe9f2;border-radius:10px;overflow:hidden;margin-top:8px">
-          <div class="pfill ic-c" id="dogBar" style="width:0"></div>
-        </div>
-      </div>
-    </div>
-
-    <div class="card">
-      <h3>🛒 阳光兑换超市</h3>
-      <p class="muted">用 ☀️ 阳光兑换物资，喂养小猫积攒成长值</p>
-      <div class="shop" id="shop"></div>
-      <div style="margin-top:12px;font-weight:700">👕 我的衣柜</div>
-      <div class="wardrobe" id="wardrobe"></div>
-      <div style="margin-top:12px;font-weight:700">🎒 背包</div>
-      <div class="inv" id="inv2"></div>
-      <p class="muted" style="margin-top:8px">衣柜里点衣服可穿在小猫身上，背包里点物品可喂养 ❤️</p>
-    </div>
-  </section>
-
-  <nav class="nav" id="nav">
-    <button class="on" data-v="home"><span class="ni">🏠</span>首页</button>
-    <button data-v="chinese"><span class="ni">📖</span>语文</button>
-    <button data-v="math"><span class="ni">➗</span>数学</button>
-    <button data-v="english"><span class="ni">🔤</span>英语</button>
-    <button data-v="exercise"><span class="ni">🏃</span>运动</button>
-    <button data-v="dog"><span class="ni">🐱</span>小猫</button>
-  </nav>
+</style></head><body>
+<h2>数学模块调试页</h2>
+<div id='mathSeg'>
+  <button class='on' data-mode='mental'>口算刷题</button>
+  <button data-mode='unit'>单元重点题</button>
+  <button data-mode='wrong'>错题本</button>
 </div>
-
-<div class="toast" id="toast"></div>
-
+<div id='debug' style='background:#eee;padding:10px;margin:10px 0;font-family:monospace'></div>
+<div id='mathBox'>加载中...</div>
 <script>
+
 /* ============ utils ============ */
 const $ = s => document.querySelector(s);
 const $$ = s => [...document.querySelectorAll(s)];
@@ -815,27 +665,10 @@ function renderCN(){
 
 /* ============ math ============ */
 let mathMode='mental', mathQ=null;
-/* 模式切换：直接在 onclick 中处理，避免事件委托问题 */
-document.addEventListener('DOMContentLoaded',()=>{
-  const seg=document.getElementById('mathSeg');
-  if(!seg)return;
-  seg.querySelectorAll('button').forEach(btn=>{
-    btn.onclick=function(){
-      seg.querySelectorAll('button').forEach(b=>b.classList.remove('on'));
-      this.classList.add('on');
-      mathMode=this.dataset.mode; mathQ=null; // 切换模式时清空题目状态
-      window.renderMath();
-    };
-  });
-  /* 页面初始化时如果当前在数学页，渲染一次 */
-  if(document.getElementById('v-math')&&document.getElementById('v-math').style.display!=='none')
-    window.renderMath();
-});
-/* 兼容：DOMContentLoaded 之前若被调用也能工作 */
-$('#mathSeg')?.addEventListener('click',e=>{
+$('#mathSeg').addEventListener('click',e=>{
   const b=e.target.closest('button'); if(!b)return;
   $$('#mathSeg button').forEach(x=>x.classList.remove('on')); b.classList.add('on');
-  mathMode=b.dataset.mode; mathQ=null; renderMath();
+  mathMode=b.dataset.mode; renderMath();
 });
 function genMath(){
   const r=Math.random();
@@ -994,91 +827,78 @@ const UNIT_MATH=[
 ];
 function renderMath(){
   const box=$('#mathBox');
-  if(!box)return;
-  /* ── 错题本模式 ── */
   if(mathMode==='wrong'){
     if(!S.wrong.length){ box.innerHTML='<p class="muted">🎉 还没有错题，真厉害！</p>'; return; }
     box.innerHTML=S.wrong.map((w,i)=>`<div class="item"><div class="it"><div class="t">${w.q}</div><div class="s">正确答案：${w.a}</div></div><button class="chk" data-del="${i}">移除</button></div>`).join('');
     $$('#mathBox [data-del]').forEach(b=>b.onclick=()=>{ S.wrong.splice(+b.dataset.del,1); save(); renderMath(); });
     return;
   }
-  /* ── 单元重点题模式（教材原题） ── */
   if(mathMode==='unit'){
-    try {
-      if(!mathQ||mathQ._unit!==true){ mathQ={_unit:true, idx:0, list:shuffle(UNIT_MATH.slice())}; }
-      const item=mathQ.list[mathQ.idx];
-      if(!item){ box.innerHTML='<p class="muted">⚠️ 题目加载失败</p>'; return; }
-      box.innerHTML='<div class="quiz-top"><span>📚 单元重点题 '+(mathQ.idx+1)+'/'+mathQ.list.length+'</span><span style="font-size:12px">'+(item.tip||'')+'</span></div>'+
-        '<div class="qprompt" style="font-size:17px;font-weight:600">'+item.q+'</div>'+
-        '<div class="qhint">'+(item.free?'💡 输入文字或数字答案':'💡 输入数字答案')+'</div>'+
-        '<input type="text" id="mA" placeholder="输入答案" '+(item.free?'':'inputmode="numeric"')+' autocomplete="off">'+
-        '<button class="btn block" id="mSub" style="margin-top:12px">✅ 提交答案</button>'+
-        '<div class="feedback" id="mFb"></div>';
-      const sub=function(){
-        const v=document.getElementById('mA').value.trim();
-        if(!v){toast('✏️ 写一下答案吧');return;}
-        const ok = item.free ? v===String(item.a) : Number(v)===item.a;
-        const fb=document.getElementById('mFb');
-        if(ok){
-          S.mathCorrect++; S.total.m++; S.today.m++; maybeMathSun();
-          fb.className='feedback ok'; fb.innerHTML='🎉 正确！太棒了！';
-        } else {
-          fb.className='feedback no'; fb.innerHTML='❌ 正确答案：<b>'+item.a+'</b>';
-          if(!S.wrong.find(w=>w.q===item.q)) S.wrong.push({q:item.q,a:item.a});
-        }
-        save(); renderHome();
-        mathQ.idx++;
-        setTimeout(function(){
-          if(!mathQ||mathQ.idx>=mathQ.list.length){
-            mathQ=null;
-            box.innerHTML='<div style="text-align:center;padding:30px 0">'+
-              '<div style="font-size:48px">🏆</div>'+
-              '<h3 style="margin:8px 0">单元重点题全部做完！</h3>'+
-              '<p class="muted" style="margin-bottom:16px">共 '+UNIT_MATH.length+' 道教材原题</p>'+
-              '<button class="btn mint" id="mRetry" style="margin-right:8px">🔄 再做一遍</button>'+
-              '<button class="btn" id="mBack">🔢 回到口算</button></div>';
-            document.getElementById('mRetry').onclick=function(){ mathMode='unit'; mathQ=null; renderMath(); };
-            document.getElementById('mBack').onclick=function(){
-              mathMode='mental'; mathQ=null;
-              var btns=document.querySelectorAll('#mathSeg button');
-              btns.forEach(function(x){x.classList.remove('on');});
-              btns[0].classList.add('on'); renderMath();
-            };
-          } else { renderMath(); }
-        }, ok?500:1200);
-      };
-      document.getElementById('mSub').onclick=sub;
-      document.getElementById('mA').addEventListener('keydown',function(e){if(e.key==='Enter')sub();});
-      setTimeout(function(){var el=document.getElementById('mA');if(el)el.focus();},100);
-      return;
-    } catch(err) {
-      box.innerHTML='<p style="color:red">⚠️ 单元题目加载出错：'+err.message+'</p>';
-      console.error('renderMath unit error:',err);
-      return;
-    }
+    if(!mathQ||mathQ._unit!==true){ mathQ={_unit:true, idx:0, list:shuffle(UNIT_MATH.slice())}; }
+    const item=mathQ.list[mathQ.idx];
+    box.innerHTML=`<div class="quiz-top"><span>单元重点题 ${mathQ.idx+1}/${mathQ.list.length}</span></div>
+      <div class="qprompt">${item.q}</div>
+      <div class="qhint">${item.free?'输入答案即可':''}</div>
+      <input type="text" id="mA" placeholder="输入答案" ${item.free?'':'inputmode="numeric"'}>
+      <button class="btn block" id="mSub">提交</button>
+      <div class="feedback" id="mFb"></div>`;
+    const sub=()=>{
+      const v=$('#mA').value.trim(); if(v===''){toast('写一下答案吧');return;}
+      // 文字题直接比较字符串，数字题转数字比较
+      const ok = item.free ? v===String(item.a) : Number(v)===item.a;
+      const fb=$('#mFb');
+      if(ok){ S.mathCorrect++; S.total.m++; S.today.m++; maybeMathSun(); fb.className='feedback ok'; fb.innerHTML='✅ 正确！'; }
+      else { fb.className='feedback no'; fb.innerHTML=`❌ 正确答案：<b>${item.a}</b>`;
+        if(!S.wrong.find(w=>w.q===item.q)) S.wrong.push({q:item.q,a:item.a}); }
+      save(); renderHome();
+      mathQ.idx++;
+      setTimeout(()=>{
+        if(mathQ.idx>=mathQ.list.length){
+          // 做完了，显示完成页，不重复
+          mathQ=null;
+          box.innerHTML=`<div style="text-align:center;padding:30px 0">
+            <div style="font-size:48px;margin-bottom:8px">🎉</div>
+            <h3 style="margin:0 0 8px">单元重点题全部做完！</h3>
+            <p class="muted" style="margin-bottom:16px">共 ${UNIT_MATH.length} 道题，太棒了！</p>
+            <button class="btn mint" id="mRetry" style="margin-right:8px">🔄 再做一遍</button>
+            <button class="btn" id="mBack">🔢 回到口算</button>
+          </div>`;
+          $('#mRetry').onclick=()=>{ mathMode='unit'; renderMath(); };
+          $('#mBack').onclick=()=>{
+            mathMode='mental';
+            $$('#mathSeg button').forEach(x=>x.classList.remove('on'));
+            document.querySelector('[data-mode=mental]').classList.add('on');
+            renderMath();
+          };
+        } else renderMath();
+      });
+    $('#mSub').onclick=sub;
+    $('#mA').addEventListener('keydown',e=>{if(e.key==='Enter')sub();});
+    return;
   }
-  /* ── 口算练习模式（默认） ── */
+  // mental
   if(!mathQ||mathQ._mental!==true){ mathQ={_mental:true, ...genMath()}; }
-  box.innerHTML='<div class="quiz-top"><span>🔢 口算练习 · 累计正确 '+S.mathCorrect+'</span><span>每30题 ☀️+1</span></div>'+
-    '<div class="qprompt">'+mathQ.q+'</div>'+
-    '<input type="text" id="mA" placeholder="输入答案" inputmode="numeric" autocomplete="off">'+
-    '<button class="btn block" id="mSub" style="margin-top:10px">提交</button>'+
-    '<div class="feedback" id="mFb"></div>';
-  var sub2=function(){
-    var v=document.getElementById('mA').value.trim(); if(!v){toast('写一下答案吧');return;}
-    var ok=Number(v)===mathQ.a;
-    var fb=document.getElementById('mFb');
-    if(ok){ S.mathCorrect++; S.total.m++; S.today.m++; var got=maybeMathSun();
+  box.innerHTML=`<div class="quiz-top"><span>口算练习 · 累计正确 ${S.mathCorrect}</span><span>每30题 ☀️+1</span></div>
+    <div class="qprompt">${mathQ.q}</div>
+    <input type="text" id="mA" placeholder="输入答案" inputmode="numeric" autocomplete="off">
+    <button class="btn block" id="mSub">提交</button>
+    <div class="feedback" id="mFb"></div>`;
+  const sub2=()=>{
+    const v=$('#mA').value.trim(); if(v===''){toast('写一下答案吧');return;}
+    const ok=Number(v)===mathQ.a;
+    const fb=$('#mFb');
+    if(ok){ S.mathCorrect++; S.total.m++; S.today.m++; const got=maybeMathSun();
       fb.className='feedback ok'; fb.innerHTML='✅ 正确！'+(got?' 🌟☀️+1':''); }
-    else { fb.className='feedback no'; fb.innerHTML='❌ 正确答案：<b>'+mathQ.a+'</b>';
+    else { fb.className='feedback no'; fb.innerHTML=`❌ 正确答案：<b>${mathQ.a}</b>`;
       if(!S.wrong.find(w=>w.q===mathQ.q)) S.wrong.push({q:mathQ.q,a:mathQ.a}); }
     save(); renderHome();
     mathQ={_mental:true, ...genMath()};
-    setTimeout(renderMath, ok?500:800);
+    setTimeout(renderMath, 650);
   };
-  document.getElementById('mSub').onclick=sub2;
-  document.getElementById('mA').addEventListener('keydown',function(e){if(e.key==='Enter')sub2();});
-  setTimeout(function(){var el=document.getElementById('mA');if(el)el.focus();},50);
+  $('#mSub').onclick=sub2;
+  $('#mA').addEventListener('keydown',e=>{if(e.key==='Enter')sub2();});
+  setTimeout(()=>$('#mA')&&$('#mA').focus(),50);
+}
 }
 function maybeMathSun(){
   if(S.mathCorrect>0 && S.mathCorrect%30===0){ S.sun+=1; toast('🎉 数学答对30题，☀️阳光+1！'); return true; }
@@ -1445,6 +1265,20 @@ function dogBurst(){
 function shuffle(a){ a=a.slice(); for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];} return a; }
 renderHome();
 window.addEventListener('beforeinstallprompt',e=>e.preventDefault());
-</script>
-</body>
-</html>
+
+
+// Override to add debug info
+const _origRenderMath = renderMath;
+renderMath = function() {
+  const dbg = document.getElementById('debug');
+  dbg.innerHTML = 'mathMode=' + mathMode + ' | mathQ=' + JSON.stringify(mathQ) + ' | UNIT_MATH.length=' + (typeof UNIT_MATH !== 'undefined' ? UNIT_MATH.length : 'N/A');
+  try {
+    _origRenderMath();
+  } catch(e) {
+    document.getElementById('mathBox').innerHTML = '<p style="color:red">ERROR: ' + e.message + '</p><pre>' + e.stack + '</pre>';
+  }
+};
+
+// Initial render
+renderMath();
+</script></body></html>

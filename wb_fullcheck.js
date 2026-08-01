@@ -1,0 +1,753 @@
+/* ============ utils ============ */
+const $ = s => document.querySelector(s);
+const $$ = s => [...document.querySelectorAll(s)];
+const el = (tag, cls) => { const d=document.createElement(tag); if(cls) d.className=cls; return d; };
+const pad = n => n<10?'0'+n:''+n;
+const todayStr = () => { const d=new Date(); return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate()); };
+const yestStr = () => { const d=new Date(Date.now()-864e5); return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate()); };
+const HOLIDAY_END = '2026-09-01';
+function daysLeft(){
+  const e=new Date(HOLIDAY_END), t=new Date();
+  return Math.max(0, Math.round((e-t)/864e5));
+}
+function toast(msg){ const t=$('#toast'); t.textContent=msg; t.classList.add('show'); clearTimeout(t._h); t._h=setTimeout(()=>t.classList.remove('show'),1600); }
+function speak(t){ try{ speechSynthesis.cancel(); const u=new SpeechSynthesisUtterance(t); u.lang='en-US'; u.rate=.9; u.pitch=1.1; speechSynthesis.speak(u);}catch(e){} }
+
+/* ============ state ============ */
+const SKEY='egg_checkin_v1';
+let S = load();
+function load(){
+  let s; try{ s=JSON.parse(localStorage.getItem(SKEY)); }catch(e){}
+  if(!s) s={};
+  s.sun = s.sun||0;                 // 累计阳光
+  s.lastSign = s.lastSign||'';      // 上次签到日期
+  s.streak = s.streak||0;           // 连续打卡
+  s.cnDone = s.cnDone||[];          // 已背语文id
+  s.mathCorrect = s.mathCorrect||0; // 累计口算正确
+  s.engCorrect = s.engCorrect||0;   // 累计英语正确
+  s.total = s.total||{c:0,m:0,e:0}; // 累计各科完成
+  s.today = s.today||{date:'',c:0,m:0,e:0,ex:[]};
+  s.wrong = s.wrong||[];            // 数学错题
+  s.exDone = s.exDone||{};          // 运动完成(按日期)
+  s.dog = s.dog||{growth:0, inv:{food:0,clothes:0,medicine:0}, wardrobe:[], equipped:null};
+  if(s.today.date!==todayStr()){
+    s.today={date:todayStr(),c:0,m:0,e:0,ex:[]};
+    s.exDone[s.today.date]=s.exDone[s.today.date]||{};
+  }
+  return s;
+}
+function save(){ localStorage.setItem(SKEY, JSON.stringify(S)); }
+
+/* ============ content ============ */
+/* 以下数学/英语/语文内容均依据 IMA「文武宝贝的知识库 · 蛋蛋教学」文件夹中
+   人教版(PEP)四年级上册教材编写：
+   - 数学：四年级上册 8 个单元（大数的认识 → 数学广角）
+   - 英语：PEP 四年级上册 6 个单元（My classroom → Meet my family）
+   - 语文：四年级上册必背（古诗 / 文言 / 日积月累 / 课文）
+   与文件夹内对应 PDF 完全一致。 */
+const CN = [
+  {id:'1',tag:'古诗',title:'《鹿柴》[唐]王维',text:'空山不见人，但闻人语响。\n返景入深林，复照青苔上。'},
+  {id:'2',tag:'古诗',title:'《暮江吟》[唐]白居易',text:'一道残阳铺水中，半江瑟瑟半江红。\n可怜九月初三夜，露似真珠月似弓。'},
+  {id:'3',tag:'古诗',title:'《题西林壁》[宋]苏轼',text:'横看成岭侧成峰，远近高低各不同。\n不识庐山真面目，只缘身在此山中。'},
+  {id:'4',tag:'古诗',title:'《雪梅》[宋]卢钺',text:'梅雪争春未肯降，骚人阁笔费评章。\n梅须逊雪三分白，雪却输梅一段香。'},
+  {id:'5',tag:'古诗',title:'《嫦娥》[唐]李商隐',text:'云母屏风烛影深，长河渐落晓星沉。\n嫦娥应悔偷灵药，碧海青天夜夜心。'},
+  {id:'6',tag:'古诗',title:'《出塞》[唐]王昌龄',text:'秦时明月汉时关，万里长征人未还。\n但使龙城飞将在，不教胡马度阴山。'},
+  {id:'7',tag:'古诗',title:'《凉州词》[唐]王翰',text:'葡萄美酒夜光杯，欲饮琵琶马上催。\n醉卧沙场君莫笑，古来征战几人回？'},
+  {id:'8',tag:'古诗',title:'《夏日绝句》[宋]李清照',text:'生当作人杰，死亦为鬼雄。\n至今思项羽，不肯过江东。'},
+  {id:'9',tag:'古诗',title:'《别董大》[唐]高适',text:'千里黄云白日曛，北风吹雁雪纷纷。\n莫愁前路无知己，天下谁人不识君？'},
+  {id:'10',tag:'文言',title:'《王戎不取道旁李》',text:'王戎七岁，尝与诸小儿游。看道边李树多子折枝，诸儿竞走取之，唯戎不动。人问之，答曰：“树在道边而多子，此必苦李。”取之，信然。'},
+  {id:'11',tag:'日积月累',title:'关于提问的名言',text:'好问则裕，自用则小。——《尚书》\n博学之，审问之，慎思之，明辨之，笃行之。——《礼记》\n智能之士，不学不成，不问不知。——王充\n人非生而知之者，孰能无惑？——韩愈'},
+  {id:'12',tag:'课文',title:'《观潮》精彩段（背诵）',text:'浪潮越来越近，犹如千万匹白色战马齐头并进，浩浩荡荡地飞奔而来；那声音如同山崩地裂，好像大地都被震得颤动起来。'},
+];
+const CN_TARGET = CN.length;
+
+const EN_UNITS = [
+  {unit:'Unit 1 My classroom', words:[['classroom','教室'],['window','窗户'],['blackboard','黑板'],['light','电灯'],['picture','图画'],['door','门'],['teacher\'s desk','讲台'],['computer','计算机'],['fan','风扇'],['wall','墙壁'],['floor','地板'],['clean','打扫'],['help','帮助']],
+    sentences:[['What\'s in the classroom?','教室里有什么？'],['Let me clean the window.','让我擦窗户吧。'],['Where is it?','它在哪儿？']]},
+  {unit:'Unit 2 My schoolbag', words:[['schoolbag','书包'],['maths book','数学书'],['English book','英语书'],['Chinese book','语文书'],['storybook','故事书'],['candy','糖果'],['notebook','笔记本'],['toy','玩具'],['key','钥匙'],['cute','可爱的']],
+    sentences:[['What\'s in your schoolbag?','你书包里有什么？'],['I have a new schoolbag.','我有一个新书包。'],['Put away your books.','把你的书收起来。']]},
+  {unit:'Unit 3 My friends', words:[['strong','强壮的'],['friendly','友好的'],['quiet','安静的'],['hair','头发'],['shoe','鞋'],['glasses','眼镜'],['his','他的'],['or','或者'],['hat','帽子'],['her','她的']],
+    sentences:[['He is tall and strong.','他又高又壮。'],['What\'s his name?','他叫什么名字？'],['She has long hair.','她有长头发。']]},
+  {unit:'Unit 4 My home', words:[['bedroom','卧室'],['living room','客厅'],['study','书房'],['kitchen','厨房'],['bathroom','浴室'],['bed','床'],['phone','电话'],['table','桌子'],['sofa','沙发'],['fridge','冰箱'],['find','找到'],['them','它们']],
+    sentences:[['Where is she?','她在哪儿？'],['Is she in the kitchen?','她在厨房里吗？'],['Go to the living room.','去客厅。']]},
+  {unit:'Unit 5 Dinner\'s ready', words:[['beef','牛肉'],['chicken','鸡肉'],['noodles','面条'],['soup','汤'],['vegetable','蔬菜'],['chopsticks','筷子'],['bowl','碗'],['fork','餐叉'],['knife','刀'],['spoon','勺'],['dinner','晚餐'],['ready','准备好的']],
+    sentences:[['What would you like?','你想吃什么？'],['I\'d like some soup.','我想要些汤。'],['Help yourself.','随便吃吧。']]},
+  {unit:'Unit 6 Meet my family', words:[['family','家庭'],['parents','父母'],['cousin','表亲'],['uncle','叔叔'],['aunt','阿姨'],['baby brother','婴儿小弟'],['doctor','医生'],['cook','厨师'],['driver','司机'],['farmer','农民'],['nurse','护士'],['job','工作'],['basketball','篮球']],
+    sentences:[['How many people are there?','有多少口人？'],['What\'s your father\'s job?','你爸爸做什么工作？'],['He is a doctor.','他是一名医生。']]},
+];
+const EN_ALL_WORDS = EN_UNITS.reduce((a,u)=>a+u.words.length,0);
+
+const EX_ITEMS = [
+  {id:'rope',icon:'🪢',name:'跳绳',desc:'每天跳绳 100 下'},
+  {id:'express',icon:'📦',name:'取快递',desc:'帮家人取一次快递'},
+  {id:'run',icon:'🏃',name:'操场1000米',desc:'操场慢跑 1000 米'},
+  {id:'jack',icon:'⭐',name:'开合跳500个',desc:'开合跳 500 下'},
+];
+
+/* ============ nav ============ */
+function switchView(v){
+  $$('.view').forEach(s=>s.classList.remove('on'));
+  $('#v-'+v).classList.add('on');
+  $$('#nav button').forEach(b=>b.classList.toggle('on', b.dataset.v===v));
+  if(v==='chinese') renderCN();
+  if(v==='math') renderMath();
+  if(v==='english') renderEN();
+  if(v==='exercise') renderEx();
+  if(v==='dog') renderDog();
+  window.scrollTo(0,0);
+}
+$$('#nav button').forEach(b=>b.onclick=()=>switchView(b.dataset.v));
+$$('[data-go]').forEach(b=>b.onclick=()=>switchView(b.dataset.go));
+
+/* ============ home ============ */
+const SLOGANS=['今天也要元气满满地打卡哦！🌟','每天进步一点点，开学惊艳所有人✨','蛋蛋最棒啦，加油鸭！🦆','坚持就是胜利，阳光值蹭蹭涨☀️','读书破万卷，下笔如有神📚'];
+function renderHome(){
+  $('#sunTop').textContent=S.sun;
+  $('#sunHero').textContent=S.sun;
+  $('#mSun').textContent=S.sun;
+  const tdone=S.today.c+S.today.m+S.today.e + (S.exDone[todayStr()]?Object.keys(S.exDone[todayStr()]).length:0);
+  $('#stDone').textContent=tdone;
+  const pctC=Math.min(1,S.total.c/CN_TARGET), pctM=Math.min(1,S.total.m/200), pctE=Math.min(1,S.total.e/EN_ALL_WORDS);
+  const pct=Math.round((pctC+pctM+pctE)/3*100);
+  $('#stPct').textContent=pct+'%';
+  $('#stStreak').textContent=S.streak;
+  $('#pbC').style.width=(pctC*100)+'%'; $('#pvC').textContent=S.total.c+'/'+CN_TARGET;
+  $('#pbM').style.width=(pctM*100)+'%'; $('#pvM').textContent=S.total.m;
+  $('#pbE').style.width=(pctE*100)+'%'; $('#pvE').textContent=S.total.e;
+  $('#mC').textContent=S.total.c; $('#mM').textContent=S.total.m; $('#mE').textContent=S.total.e;
+  $('#mEx').textContent=S.exDone[todayStr()]?Object.keys(S.exDone[todayStr()]).length:0;
+  $('#mDay').textContent=daysLeft();
+  $('#slogan').textContent=SLOGANS[new Date().getDate()%SLOGANS.length];
+  const sb=$('#signBtn');
+  if(S.lastSign===todayStr()){ sb.textContent='已签到✓'; sb.classList.add('done'); }
+  else { sb.textContent='签到+1'; sb.classList.remove('done'); }
+}
+$('#signBtn').onclick=()=>{
+  if(S.lastSign===todayStr()){ toast('今天已经签到啦～'); return; }
+  S.sun+=1;
+  S.streak = (S.lastSign===yestStr()) ? S.streak+1 : 1;
+  S.lastSign=todayStr();
+  save(); renderHome(); toast('签到成功，☀️+1 阳光！');
+};
+
+/* ============ chinese ============ */
+function renderCN(){
+  const box=$('#cnList'); box.innerHTML='';
+  CN.forEach(it=>{
+    const done=S.cnDone.includes(it.id);
+    const d=document.createElement('details'); d.className='rec'; if(done) d.open=true;
+    d.innerHTML=`<summary>${done?'✅':''} ${it.title} <span class="pill">${it.tag}</span></summary>
+      <div class="poem">${it.text}</div>
+      <button class="chk ${done?'on':''}" data-id="${it.id}">${done?'已背会 ✓':'我背会了'}</button>`;
+    box.appendChild(d);
+  });
+  $$('#cnList .chk').forEach(b=>b.onclick=()=>{
+    const id=b.dataset.id;
+    if(S.cnDone.includes(id)){ toast('已经记录过啦～'); return; }
+    S.cnDone.push(id); S.total.c++; S.today.c++; S.sun+=0; save(); renderCN(); renderHome();
+    toast('太棒了！背诵 +1 📖');
+  });
+}
+
+/* ============ math ============ */
+let mathMode='mental', mathQ=null;
+$('#mathSeg').addEventListener('click',e=>{
+  const b=e.target.closest('button'); if(!b)return;
+  $$('#mathSeg button').forEach(x=>x.classList.remove('on')); b.classList.add('on');
+  mathMode=b.dataset.mode; renderMath();
+});
+function genMath(){
+  const r=Math.random();
+  if(r<0.4){ // 加法
+    const a=Math.floor(Math.random()*900)+100, b=Math.floor(Math.random()*900)+100;
+    return {q:`${a} + ${b} = ?`, a:a+b};
+  } else if(r<0.7){ // 减法
+    let a=Math.floor(Math.random()*900)+200, b=Math.floor(Math.random()*a);
+    return {q:`${a} - ${b} = ?`, a:a-b};
+  } else if(r<0.9){ // 乘法
+    const a=Math.floor(Math.random()*9)+2, b=Math.floor(Math.random()*9)+2;
+    return {q:`${a} × ${b} = ?`, a:a*b};
+  } else { // 除法
+    const b=Math.floor(Math.random()*9)+2, a=b*(Math.floor(Math.random()*9)+2);
+    return {q:`${a} ÷ ${b} = ?`, a:a/b};
+  }
+}
+const UNIT_MATH=[
+  /* ═══════════════ 第一单元：大数的认识 ═══════════════ */
+  {q:'从右边起，第5位是什么位？', a:'万位', free:true, tip:'数位顺序表'},
+  {q:'从右边起，第9位是什么位？', a:'亿位', free:true, tip:'数位顺序表'},
+  {q:'一个八位数，最高位是（    ）位', a:'千万', free:true, tip:'位数判断'},
+  {q:'10个一万是多少？', a:'十万', free:true, tip:'计数单位'},
+  {q:'10个一千万是多少？', a:'一亿', free:true, tip:'计数单位'},
+  {q:'100个一百万等于（    ）', a:'一亿', free:true, tip:'大数组成'},
+  {q:'350400 读作什么？（用汉字）', a:'三十五万零四百', free:true, tip:'大数读法'},
+  {q:'7006000 读作什么？（用汉字）', a:'七百万六千', free:true, tip:'大数读法'},
+  {q:'50030070 读作什么？（用汉字）', a:'五千零三万零七十', free:true, tip:'含两个零的读法'},
+  {q:'五万零三百写作数字？', a:'50300', free:true, tip:'大数写法'},
+  {q:'八十万零五十写作数字？', a:'800050', free:true, tip:'大数写法'},
+  {q:'把 840000 改写成用"万"作单位的数', a:'84万', free:true, tip:'改写成万'},
+  {q:'把 30700000 改写成用"万"作单位的数', a:'3070万', free:true, tip:'改写成万'},
+  {q:'省略万位后面尾数：849000 ≈ ?', a:'85万', free:true, tip:'四舍五入到万位'},
+  {q:'省略万位后面尾数：750800 ≈ ?', a:'75万', free:true, tip:'四舍五入到万位'},
+  {q:'省略亿位后面尾数：996000000 ≈ ?', a:'10亿', free:true, tip:'四舍五入到亿位'},
+  {q:'省略亿位后面尾数：849900000 ≈ ?', a:'8亿', free:true, tip:'四舍五入到亿位'},
+  {q:'比较大小：52000 ○ 50020（填>或<）', a:'>', free:true, tip:'大数比较'},
+  {q:'最小的八位数比最大的七位数多（    ）', a:1, tip:'极值差'},
+
+  /* ═══════════════ 第二单元：公顷和平方千米 ═══════════════ */
+  {q:'1 公顷 = （    ）平方米', a:10000, tip:'面积单位换算'},
+  {q:'1 平方千米 = （    ）公顷', a:100, tip:'面积单位换算'},
+  {q:'1 平方千米 = （    ）平方米', a:1000000, tip:'跨级换算'},
+  {q:'边长是（    ）米的正方形，面积是 1 公顷', a:100, tip:'1公顷的直观认识'},
+  {q:'边长是（    ）米的正方形，面积是 1 平方千米', a:1000, tip:'1平方千米的直观认识'},
+  {q:'一个标准足球场面积约 7000（    ）', a:'平方米', free:true, tip:'实际面积感知'},
+  {q:'我们教室的面积约 50（    ）', a:'平方米', free:true, tip:'实际面积感知'},
+  {q:'北京市的面积约 16000（    ）', a:'平方千米', free:true, tip:'实际面积感知'},
+  {q:'一个成人手掌面积约 1（    ）', a:'平方分米', free:true, tip:'小面积感知'},
+  {q:'5 公顷 = （    ）平方米', a:50000, tip:'高级→低级'},
+  {q:'300 公顷 = （    ）平方千米', a:3, tip:'公顷→平方千米'},
+  {q:'80000 平方米 = （    ）公顷', a:8, tip:'平方米→公顷'},
+  {q:'4 平方千米 = （    ）公顷', a:400, tip:'平方千米→公顷'},
+  {q:'一块正方形菜地，边长 300 米，面积是（    ）公顷', a:9, tip:'应用题'},
+  {q:'一个长方形公园长 500 米、宽 200 米，面积合（    ）公顷', a:10, tip:'应用题'},
+
+  /* ═══════════════ 第三单元：角的度量 ═══════════════ */
+  {q:'直角 = （    ）°', a:90, tip:'角的分类'},
+  {q:'平角 = （    ）°', a:180, tip:'角的分类'},
+  {q:'周角 = （    ）°', a:360, tip:'角的分类'},
+  {q:'小于 90° 的角叫（    ）角', a:'锐', free:true, tip:'锐角定义'},
+  {q:'大于 90° 且 小于 180° 的角叫（    ）角', a:'钝', free:true, tip:'钝角定义'},
+  {q:'1 个周角 = （    ）个直角', a:4, tip:'角度换算'},
+  {q:'1 个平角 = （    ）个直角', a:2, tip:'角度换算'},
+  {q:'90° 的角 + 90° 的角 = （    ）° 的角，这个角叫（    ）角', a:'180 平', free:true, tip:'拼角'},
+  {q:'三角形的三个内角加起来一共是（    ）°', a:180, tip:'三角形内角和'},
+  {q:'一个三角形中，已知 ∠1=60°，∠2=70°，那么 ∠3 = （    ）°', a:50, tip:'求第三个角'},
+  {q:'等腰直角三角形的每个底角是（    ）°', a:45, tip:'特殊三角形'},
+  {q:'两条直线相交成直角，就说这两条直线互相（    ）', a:'垂直', free:true, tip:'垂直的定义'},
+  {q:'同一平面内永不相交的两条直线互相（    ）', a:'平行', free:true, tip:'平行的定义'},
+  {q:'过一点可以画（    ）条直线', a:'无数', free:true, tip:'直线的性质'},
+  {q:'过两点只能画（    ）条直线', a:1, tip:'两点确定一条线'},
+  {q:'量角器的中心点要与角的（    ）重合', a:'顶点', free:true, tip:'量角器使用'},
+  {q:'量角器的 0 刻度线要与角的一条边（    ）', a:'重合', free:true, tip:'量角器使用'},
+  {q:'钟面上 3 时整，时针和分针成（    ）° 角', a:90, tip:'钟面角度'},
+  {q:'钟面上 6 时整，时针和分针成（    ）° 角', a:180, tip:'钟面角度'},
+  {q:'一副三角板中，最大的角是（    ）°', a:90, tip:'三角板知识'},
+  {q:'用一副三角板可以拼出的最小锐角是（    ）°', a:15, tip:'拼角组合'},
+
+  /* ═══════════════ 第四单元：三位数乘两位数 ═══════════════ */
+  {q:'125 × 16 = ?', a:2000, tip:'凑整巧算（125×8=1000）'},
+  {q:'25 × 32 = ?', a:800, tip:'拆分巧算（25×4=100）'},
+  {q:'140 × 20 = ?', a:2800, tip:'末尾有0的乘法'},
+  {q:'306 × 24 = ?', a:7344, tip:'中间有0的乘法'},
+  {q:'估算：198 × 41 ≈ ?（把因数看成整十数）', a:'8000', free:true, tip:'估算'},
+  {q:'估算：302 × 58 ≈ ?', a:'18000', free:true, tip:'估算'},
+  {q:'一个因数不变，另一个因数乘 10，积也（    ）', a:'乘10', free:true, tip:'积的变化规律'},
+  {q:'两个因数都乘 10，积会（    ）', a:'乘100', free:true, tip:'积的变化规律'},
+  {q:'150 × 40 积的末尾共有（    ）个 0', a:3, tip:'末尾0的个数'},
+  {q:'汽车每小时行 85 千米，12 小时行（    ）千米', a:1020, tip:'行程问题'},
+  {q:'学校买了 24 套课桌椅，每套 128 元，共花（    ）元', a:3072, tip:'总价问题'},
+  {q:'25 × 14 + 25 × 26 = 25 × (14+26) = ?', a:1000, tip:'乘法分配律'},
+  {q:'99 × 38 = (100-1) × 38 = ?', a:3762, tip:'凑整减补'},
+  {q:'甲数 × 乙数 = 240，如果甲数乘 3 不变，乙数不变，积变为（    ）', a:720, tip:'积的变化规律'},
+  {q:'320 × 50 与 32 × 500 的积相比，（    ）', a:'相等', free:true, tip:'积不变规律'},
+  {q:'一个三位数乘两位数，积最少是（    ）位数', a:4, tip:'积的位数'},
+  {q:'999 × 99 的积大约是（    ）（估算）', a:'99000', free:true, tip:'大数估算'},
+
+  /* ═══════════════ 第五单元：平行四边形与梯形 ═══════════════ */
+  {q:'平行四边形的两组对边分别（    ）且（    ）', a:'平行 相等', free:true, tip:'平行四边形性质'},
+  {q:'平行四边形有（    ）条高', a:'无数', free:true, tip:'平行四边形的高'},
+  {q:'长方形是一种特殊的（    ）四边形', a:'平行', free:true, tip:'特殊平行四边形'},
+  {q:'正方形是特殊的（    ），也是特殊的（    ）', a:'长方形 平行四边形', free:true, tip:'图形包含关系'},
+  {q:'只有一组对边平行的四边形叫做（    ）', a:'梯形', free:true, tip:'梯形定义'},
+  {q:'梯形有（    ）条高', a:'无数', free:true, tip:'梯形的高'},
+  {q:'两腰相等的梯形叫（    ）梯形', a:'等腰', free:true, tip:'等腰梯形'},
+  {q:'有一个角是直角的梯形叫（    ）梯形', a:'直角', free:true, tip:'直角梯形'},
+  {q:'从平行四边形一条边上的一点向对边引一条（    ），这点和垂足之间的线段叫做高', a:'垂线', free:true, tip:'高的定义'},
+  {q:'用两根长度都是 6cm 的木棒和两根 4cm 的木棒，能围成一个（    ）', a:'平行四边形', free:true, tip:'围图形'},
+  {q:'平行四边形的对角（    ）', a:'相等', free:true, tip:'对角性质'},
+  {q:'梯形的上底和下底是互相（    ）的两条边', a:'平行', free:true, tip:'上下底关系'},
+  {q:'在两条平行线之间画若干条垂线段，这些垂线段的长度都（    ）', a:'相等', free:true, tip:'平行线间距离'},
+
+  /* ═══════════════ 第六单元：除数是两位数的除法 ═══════════════ */
+  {q:'360 ÷ 12 = ?', a:30, tip:'除法计算'},
+  {q:'480 ÷ 24 = ?', a:20, tip:'除法计算'},
+  {q:'720 ÷ 80 = ?', a:9, tip:'除数是整十数'},
+  {q:'验算有余数的除法：（    ）× 除数 + 余数 = 被除数', a:'商', free:true, tip:'除法各部分关系'},
+  {q:'25 × (    ) < 240，括号里最大能填几？', a:9, tip:'试商-最大填几'},
+  {q:'45 × (    ) < 370，括号里最大能填几？', a:8, tip:'试商-最大填几'},
+  {q:'除数是两位数，先看被除数的前（    ）位', a:'两', free:true, tip:'除法步骤'},
+  {q:'378 ÷ 18 = ?', a:21, tip:'两位数除三位数'},
+  {q:'768 ÷ 32 = ?', a:24, tip:'两位数除三位数'},
+  {q:'960 ÷ 16 = ?', a:60, tip:'末尾有0的除法'},
+  {q:'商不变的规律：被除数和除数同时乘或除以相同的数（0除外），（    ）不变', a:'商', free:true, tip:'商不变规律'},
+  {q:'150 ÷ 25 = (150×4) ÷ (25×4) = ?', a:6, tip:'利用商不变规律'},
+  {q:'800 ÷ 25 = (800×4) ÷ (25×4) = ?', a:32, tip:'利用商不变规律'},
+  {q:'甲数 ÷ 乙数 = 15……3，如果甲数和乙数都乘 10，商是（    ），余数是（    ）', a:'15 30', free:true, tip:'余数变化规律'},
+  {q:'一个数除以 15，商是 12 余 8，这个数是（    ）', a:188, tip:'逆向求被除数'},
+  {q:'把 180 本练习本平均分给 24 名同学，每人分（    ）本，还剩（    ）本', a:'7 12', free:true, tip:'带余除法应用'},
+
+  /* ═══════════════ 第七单元：条形统计图 ═══════════════ */
+  {q:'要清楚地看出数量的多少，适合用（    ）统计图', a:'条形', free:true, tip:'统计图选择'},
+  {q:'条形统计图中，一格可以表示 1、2、5 或（    ）等单位数量', a:'10', free:true, tip:'刻度选择'},
+  {q:'当数据较大时，条形统计图的一格可以代表（    ）', a:'多个', free:true, tip:'以一当多'},
+  {q:'纵向条形统计图的纵轴表示（    ）', a:'数量', free:true, tip:'纵轴含义'},
+  {q:'横向条形统计图的纵轴通常表示（    ）', a:'类别/项目', free:true, tip:'横轴含义'},
+  {q:'某班投票选班长：小明 18 票、小红 12 票、小刚 6 票。小明比小红多（    ）票', a:6, tip:'读图计算'},
+  {q:'上题中，总票数是（    ）票', a:36, tip:'读图合计'},
+  {q:'图书馆周一借出 45 本，周二 30 本，周三 55 本。这三天平均每天借出（    ）本', a:43, tip:'平均数'},
+  {q:'条形统计图中，直条越（    ）表示数量越多', a:'高/长', free:true, tip:'直条含义'},
+  {q:'制作条形统计图时，要根据数据的（    ）来确定每格代表几', a:'大小范围', free:true, tip:'制图要点'},
+
+  /* ═══════════════ 第八单元：数学广角（优化） ═══════════════ */
+  {q:'烙饼问题：烙 1 张饼（两面都要烙），每次最多烙 2 张，每面需 3 分钟，最少（    ）分钟', a:6, tip:'烙饼-基本'},
+  {q:'烙饼问题：烙 2 张饼，每次最多烙 2 张，每面 3 分钟，最少（    ）分钟', a:6, tip:'烙饼-同时烙'},
+  {q:'烙饼问题：烙 3 张饼，每次最多烙 2 张，每面 3 分钟，最优方案需（    ）分钟', a:18, tip:'烙饼-交替烙'},
+  {q:'烙饼问题：烙 4 张饼，每次最多烙 2 张，每面 3 分钟，最少（    ）分钟', a:12, tip:'烙饼-推广'},
+  {q:'烙饼问题：如果要烙 5 张饼（每面 3 分钟），最优需要（    ）分钟', a:30, tip:'烙饼-找规律'},
+  {q:'烙饼规律：烙 n 张饼（n>1），最少时间 = n × 每面时间 × （    ）÷ 每次可烙张数', a:'2', free:true, tip:'烙饼公式'},
+  {q:'沏茶问题：洗水壶 1 分钟 → 烧水 8 分钟 → 洗茶杯 2 分钟 → 拿茶叶 1 分钟 → 泡茶 1 分钟。最短（    ）分钟完成', a:11, tip:'沏茶-并行'},
+  {q:'上题中，烧水的同时可以做哪些事？（选一项）', a:'洗茶杯/拿茶叶', free:true, tip:'沏茶-统筹'},
+  {q:'小明早上起床后：穿衣 3 分、煮粥 10 分、洗脸 4 分、吃粥 8 分。最短（    ）分吃完出发', a:21, tip:'日常优化'},
+  {q:'排队问题：3 人打水，分别需 2 分、4 分、6 分。怎样安排总等待时间最短？先让用时（    ）的人打', a:'少/短', free:true, tip:'排队优化'},
+  {q:'上题中最短总等待时间 = （    ）分钟', a:22, tip:'排队计算'},
+];
+function renderMath(){
+  const box=$('#mathBox');
+  if(mathMode==='wrong'){
+    if(!S.wrong.length){ box.innerHTML='<p class="muted">🎉 还没有错题，真厉害！</p>'; return; }
+    box.innerHTML=S.wrong.map((w,i)=>`<div class="item"><div class="it"><div class="t">${w.q}</div><div class="s">正确答案：${w.a}</div></div><button class="chk" data-del="${i}">移除</button></div>`).join('');
+    $$('#mathBox [data-del]').forEach(b=>b.onclick=()=>{ S.wrong.splice(+b.dataset.del,1); save(); renderMath(); });
+    return;
+  }
+  if(mathMode==='unit'){
+    if(!mathQ||mathQ._unit!==true){ mathQ={_unit:true, idx:0, list:shuffle(UNIT_MATH.slice())}; }
+    const item=mathQ.list[mathQ.idx];
+    box.innerHTML=`<div class="quiz-top"><span>单元重点题 ${mathQ.idx+1}/${mathQ.list.length}</span></div>
+      <div class="qprompt">${item.q}</div>
+      <div class="qhint">${item.free?'输入答案即可':''}</div>
+      <input type="text" id="mA" placeholder="输入答案" ${item.free?'':'inputmode="numeric"'}>
+      <button class="btn block" id="mSub">提交</button>
+      <div class="feedback" id="mFb"></div>`;
+    const sub=()=>{
+      const v=$('#mA').value.trim(); if(v===''){toast('写一下答案吧');return;}
+      // 文字题直接比较字符串，数字题转数字比较
+      const ok = item.free ? v===String(item.a) : Number(v)===item.a;
+      const fb=$('#mFb');
+      if(ok){ S.mathCorrect++; S.total.m++; S.today.m++; maybeMathSun(); fb.className='feedback ok'; fb.innerHTML='✅ 正确！'; }
+      else { fb.className='feedback no'; fb.innerHTML=`❌ 正确答案：<b>${item.a}</b>`;
+        if(!S.wrong.find(w=>w.q===item.q)) S.wrong.push({q:item.q,a:item.a}); }
+      save(); renderHome();
+      mathQ.idx++;
+      setTimeout(()=>{
+        if(mathQ.idx>=mathQ.list.length){
+          // 做完了，显示完成页，不重复
+          mathQ=null;
+          box.innerHTML=`<div style="text-align:center;padding:30px 0">
+            <div style="font-size:48px;margin-bottom:8px">🎉</div>
+            <h3 style="margin:0 0 8px">单元重点题全部做完！</h3>
+            <p class="muted" style="margin-bottom:16px">共 ${UNIT_MATH.length} 道题，太棒了！</p>
+            <button class="btn mint" id="mRetry" style="margin-right:8px">🔄 再做一遍</button>
+            <button class="btn" id="mBack">🔢 回到口算</button>
+          </div>`;
+          $('#mRetry').onclick=()=>{ mathMode='unit'; renderMath(); };
+          $('#mBack').onclick=()=>{
+            mathMode='mental';
+            $$('#mathSeg button').forEach(x=>x.classList.remove('on'));
+            document.querySelector('[data-mode=mental]').classList.add('on');
+            renderMath();
+          };
+        } else renderMath();
+      });
+    $('#mSub').onclick=sub;
+    $('#mA').addEventListener('keydown',e=>{if(e.key==='Enter')sub();});
+    return;
+  }
+  // mental
+  if(!mathQ||mathQ._mental!==true){ mathQ={_mental:true, ...genMath()}; }
+  box.innerHTML=`<div class="quiz-top"><span>口算练习 · 累计正确 ${S.mathCorrect}</span><span>每30题 ☀️+1</span></div>
+    <div class="qprompt">${mathQ.q}</div>
+    <input type="text" id="mA" placeholder="输入答案" inputmode="numeric" autocomplete="off">
+    <button class="btn block" id="mSub">提交</button>
+    <div class="feedback" id="mFb"></div>`;
+  const sub2=()=>{
+    const v=$('#mA').value.trim(); if(v===''){toast('写一下答案吧');return;}
+    const ok=Number(v)===mathQ.a;
+    const fb=$('#mFb');
+    if(ok){ S.mathCorrect++; S.total.m++; S.today.m++; const got=maybeMathSun();
+      fb.className='feedback ok'; fb.innerHTML='✅ 正确！'+(got?' 🌟☀️+1':''); }
+    else { fb.className='feedback no'; fb.innerHTML=`❌ 正确答案：<b>${mathQ.a}</b>`;
+      if(!S.wrong.find(w=>w.q===mathQ.q)) S.wrong.push({q:mathQ.q,a:mathQ.a}); }
+    save(); renderHome();
+    mathQ={_mental:true, ...genMath()};
+    setTimeout(renderMath, 650);
+  };
+  $('#mSub').onclick=sub2;
+  $('#mA').addEventListener('keydown',e=>{if(e.key==='Enter')sub2();});
+  setTimeout(()=>$('#mA')&&$('#mA').focus(),50);
+}
+}
+function maybeMathSun(){
+  if(S.mathCorrect>0 && S.mathCorrect%30===0){ S.sun+=1; toast('🎉 数学答对30题，☀️阳光+1！'); return true; }
+  return false;
+}
+
+/* ============ english ============ */
+let enUnit='all', enQueue=[], enIdx=0;
+function buildENSeg(){
+  const seg=$('#enUnitSeg'); seg.innerHTML='';
+  const opts=[{k:'all',n:'全部单元'},...EN_UNITS.map((u,i)=>({k:'u'+i,n:u.unit.split(' ')[0]+' '+u.unit.split(' ')[1]}))];
+  opts.forEach(o=>{
+    const b=document.createElement('button'); b.textContent=o.n; b.dataset.k=o.k;
+    if(o.k===enUnit)b.classList.add('on');
+    b.onclick=()=>{ enUnit=o.k; enIdx=0; enQueue=[]; buildENSeg(); renderEN(); };
+    seg.appendChild(b);
+  });
+}
+function buildENQueue(){
+  let items=[];
+  const units = enUnit==='all'?EN_UNITS:EN_UNITS.filter((_,i)=>'u'+i===enUnit);
+  units.forEach(u=>{
+    u.words.forEach(w=>items.push({type:'spell', q:w[1], a:w[0], ex:w[1]}));
+    u.sentences.forEach(s=>items.push({type:'read', q:s[0], zh:s[1]}));
+  });
+  enQueue=shuffle(items);
+}
+function renderEN(){
+  buildENSeg();
+  const box=$('#enBox');
+  if(!enQueue.length||enIdx>=enQueue.length){ buildENQueue(); enIdx=0; }
+  const it=enQueue[enIdx];
+  if(!it){ box.innerHTML='<p class="muted">暂无题目</p>'; return; }
+  if(it.type==='spell'){
+    box.innerHTML=`<div class="quiz-top"><span>拼写练习 ${enIdx+1}/${enQueue.length}</span><span>每30题 ☀️+1</span></div>
+      <div class="qprompt">${it.q}</div>
+      <div class="qhint">看中文写出英文单词</div>
+      <input type="text" id="eA" placeholder="英文单词" autocomplete="off">
+      <button class="btn block mint" id="eSub">提交</button>
+      <div class="feedback" id="eFb"></div>`;
+  } else {
+    box.innerHTML=`<div class="quiz-top"><span>朗读练习 ${enIdx+1}/${enQueue.length}</span><span>每30题 ☀️+1</span></div>
+      <div class="qprompt">${it.q} <button class="speak" id="eSp">🔊</button></div>
+      <div class="qhint">中文意思：${it.zh} ｜ 点🔊听读音，读完后点完成</div>
+      <button class="btn block mint" id="eSub">我读完啦 ✓</button>
+      <div class="feedback" id="eFb"></div>`;
+    $('#eSp').onclick=()=>speak(it.q);
+  }
+  const submit=()=>{
+    let ok;
+    if(it.type==='spell'){
+      const v=$('#eA').value.trim().toLowerCase().replace(/\s+/g,'');
+      ok = v===it.a.toLowerCase().replace(/\s+/g,'');
+      const fb=$('#eFb');
+      if(ok){ S.engCorrect++; S.total.e++; S.today.e++; const got=maybeEngSun();
+        fb.className='feedback ok'; fb.innerHTML='✅ 拼写正确！'+(got?' 🌟☀️+1':''); }
+      else { fb.className='feedback no'; fb.innerHTML=`❌ 正确拼写：<b>${it.a}</b>`; }
+    } else {
+      S.engCorrect++; S.total.e++; S.today.e++; const got=maybeEngSun();
+      const fb=$('#eFb'); fb.className='feedback ok'; fb.innerHTML='✅ 完成朗读！'+(got?' 🌟☀️+1':'');
+    }
+    save(); renderHome(); enIdx++;
+    setTimeout(renderEN, 750);
+  };
+  $('#eSub').onclick=submit;
+  if(it.type==='spell'){ const e=$('#eA'); e.addEventListener('keydown',ev=>{if(ev.key==='Enter')submit();}); setTimeout(()=>e.focus(),50); }
+}
+function maybeEngSun(){
+  if(S.engCorrect>0 && S.engCorrect%30===0){ S.sun+=1; toast('🎉 英语答对30题，☀️阳光+1！'); return true; }
+  return false;
+}
+
+/* ============ exercise ============ */
+function renderEx(){
+  const box=$('#exList'); box.innerHTML='';
+  const todayEx=S.exDone[todayStr()]||{};
+  EX_ITEMS.forEach(it=>{
+    const done=!!todayEx[it.id];
+    const added=todayEx[it.id]&&todayEx[it.id].add||0;
+    const d=document.createElement('div'); d.className='ex-card';
+    d.innerHTML=`<div class="ei">${it.icon}</div>
+      <div class="et"><div class="t">${it.name}</div><div class="s">${it.desc}</div>
+      ${done?(added?`<div class="addpick" style="opacity:.5;pointer-events:none"><span style="color:#e67e22;font-weight:bold">已加 ☀️+${added}</span></div>`:`<div class="addpick"><button data-add="1">+1☀️</button><button data-add="2">+2☀️</button><button data-add="3">+3☀️</button></div>`):''}
+      </div>
+      <button class="chk ${done?'on':''}" data-id="${it.id}">${done?'已完成✓':'打卡'}</button>`;
+    box.appendChild(d);
+  });
+  $$('#exList .chk').forEach(b=>b.onclick=()=>{
+    const id=b.dataset.id;
+    if((S.exDone[todayStr()]||{})[id]){ toast('今天已经打过卡啦～'); return; }
+    S.exDone[todayStr()]=S.exDone[todayStr()]||{}; S.exDone[todayStr()][id]={done:true};
+    save(); renderEx(); renderHome(); toast('运动打卡成功！🎉 选择加阳光吧');
+  });
+  $$('#exList [data-add]').forEach(b=>b.onclick=()=>{
+    const n=+b.dataset.add;
+    const card=b.closest('.ex-card');
+    const chk=card.querySelector('.chk');
+    const id=chk.dataset.id;
+    const rec=S.exDone[todayStr()]&&S.exDone[todayStr()][id];
+    if(rec && rec.add){ return; }
+    // 兼容旧数据：如果存的是 true，转成对象
+    if(rec===true){ S.exDone[todayStr()][id]={done:true}; }
+    S.sun+=n; S.exDone[todayStr()][id].add=n; save(); renderEx(); renderHome(); toast('🎉 表扬蛋蛋！☀️+'+n);
+  });
+}
+
+/* ============ dog ============ */
+// 衣服池 — 每次兑换小衣服随机抽一件
+const CLOTHES_POOL=[
+  {id:'c1', name:'红白条纹T恤', icon:'👕', css:'striped-red', rarity:'普通'},
+  {id:'c2', name:'蓝色背带裤', icon:'👖', css:'overalls-blue', rarity:'普通'},
+  {id:'c3', name:'粉色小裙子', icon:'👗', css:'dress-pink', rarity:'稀有'},
+  {id:'c4', name:'超人披风', icon:'🦸', css:'cape-hero', rarity:'稀有'},
+  {id:'c5', name:'圣诞小毛衣', icon:'🧥', css:'sweater-xmas', rarity:'稀有'},
+  {id:'c6', name:'恐龙连体衣', icon:'🦕', css:'onesie-dino', rarity:'史诗'},
+  {id:'c7', name:'公主蓬蓬裙', icon:'👸', css:'dress-princess', rarity:'史诗'},
+  {id:'c8', name:'宇航员套装', icon:'🧑‍🚀', css:'suit-space', rarity:'传说'},
+  {id:'c9', name:'小龙虾斗篷', icon:'🦞', css:'cape-lobster', rarity:'传说'},
+  {id:'c10',name:'彩虹彩虹衣', icon:'🌈', css:'rainbow-coat',  rarity:'传说'},
+];
+const RARITY_COLOR={'普通':'#95a5a6','稀有':'#9b59b6','史诗':'#e67e22','传说':'#e74c3c'};
+const SHOP=[
+  {key:'food',icon:'🐟',name:'猫粮',price:10,grow:12,desc:'喂养+12成长'},
+  {key:'clothes',icon:'👕',name:'小衣服',price:20,grow:0,desc:'随机抽一件衣服'},
+  {key:'medicine',icon:'💊',name:'药品',price:15,grow:9,desc:'喂养+9成长'},
+];
+function dogLevel(g){ if(g>=150)return 3; if(g>=80)return 2; if(g>=30)return 1; return 0; }
+const DOG_NAMES=['幼崽小猫','可爱小猫','帅气大猫','超级神猫'];
+function renderDog(){
+  const g=S.dog.growth, lv=dogLevel(g);
+  const dog=$('#dog'); dog.className='dog lv'+lv;
+  $('#dogName').textContent=DOG_NAMES[lv];
+  $('#dogGrow').textContent='成长值 '+g;
+  const next=[30,80,150,9999][lv];
+  $('#dogBar').style.width=Math.min(100, g/next*100)+'%';
+  // ═══ 换装系统：角色整体替换（带过渡动画） ═══
+  const dogEl=$('#dog');
+  const prevOutfit = dogEl.className.match(/outfit-(\S+)/);
+  const prevId = prevOutfit ? prevOutfit[1] : null;
+  
+  // 清除旧衣服的额外DOM元素
+  dogEl.querySelectorAll('.outfit-extra').forEach(e=>e.remove());
+  const outfitEl=$('#catOutfit'); outfitEl.innerHTML='';
+  
+  // 重置基础类名，再添加新衣服类名
+  dogEl.className='dog lv'+lv;
+  
+  if(S.dog.equipped){
+    const eq=CLOTHES_POOL.find(c=>c.id===S.dog.equipped);
+    if(eq){
+      dogEl.classList.add('outfit-'+eq.id);
+      const bodyEl=dogEl.querySelector('.body');
+      
+      // 只构建CSS无法实现的元素（SVG、复杂装饰等）
+      if(eq.id==='c3'){ // 粉色裙子 — 裙摆层
+        const sk=el('div','skirt-layer');
+        sk.appendChild(el('div','gown-skirt-inner'));
+        sk.appendChild(el('div','gown-skirt-shine'));
+        bodyEl.appendChild(sk);
+        const bt=el('div','bow-text'); bt.textContent='🎀'; bodyEl.appendChild(bt);
+      }
+      if(eq.id==='c4'){ // 超人披风
+        const cape=el('div','cape-wrap outfit-extra'); dogEl.insertBefore(cape, bodyEl);
+        const em=el('div','s-emblem'); em.textContent='S'; bodyEl.appendChild(em);
+        bodyEl.appendChild(el('div','boot-l'));
+        bodyEl.appendChild(el('div','boot-r'));
+      }
+      if(eq.id==='c5'){ // 圣诞毛衣
+        bodyEl.appendChild(el('div','x-collar'));
+        const snows=el('div','snow-flakes');
+        '❄❄❄'.split('').forEach(s=>{const sp=document.createElement('span');sp.textContent=s;snows.appendChild(sp);});
+        bodyEl.appendChild(snows);
+        bodyEl.appendChild(el('div','x-cuff-l'));
+        bodyEl.appendChild(el('div','x-cuff-r'));
+        // 圣诞帽
+        const hat=el('div','hat-santa outfit-extra'); dogEl.insertBefore(hat, bodyEl);
+      }
+      if(eq.id==='c6'){ // 恐龙衣
+        const sp=el('div','dino-spikes-row outfit-extra');
+        for(let i=0;i<5;i++) sp.appendChild(document.createElement('span'));
+        dogEl.insertBefore(sp, bodyEl);
+        bodyEl.appendChild(el('div','dino-tail-tip'));
+      }
+      if(eq.id==='c7'){ // 公主裙（传说）
+        const sk=el('div','gown-skirt');
+        sk.appendChild(el('div','gown-skirt-inner'));
+        sk.appendChild(el('div','gown-skirt-shine'));
+        bodyEl.appendChild(sk);
+        bodyEl.appendChild(el('div','gown-gold-line'));
+        const bw=el('div','gown-bow'); bw.textContent='🎀'; bodyEl.appendChild(bw);
+        const co=el('div','gown-corset');
+        for(let i=0;i<3;i++) co.appendChild(el('div','corset-stitch'));
+        bodyEl.appendChild(co);
+        bodyEl.appendChild(el('div','puff-sl'));
+        bodyEl.appendChild(el('div','puff-sr'));
+        // SVG皇冠
+        const crown=el('div','crown-svg outfit-extra');
+        crown.innerHTML='<svg viewBox="0 0 40 28" fill="none"><path d="M2 26L7 6L14 18L20 3L26 18L33 6L38 26H2Z" fill="url(#cg2)" stroke="#f39c12" stroke-width="1.5"/><circle cx="20" cy="6" r="3" fill="#e74c3c"/><circle cx="11" cy="10" r="2.2" fill="#3498db"/><circle cx="29" cy="10" r="2.2" fill="#2ecc71"/><defs><linearGradient id="cg2" x1="20" y1="3" x2="20" y2="26"><stop stop-color="#f1c40f"/><stop offset="1" stop-color="#f39c12"/></linearGradient></defs></svg>';
+        dogEl.appendChild(crown);
+        bodyEl.appendChild(el('div','jewel-glow'));
+        const sl=el('div','star-twinkle sl'); sl.textContent='✦'; bodyEl.appendChild(sl);
+        const sr=el('div','star-twinkle sr'); sr.textContent='✦'; bodyEl.appendChild(sr);
+        const glow=el('div','princess-glow outfit-extra'); dogEl.insertBefore(glow, bodyEl);
+      }
+      if(eq.id==='c8'){ // 宇航员（传说）
+        const helm=el('div','helmet-shell outfit-extra');
+        helm.appendChild(el('div','visor-glass')); dogEl.appendChild(helm);
+        const bd=el('div','nasa-badge'); bd.textContent='NASA'; bodyEl.appendChild(bd);
+        const ctrl=el('div','ctrl-panel');
+        for(let i=0;i<4;i++){const b=document.createElement('b');ctrl.appendChild(b);}
+        bodyEl.appendChild(ctrl);
+        bodyEl.appendChild(el('div','space-boot-l'));
+        bodyEl.appendChild(el('div','space-boot-r'));
+      }
+      if(eq.id==='c9'){ // 小龙虾（传说）
+        const cape=el('div','lobster-cape outfit-extra'); dogEl.insertBefore(cape, bodyEl);
+        bodyEl.appendChild(el('div','shell-plaque'));
+        const cl=el('div','outfit-claw-big cl'); cl.textContent='🦞'; outfitEl.appendChild(cl);
+        const cr=el('div','outfit-claw-big cr'); cr.textContent='🦞'; outfitEl.appendChild(cr);
+        bodyEl.appendChild(el('div','antenna-l'));
+        bodyEl.appendChild(el('div','antenna-r'));
+      }
+      if(eq.id==='c10'){ // 彩虹衣（传说）
+        const arc=el('div','rainbow-arc-wrap');
+        arc.innerHTML='<svg viewBox="0 0 70 32"><path d="M5 32 A30 30 0 0 1 65 32" stroke="#e74c3c" stroke-width="3.5" fill="none" stroke-linecap="round"/><path d="M8 32 A27 27 0 0 1 62 32" stroke="#f39c12" stroke-width="3.5" fill="none" stroke-linecap="round"/><path d="M11 32 A24 24 0 0 1 59 32" stroke="#f1c40f" stroke-width="3.5" fill="none" stroke-linecap="round"/><path d="M14 32 A21 21 0 0 1 56 32" stroke="#2ecc71" stroke-width="3.5" fill="none" stroke-linecap="round"/><path d="M17 32 A18 18 0 0 1 53 32" stroke="#3498db" stroke-width="3.5" fill="none" stroke-linecap="round"/><path d="M20 32 A15 15 0 0 1 50 32" stroke="#9b59b6" stroke-width="3.5" fill="none" stroke-linecap="round"/></svg>';
+        outfitEl.appendChild(arc);
+        const ccl=el('div','cloud-deco cl'); ccl.textContent='☁️'; outfitEl.appendChild(ccl);
+        const ccr=el('div','cloud-deco cr'); ccr.textContent='☁️'; outfitEl.appendChild(ccr);
+        ['✨','⭐','💫','✦'].forEach(s=>{const sp=el('div','sparkle-magic');sp.textContent=s;outfitEl.appendChild(sp);});
+      }
+    }
+  }
+
+  // shop
+  const shop=$('#shop'); shop.innerHTML='';
+  SHOP.forEach(s=>{
+    const can=S.sun>=s.price;
+    const d=document.createElement('div'); d.className='sc';
+    d.innerHTML=`<div class="si">${s.icon}</div><div class="sn">${s.name}</div>
+      <div class="sp">${s.price}☀️ · ${s.desc}</div>
+      <button class="btn sm block ${can?'':'ghost'}" data-buy="${s.key}" ${can?'':'disabled style="opacity:.5"'}>兑换</button>`;
+    shop.appendChild(d);
+  });
+  $$('#shop [data-buy]').forEach(b=>b.onclick=()=>{
+    const k=b.dataset.buy, item=SHOP.find(x=>x.key===k);
+    if(S.sun<item.price){ toast('阳光不够哦，多做习题赚阳光☀️'); return; }
+    S.sun-=item.price;
+    if(k==='clothes'){
+      // 随机抽一件衣服（排除已拥有的）
+      const owned=(S.dog.wardrobe||[]).map(w=>w.id);
+      const available=CLOTHES_POOL.filter(c=>!owned.includes(c.id));
+      const pool=available.length>0?available:CLOTHES_POOL; // 全集了就允许重复
+      const drawn=pool[Math.floor(Math.random()*pool.length)];
+      S.dog.wardrobe=S.dog.wardrobe||[];
+      S.dog.wardrobe.push({id:drawn.id,name:drawn.name,icon:drawn.icon,rarity:drawn.rarity,time:Date.now()});
+      save(); renderDog(); renderHome();
+      toast('🎁 抽到了「'+drawn.name+'」！去衣柜穿上吧～');
+    } else {
+      S.dog.inv[k]=(S.dog.inv[k]||0)+1;
+      save(); renderDog(); renderHome(); toast('兑换成功：'+item.name+' 🎁');
+    }
+  });
+
+  // 衣柜
+  const wrd=$('#wardrobe')||document.getElementById('wardrobe');
+  if(!wrd){
+    // 首次创建衣柜容器，替换原来的 inv 区域
+    const invEl=document.getElementById('inv');
+    if(invEl){
+      invEl.outerHTML='<div class="wardrobe" id="wardrobe"></div>';
+    }
+  }
+  const ward=document.getElementById('wardrobe'); ward.innerHTML='';
+  const wardrobe=S.dog.wardrobe||[];
+  if(wardrobe.length===0){
+    ward.innerHTML='<span class="muted" style="grid-column:1/-1;text-align:center;padding:16px">👕 衣柜空空的，去超市抽衣服吧～</span>';
+  } else {
+    wardrobe.forEach((w,idx)=>{
+      const isEq=S.dog.equipped===w.id;
+      const rc=RARITY_COLOR[w.rarity]||'#95a5a6';
+      const d=document.createElement('div'); d.className='wc'+(isEq?' equipped':'');
+      d.innerHTML=`<div class="wi">${w.icon}</div>
+        <div class="wn">${w.name}</div>
+        <div class="wr" style="background:${rc}">${w.rarity}</div>
+        ${isEq?'<div class="weq">✓</div>':''}`;
+      d.onclick=()=>{ equipClothes(w.id); };
+      ward.appendChild(d);
+    });
+    // 脱下按钮
+    if(S.dog.equipped){
+      const ub=document.createElement('div'); ub.className='wc';
+      ub.style.gridColumn='1/-1'; ub.style.background='#fff0f5';
+      ub.innerHTML='<div style="font-size:20px;margin-bottom:4px">🚫</div><div class="wn">脱下衣服</div>';
+      ub.onclick=()=>{ equipClothes(null); };
+      ward.appendChild(ub);
+    }
+  }
+
+  // 背包（非衣服物品）
+  const inv=$('#inv2')||document.getElementById('inv2');
+  if(!inv){
+    const afterWard=document.getElementById('wardrobe');
+    if(afterWard){
+      const invDiv=document.createElement('div');
+      invDiv.className='inv'; invDiv.id='inv2';
+      afterWard.parentNode.insertBefore(invDiv, afterWard.nextSibling);
+    }
+  }
+  const invEl2=document.getElementById('inv2'); if(invEl2) invEl2.innerHTML='';
+  let hasInv=false;
+  ['food','medicine'].forEach(k=>{
+    const item=SHOP.find(x=>x.key===k);
+    const n=S.dog.inv[k]||0;
+    if(n>0){ hasInv=true;
+      const d=document.createElement('div'); d.className='ib';
+      d.innerHTML=`${item.icon} ${item.name}×${n} <button class="btn sm mint" data-feed="${k}" style="margin-left:6px">喂养</button>`;
+      (invEl2||document.getElementById('inv2')).appendChild(d);
+    }
+  });
+  if(!hasInv && invEl2) invEl2.innerHTML='<span class="muted">背包空空</span>';
+
+  $$('#inv2 [data-feed]').forEach(b=>b.onclick=()=>{
+    const k=b.dataset.feed, item=SHOP.find(x=>x.key===k);
+    if((S.dog.inv[k]||0)<=0) return;
+    const before=dogLevel(S.dog.growth);
+    S.dog.inv[k]--; S.dog.growth+=item.grow;
+    const after=dogLevel(S.dog.growth);
+    save(); renderDog();
+    if(after>before) dogBurst();
+    else toast('喂养成功，小猫成长值+'+item.grow+' ❤️');
+  });
+}
+function equipClothes(id){
+  S.dog.equipped=id; save(); renderDog();
+  if(id){
+    const c=CLOTHES_POOL.find(x=>x.id===id);
+    toast('👔 换上了「'+c.name+'」！');
+  } else {
+    toast('脱下了衣服 🙀');
+  }
+}
+$('#dog').addEventListener('click',()=>{
+  const dog=$('#dog'); dog.classList.remove('jump'); void dog.offsetWidth; dog.classList.add('jump');
+  const stage=$('#dogStage'), r=stage.getBoundingClientRect();
+  const h=document.createElement('div'); h.className='heart'; h.textContent='❤️';
+  h.style.left=(stage.clientWidth/2-10+Math.random()*40-20)+'px'; h.style.bottom='60px';
+  stage.appendChild(h); setTimeout(()=>h.remove(),1000);
+});
+function dogBurst(){
+  const stage=$('#dogStage');
+  for(let i=0;i<14;i++){
+    const s=document.createElement('div'); s.className='burst';
+    s.textContent= Math.random()<.5?'⭐':'☀️';
+    s.style.left=(stage.clientWidth/2)+'px'; s.style.bottom='90px';
+    const ang=Math.random()*Math.PI*2, dist=60+Math.random()*80;
+    s.style.setProperty('--bx',(Math.cos(ang)*dist)+'px');
+    s.style.setProperty('--by',(-Math.abs(Math.sin(ang)*dist)-40)+'px');
+    stage.appendChild(s); setTimeout(()=>s.remove(),1100);
+  }
+  toast('🎉 小猫长大啦！星星炸开～');
+}
+
+/* ============ init ============ */
+function shuffle(a){ a=a.slice(); for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];} return a; }
+renderHome();
+window.addEventListener('beforeinstallprompt',e=>e.preventDefault());
