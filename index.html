@@ -703,6 +703,12 @@ function load(){
 function save(){ localStorage.setItem(SKEY, JSON.stringify(S)); }
 
 /* ============ content ============ */
+/* 以下数学/英语/语文内容均依据 IMA「文武宝贝的知识库 · 蛋蛋教学」文件夹中
+   人教版(PEP)四年级上册教材编写：
+   - 数学：四年级上册 8 个单元（大数的认识 → 数学广角）
+   - 英语：PEP 四年级上册 6 个单元（My classroom → Meet my family）
+   - 语文：四年级上册必背（古诗 / 文言 / 日积月累 / 课文）
+   与文件夹内对应 PDF 完全一致。 */
 const CN = [
   {id:'1',tag:'古诗',title:'《鹿柴》[唐]王维',text:'空山不见人，但闻人语响。\n返景入深林，复照青苔上。'},
   {id:'2',tag:'古诗',title:'《暮江吟》[唐]白居易',text:'一道残阳铺水中，半江瑟瑟半江红。\n可怜九月初三夜，露似真珠月似弓。'},
