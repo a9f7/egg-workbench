@@ -599,7 +599,7 @@
   <section class="view" id="v-english">
     <div class="card">
       <h3>🔤 英语专区 · 人教版四上</h3>
-      <p class="muted">选单元自测：看汉字拼单词 / 英译中朗读，自动判对错，答对30题得 ☀️+1</p>
+      <p class="muted">选单元自测：看汉字拼单词 / 英译中朗读，自动判对错，每5题 ☀️+1</p>
       <div class="seg" id="enUnitSeg"></div>
       <div id="enBox"></div>
     </div>
@@ -1851,7 +1851,7 @@ function renderMath(){
   }
   /* ── 口算练习模式（默认） ── */
   if(!mathQ||mathQ._mental!==true){ mathQ={_mental:true, ...genMath()}; }
-  box.innerHTML='<div class="quiz-top"><span>🔢 口算练习 · 累计正确 '+S.mathCorrect+'</span><span>每30题 ☀️+1</span></div>'+
+  box.innerHTML='<div class="quiz-top"><span>🔢 口算练习 · 累计正确 '+S.mathCorrect+'</span><span>每5题 ☀️+1</span></div>'+
     '<div class="qprompt">'+mathQ.q+'</div>'+
     '<input type="text" id="mA" placeholder="输入答案" inputmode="numeric" autocomplete="off">'+
     '<button class="btn block" id="mSub" style="margin-top:10px">提交</button>'+
@@ -1905,14 +1905,14 @@ function renderEN(){
   const it=enQueue[enIdx];
   if(!it){ box.innerHTML='<p class="muted">暂无题目</p>'; return; }
   if(it.type==='spell'){
-    box.innerHTML=`<div class="quiz-top"><span>拼写练习 ${enIdx+1}/${enQueue.length}</span><span>每30题 ☀️+1</span></div>
+    box.innerHTML=`<div class="quiz-top"><span>拼写练习 ${enIdx+1}/${enQueue.length}</span><span>每5题 ☀️+1</span></div>
       <div class="qprompt">${it.q}</div>
       <div class="qhint">看中文写出英文单词</div>
       <input type="text" id="eA" placeholder="英文单词" autocomplete="off">
       <button class="btn block mint" id="eSub">提交</button>
       <div class="feedback" id="eFb"></div>`;
   } else {
-    box.innerHTML=`<div class="quiz-top"><span>朗读练习 ${enIdx+1}/${enQueue.length}</span><span>每30题 ☀️+1</span></div>
+    box.innerHTML=`<div class="quiz-top"><span>朗读练习 ${enIdx+1}/${enQueue.length}</span><span>每5题 ☀️+1</span></div>
       <div class="qprompt">${it.q} <button class="speak" id="eSp">🔊</button></div>
       <div class="qhint">中文意思：${it.zh} ｜ 点🔊听读音，读完后点完成</div>
       <button class="btn block mint" id="eSub">我读完啦 ✓</button>
