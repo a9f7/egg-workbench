@@ -733,7 +733,7 @@ function buildENSeg(){
   opts.forEach(o=>{
     const b=document.createElement('button'); b.textContent=o.n; b.dataset.k=o.k;
     if(o.k===enUnit)b.classList.add('on');
-    b.onclick=()=>{ enUnit=o.k; enIdx=0; buildENSeg(); renderEN(); };
+    b.onclick=()=>{ enUnit=o.k; enIdx=0; enQueue=[]; buildENSeg(); renderEN(); };
     seg.appendChild(b);
   });
 }
