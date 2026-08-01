@@ -609,7 +609,7 @@
   <section class="view" id="v-exercise">
     <div class="card">
       <h3>🏃 运动 & 🧹 家务打卡</h3>
-      <p class="muted">运动和家务分开打卡，完成任意一项都能自选加阳光次数哦！</p>
+      <p class="muted">运动打卡 ☀️+2、家务打卡 ☀️+1（学习积分最高）；完成后还能再自选表扬加阳光哦！</p>
       <div id="exList"></div>
     </div>
   </section>
@@ -1429,8 +1429,8 @@ function renderCN(){
   $$('#cnList .chk').forEach(b=>b.onclick=()=>{
     const id=b.dataset.id;
     if(S.cnDone.includes(id)){ toast('已经记录过啦～'); return; }
-    S.cnDone.push(id); S.total.c++; S.today.c++; S.sun+=0; save(); renderCN(); renderHome();
-    toast('太棒了！背诵 +1 📖');
+    S.cnDone.push(id); S.total.c++; S.today.c++; S.sun+=3; save(); renderCN(); renderHome();
+    toast('太棒了！背诵完成 ☀️+3 📖');
   });
 }
 
@@ -1873,7 +1873,7 @@ function renderMath(){
   setTimeout(function(){var el=document.getElementById('mA');if(el)el.focus();},50);
 }
 function maybeMathSun(){
-  if(S.mathCorrect>0 && S.mathCorrect%30===0){ S.sun+=1; toast('🎉 数学答对30题，☀️阳光+1！'); return true; }
+  if(S.mathCorrect>0 && S.mathCorrect%5===0){ S.sun+=1; toast('🎉 数学答对5题，☀️阳光+1！'); return true; }
   return false;
 }
 
@@ -1939,7 +1939,7 @@ function renderEN(){
   if(it.type==='spell'){ const e=$('#eA'); e.addEventListener('keydown',ev=>{if(ev.key==='Enter')submit();}); setTimeout(()=>e.focus(),50); }
 }
 function maybeEngSun(){
-  if(S.engCorrect>0 && S.engCorrect%30===0){ S.sun+=1; toast('🎉 英语答对30题，☀️阳光+1！'); return true; }
+  if(S.engCorrect>0 && S.engCorrect%5===0){ S.sun+=1; toast('🎉 英语答对5题，☀️阳光+1！'); return true; }
   return false;
 }
 
@@ -1971,8 +1971,10 @@ function renderEx(){
   $$('#exList .chk').forEach(b=>b.onclick=()=>{
     const id=b.dataset.id;
     if((S.exDone[todayStr()]||{})[id]){ toast('今天已经打过卡啦～'); return; }
+    const isSport = id.indexOf('sp_')===0;
     S.exDone[todayStr()]=S.exDone[todayStr()]||{}; S.exDone[todayStr()][id]={done:true};
-    save(); renderEx(); renderHome(); toast('打卡成功！🎉 选择加阳光吧');
+    S.sun += isSport ? 2 : 1;
+    save(); renderEx(); renderHome(); toast(isSport ? '运动打卡成功！🎉 ☀️+2 可再表扬加阳光' : '家务打卡成功！🎉 ☀️+1 可再表扬加阳光');
   });
   $$('#exList [data-add]').forEach(b=>b.onclick=()=>{
     const n=+b.dataset.add;
