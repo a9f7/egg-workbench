@@ -208,24 +208,26 @@
   @keyframes jump{0%{transform:translateY(0)}25%{transform:translateY(-46px)}50%{transform:translateY(0)}75%{transform:translateY(-18px)}100%{transform:translateY(0)}}
   /* ═══ 小猫形象：AI 插画资源（参考「豆包」风格） ═══ */
   .dog{transition:transform .35s ease, opacity .35s ease}
-  .dog .cat-img{
-    display:block; width:104px; height:auto;
+  .dog .cat-wrap{position:relative; width:104px; margin:0 auto;
+    transition:width .45s cubic-bezier(.34,1.4,.5,1);}
+  .dog .cat-img, .dog .cat-cloth{
+    display:block; width:100%; height:auto;
     filter:drop-shadow(0 8px 10px rgba(80,60,90,.18));
-    transition:width .45s cubic-bezier(.34,1.4,.5,1), opacity .35s ease;
     user-select:none; -webkit-user-drag:none; pointer-events:none;
   }
+  .dog .cat-cloth{position:absolute; left:0; top:0; display:none; z-index:2;}
   /* 成长阶段：基础小猫尺寸（幼崽 / 可爱 / 帅气 / 神猫） */
-  .dog.lv0 .cat-img{width:104px}
-  .dog.lv1 .cat-img{width:128px}
-  .dog.lv2 .cat-img{width:154px}
-  .dog.lv3 .cat-img{width:186px}
+  .dog.lv0 .cat-wrap{width:104px}
+  .dog.lv1 .cat-wrap{width:128px}
+  .dog.lv2 .cat-wrap{width:154px}
+  .dog.lv3 .cat-wrap{width:186px}
   /* 换装：整体略放大以容纳服饰 */
-  .dog.lv0.has-outfit .cat-img{width:130px}
-  .dog.lv1.has-outfit .cat-img{width:158px}
-  .dog.lv2.has-outfit .cat-img{width:188px}
-  .dog.lv3.has-outfit .cat-img{width:222px}
+  .dog.lv0.has-outfit .cat-wrap{width:130px}
+  .dog.lv1.has-outfit .cat-wrap{width:158px}
+  .dog.lv2.has-outfit .cat-wrap{width:188px}
+  .dog.lv3.has-outfit .cat-wrap{width:222px}
   /* 切换淡入 */
-  .dog.switching .cat-img{opacity:0; transform:scale(.86)}
+  .dog.switching .cat-wrap{opacity:0; transform:scale(.86)}
   /* 衣柜缩略图 */
   .wardrobe .wi img{width:46px;height:46px;object-fit:contain;display:block;margin:0 auto 4px;border-radius:8px}
 
@@ -235,8 +237,17 @@
   /* 状态滤镜：姿势差异由帧图本身表达，这里仅做轻微氛围 */
   .dog.state-sick  .cat-img{filter:drop-shadow(0 8px 10px rgba(80,60,90,.18)) grayscale(.45) brightness(.94)}
   .dog.state-sleep .cat-img{filter:drop-shadow(0 8px 10px rgba(80,60,90,.18)) brightness(.97) saturate(.92)}
-  /* 换装状态下（无逐帧动画）给静态图加轻微呼吸，避免完全静止 */
-  .dog.has-outfit .cat-img{animation:catBob 3.4s ease-in-out infinite}
+  /* 换装状态下给整组（身体+衣服）加轻微呼吸，避免完全静止 */
+  .dog.has-outfit .cat-wrap{animation:catBob 3.4s ease-in-out infinite}
+  /* 互动短句气泡 */
+  .dog-stage .cat-bubble{position:absolute; top:10px; left:50%; transform:translate(-50%,-12px) scale(.6);
+    background:#fff; color:#5a4a55; border:2px solid var(--pink,#ffb3c8); border-radius:14px;
+    padding:6px 12px; font-size:13px; font-weight:700; white-space:nowrap; max-width:90%;
+    box-shadow:0 6px 14px rgba(0,0,0,.12); opacity:0; pointer-events:none; z-index:6;
+    transition:opacity .2s ease, transform .25s cubic-bezier(.34,1.4,.5,1);}
+  .dog-stage .cat-bubble:after{content:''; position:absolute; left:50%; bottom:-8px; transform:translateX(-50%);
+    border:7px solid transparent; border-top-color:var(--pink,#ffb3c8);}
+  .dog-stage .cat-bubble.show{opacity:1; transform:translate(-50%,0) scale(1);}
   @keyframes catBob{0%,100%{transform:translateY(0)}50%{transform:translateY(-4px)}}
   /* 进食时的轻啃动（叠加在吃帧之上） */
   .dog.react-eat .cat-img{animation:catNibble .28s ease-in-out 4}
@@ -427,9 +438,13 @@
       <div class="dog-stage" id="dogStage">
         <div class="ground"></div>
         <div class="dog" id="dog">
-          <img class="cat-img" id="catImg" src="assets/cat-lv0.png" alt="蛋蛋的小猫">
+          <div class="cat-wrap">
+            <img class="cat-img" id="catImg" src="assets/cat-lv0.png" alt="蛋蛋的小猫">
+            <img class="cat-cloth" id="catCloth" src="" alt="">
+          </div>
         </div>
         <div class="cat-fx" id="catFx"></div>
+        <div class="cat-bubble" id="catBubble"></div>
       </div>
       <div style="text-align:center">
         <div style="font-weight:800;font-size:16px" id="dogName">幼崽小猫</div>
@@ -2207,6 +2222,31 @@ let catState='sit';                       // 当前随机状态（sit/play/sleep
 let catFrameTimer=null, catReactTimer=null, catFrameIdx=0, catFrameList=null;
 // 每种状态 × 成长级别的帧文件名（均由 AI 生成的多姿势动作帧）
 const CAT_FRAME_MS={sit:520, play:380, eat:420, sleep:1500, sick:520, react:260, medicine:480};
+// 哪些换装拥有「衣服透明图层」（可叠在动态身体上做真帧动画）；c10 为全幅彩虹覆盖，退回静态图
+const CLOTH_OVERLAY_IDS=['c1','c2','c3','c4','c5','c6','c7','c8','c9'];
+function hasCloth(id){ return CLOTH_OVERLAY_IDS.indexOf(id)>=0; }
+// 点击/喂养/吃药时的互动短句（10–30 字，按小猫当前状态/心情与主人操作变化）
+const CAT_PHRASES={
+  click:{ // 撒娇/互动：依小猫当前状态与心情
+    sit:['主人来啦，陪我玩会儿嘛～','今天也要和主人贴贴呀🥰','喵呜～主人是全世界最好！'],
+    play:['嘿嘿，主人和我一起蹦！','转圈圈～主人看好咯！','蹦哒蹦哒，我好开心呀！'],
+    sleep:['呼…zzz…主人轻点吵…','再让我睡一小会儿嘛～','唔，被主人吵醒啦，人家困～'],
+    sick:['主人，我有点不舒服…','抱抱我好不好，主人…','生病了，我也想陪着主人…']
+  },
+  eat:['呜呜，这个真的好好吃！','吃饱啦，谢谢主人投喂🍚','肚子圆滚滚，好满足～','主人喂的饭最香最香啦！'],
+  medicine:['药药好苦…但为了主人我喝！','苦死啦，不过会快点好','乖乖吃药，不让主人担心','吃完药就能陪主人玩啦']
+};
+let catBubbleTimer=null;
+function catSpeak(action){
+  const b=$('#catBubble'); if(!b) return;
+  const set=CAT_PHRASES[action]; if(!set) return;
+  const arr = Array.isArray(set) ? set : (set[catState]||set.sit);
+  if(!arr||!arr.length) return;
+  b.textContent = arr[Math.floor(Math.random()*arr.length)];
+  b.classList.add('show');
+  clearTimeout(catBubbleTimer);
+  catBubbleTimer=setTimeout(()=>b.classList.remove('show'), 2200);
+}
 function catFrameFiles(state, lv){
   const p='assets/cat-anim-';
   if(state==='play')  return [p+'p'+lv+'a.png', p+'p'+lv+'b.png'];
@@ -2231,11 +2271,26 @@ function catPlay(state, lv){
 function updateCatVisual(){
   const g=S.dog.growth, lv=dogLevel(g);
   const dog=$('#dog'); dog.className='dog lv'+lv;
-  const catImg=$('#catImg');
+  const catImg=$('#catImg'); const catCloth=$('#catCloth');
   if(S.dog.equipped){
     const eq=CLOTHES_POOL.find(c=>c.id===S.dog.equipped);
-    if(eq){ catImg.src='assets/outfit-'+eq.id+'.png'; dog.classList.add('has-outfit'); stopCat(); return; } // 换装时用静态图+轻微 bob
+    if(eq){
+      if(hasCloth(eq.id)){
+        // 穿衣服也播真帧动画：身体帧在底层循环切换，衣服透明图层叠在上面 → 衣服随身体一起动
+        catCloth.src='assets/outfit-cloth-'+eq.id+'.png';
+        catCloth.style.display='block';
+        dog.classList.add('has-outfit');
+        catPlay(catState, lv);          // 身体继续按状态切换动作帧
+        return;
+      } else {
+        // 无衣服图层的款式（如全幅彩虹衣）退回静态图 + 轻微 bob
+        catCloth.style.display='none';
+        catImg.src='assets/outfit-'+eq.id+'.png';
+        dog.classList.add('has-outfit'); stopCat(); return;
+      }
+    }
   }
+  catCloth.style.display='none';
   dog.classList.add('state-'+catState);
   catPlay(catState, lv);
 }
@@ -2375,6 +2430,7 @@ function catFeedReact(type){
   catState = (type==='medicine') ? 'medicine' : 'eat';   // 吃药用专属 m 帧，不再复用进食帧
   updateCatVisual();
   spawnFx($('#catFx'), type==='eat'?['🍚','🐟','😋']:['💊','✨'], 3);
+  catSpeak(type==='medicine'?'medicine':'eat');   // 冒一句进食/吃药短句
   if(type==='medicine') toast('💊 吃药药，早日康复～');
   clearTimeout(catReactTimer);
   catReactTimer=setTimeout(()=>{ catState=prev; updateCatVisual(); }, 1300);
@@ -2416,6 +2472,7 @@ $('#dog').addEventListener('click',()=>{
   h.style.left=(stage.clientWidth/2-10+Math.random()*40-20)+'px'; h.style.bottom='60px';
   stage.appendChild(h); setTimeout(()=>h.remove(),1000);
   spawnFx($('#catFx'),['💗','💕','✨'],3);   // 撒娇：飘爱心特效
+  catSpeak('click');                        // 依当前状态/心情冒一句互动短句
   catClickReact();                          // 切换撒娇动作帧
 });
 function dogBurst(){
