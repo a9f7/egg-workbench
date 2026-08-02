@@ -59,6 +59,19 @@
     .nav button .ni{font-size:26px}
     /* shop 4 列 */
     .shop{grid-template-columns:repeat(3,1fr)}
+    /* 桌面端：顶部标签条替代底部手机导航（像浏览器标签页） */
+    .desktabs{display:flex;gap:8px;position:sticky;top:56px;z-index:15;
+      background:rgba(255,255,255,.92);backdrop-filter:blur(8px);
+      margin:0 -24px 16px;padding:8px 24px;box-shadow:0 3px 14px rgba(170,120,160,.12);flex-wrap:wrap}
+    .desktabs .dt{border:none;background:#fff;color:var(--ink);font-family:inherit;font-weight:800;
+      font-size:14px;padding:10px 18px;border-radius:14px;cursor:pointer;box-shadow:var(--shadow);
+      display:flex;align-items:center;gap:7px;transition:transform .12s}
+    .desktabs .dt .ni{font-size:19px}
+    .desktabs .dt:hover{transform:translateY(-2px)}
+    .desktabs .dt.on{background:var(--pink);color:#fff}
+    /* 桌面隐藏底部手机导航与板块返回条（导航由标签条承担） */
+    .nav{display:none}
+    .boardbar{display:none}
     /* 运动/家务列表容器 */
     #exList{display:block}
   }
@@ -260,6 +273,8 @@
   .bb-back{border:none;background:#fff;color:var(--pink-d);font-family:inherit;font-weight:800;
     font-size:13px;padding:8px 14px;border-radius:14px;box-shadow:var(--shadow);cursor:pointer}
   .bb-back:active{transform:translateY(1px)}
+  /* 桌面标签条：默认隐藏（仅 ≥900px 显示），手机/平板继续用底部导航 */
+  .desktabs{display:none}
   /* 分页控件 */
   .cn-pager{display:flex;align-items:center;justify-content:center;gap:12px;margin:14px 0 4px}
   .cn-pager .pg{border:none;background:var(--pink);color:#fff;font-family:inherit;font-weight:800;
@@ -275,6 +290,16 @@
     <div class="ttl">蛋蛋的假期预习打卡<small>三升四年级 · 加油鸭！</small></div>
     <div class="sun-badge">☀️ <span id="sunTop">0</span></div>
     <button class="sign-btn" id="signBtn">签到+1</button>
+  </div>
+
+  <!-- DESKTOP TAB STRIP (≥900px)：像浏览器标签页一样打开各板块 -->
+  <div class="desktabs" id="desktabs">
+    <button class="dt on" data-v="home"><span class="ni">🏠</span>首页</button>
+    <button class="dt" data-v="chinese"><span class="ni">📖</span>语文</button>
+    <button class="dt" data-v="math"><span class="ni">➗</span>数学</button>
+    <button class="dt" data-v="english"><span class="ni">🔤</span>英语</button>
+    <button class="dt" data-v="exercise"><span class="ni">🏃</span>运动</button>
+    <button class="dt" data-v="dog"><span class="ni">🐱</span>小猫</button>
   </div>
 
   <!-- HOME -->
@@ -1312,6 +1337,7 @@ function switchView(v){
   $$('.view').forEach(s=>s.classList.remove('on'));
   $('#v-'+v).classList.add('on');
   $$('#nav button').forEach(b=>b.classList.toggle('on', b.dataset.v===v));
+  $$('.desktabs .dt').forEach(b=>b.classList.toggle('on', b.dataset.v===v));
   if(v==='chinese') renderCN();
   if(v==='math') renderMath();
   if(v==='english') renderEN();
@@ -1322,6 +1348,7 @@ function switchView(v){
 }
 $$('#nav button').forEach(b=>b.onclick=()=>switchView(b.dataset.v));
 $$('[data-go]').forEach(b=>b.onclick=()=>switchView(b.dataset.go));
+$$('.desktabs .dt').forEach(b=>b.onclick=()=>switchView(b.dataset.v));
 /* hash 路由：刷新 / 分享链接直接定位到对应板块，像独立页面一样打开 */
 window.addEventListener('hashchange',()=>{
   const v=(location.hash||'#home').slice(1);
