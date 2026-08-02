@@ -2268,29 +2268,33 @@ function catPlay(state, lv){
   step(); catFrameTimer=setInterval(step, CAT_FRAME_MS[state]||500);
 }
 // 根据当前状态/级别/换装，决定小猫显示什么（帧动画 or 静态换装图）
+// 穿衣服时使用的「已穿好、且跟随坐姿三姿势」的真帧文件名（由 AI 生成，衣服和身体一起动）
+function dressedFrameFiles(id, lv){
+  return ['assets/cat-dressed-s'+lv+'a-'+id+'.png',
+          'assets/cat-dressed-s'+lv+'b-'+id+'.png',
+          'assets/cat-dressed-s'+lv+'c-'+id+'.png'];
+}
+// 穿衣服：用整组「穿衣真帧」替换裸身帧循环（不再叠加静态衣服图层）
+function catPlayDressed(id, lv){
+  stopCat();
+  const list=dressedFrameFiles(id, lv); catFrameList=list; catFrameIdx=0;
+  const img=$('#catImg');
+  list.forEach(s=>{ const im=new Image(); im.src=s; });
+  const step=()=>{ if(!catFrameList) return; img.src=catFrameList[catFrameIdx]; catFrameIdx=(catFrameIdx+1)%catFrameList.length; };
+  step(); catFrameTimer=setInterval(step, CAT_FRAME_MS.sit||520);
+}
 function updateCatVisual(){
   const g=S.dog.growth, lv=dogLevel(g);
   const dog=$('#dog'); dog.className='dog lv'+lv;
-  const catImg=$('#catImg'); const catCloth=$('#catCloth');
+  const catCloth=$('#catCloth'); catCloth.style.display='none';   // 不再叠加静态衣服图层
   if(S.dog.equipped){
     const eq=CLOTHES_POOL.find(c=>c.id===S.dog.equipped);
     if(eq){
-      if(hasCloth(eq.id)){
-        // 穿衣服也播真帧动画：身体帧在底层循环切换，衣服透明图层叠在上面 → 衣服随身体一起动
-        catCloth.src='assets/outfit-cloth-'+eq.id+'.png';
-        catCloth.style.display='block';
-        dog.classList.add('has-outfit');
-        catPlay(catState, lv);          // 身体继续按状态切换动作帧
-        return;
-      } else {
-        // 无衣服图层的款式（如全幅彩虹衣）退回静态图 + 轻微 bob
-        catCloth.style.display='none';
-        catImg.src='assets/outfit-'+eq.id+'.png';
-        dog.classList.add('has-outfit'); stopCat(); return;
-      }
+      dog.classList.add('has-outfit');
+      catPlayDressed(eq.id, lv);   // 整组穿衣真帧循环 → 衣服与身体一起动
+      return;
     }
   }
-  catCloth.style.display='none';
   dog.classList.add('state-'+catState);
   catPlay(catState, lv);
 }
