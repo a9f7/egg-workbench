@@ -18,15 +18,16 @@
     --shadow:0 8px 24px rgba(170,120,160,.16);
   }
   *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html{margin:0;padding:0;-webkit-text-size-adjust:100%}
   html,body{margin:0;padding:0}
   body{
     font-family:"PingFang SC","Microsoft YaHei","Comic Sans MS",sans-serif;
     color:var(--ink);background:linear-gradient(160deg,var(--bg1),var(--bg2) 50%,var(--bg3));
-    background-attachment:fixed;min-height:100vh;overflow-x:hidden;
+    background-attachment:fixed;min-height:100vh;min-height:100dvh;overflow-x:hidden;
     -webkit-font-smoothing:antialiased;
   }
-  .app{max-width:600px;margin:0 auto;min-height:100vh;display:flex;flex-direction:column;
-    padding-bottom:74px;position:relative}
+  .app{max-width:600px;margin:0 auto;min-height:100vh;min-height:100dvh;display:flex;flex-direction:column;
+    padding-bottom:calc(74px + env(safe-area-inset-bottom));position:relative}
   /* ====== 桌面端宽屏布局 ≥ 900px ====== */
   @media (min-width:900px){
     body{font-size:15px}
@@ -61,16 +62,30 @@
     /* 运动/家务列表容器 */
     #exList{display:block}
   }
-  /* ====== 中等屏幕 600-899px ====== */
+  /* ====== 中等屏幕 / 平板 600-899px ====== */
   @media (min-width:600px) and (max-width:899px){
-    .app{max-width:760px}
-    .nav{max-width:760px}
+    body{font-size:15px}
+    .app{max-width:min(92vw,860px)}
+    .nav{max-width:min(92vw,860px)}
     .statgrid{grid-template-columns:repeat(4,1fr)}
     .mini-stat .m{min-width:120px}
   }
+  /* ====== 手机 iPhone <600px：更大点击区、适配刘海 ====== */
+  @media (max-width:599px){
+    .btn{padding:14px 18px;font-size:16px}
+    .chk{min-height:44px}
+    .opt{min-height:48px;font-size:16px;padding:12px 14px}
+    select,input[type=text]{min-height:46px;font-size:16px}
+    .nav button .ni{font-size:24px}
+    .nav button{font-size:12px}
+    .card{padding:14px}
+    .topbar .ttl{font-size:15px}
+    .poem{font-size:14px}
+    .qprompt{font-size:17px}
+  }
   /* top bar */
   .topbar{position:sticky;top:0;z-index:20;display:flex;align-items:center;gap:10px;
-    padding:12px 14px;background:rgba(255,255,255,.85);backdrop-filter:blur(8px);
+    padding:max(10px,env(safe-area-inset-top)) 14px 10px;background:rgba(255,255,255,.85);backdrop-filter:blur(8px);
     box-shadow:0 2px 12px rgba(170,120,160,.10)}
   .topbar .logo{font-size:26px}
   .topbar .ttl{font-weight:800;font-size:16px;flex:1;line-height:1.2}
@@ -240,6 +255,17 @@
   .mini-stat .m{cursor:pointer;transition:transform .15s, box-shadow .15s}
   .mini-stat .m:hover{transform:translateY(-3px);box-shadow:0 10px 28px rgba(170,120,160,.22)}
   .mini-stat .m:active{transform:translateY(0)}
+  /* 板块返回条（强化"独立页面"观感） */
+  .boardbar{display:flex;align-items:center;margin-bottom:10px}
+  .bb-back{border:none;background:#fff;color:var(--pink-d);font-family:inherit;font-weight:800;
+    font-size:13px;padding:8px 14px;border-radius:14px;box-shadow:var(--shadow);cursor:pointer}
+  .bb-back:active{transform:translateY(1px)}
+  /* 分页控件 */
+  .cn-pager{display:flex;align-items:center;justify-content:center;gap:12px;margin:14px 0 4px}
+  .cn-pager .pg{border:none;background:var(--pink);color:#fff;font-family:inherit;font-weight:800;
+    font-size:14px;padding:10px 16px;border-radius:14px;cursor:pointer;box-shadow:0 3px 0 var(--pink-d)}
+  .cn-pager .pg:disabled{background:#e8dde6;color:#bba;box-shadow:none;cursor:default}
+  .cn-pager .pgi{font-weight:700;font-size:14px;color:var(--muted);min-width:84px;text-align:center}
 </style>
 </head>
 <body>
@@ -1280,7 +1306,9 @@ const EX_CHORES = [
 ];
 
 /* ============ nav ============ */
+const VIEWS=['home','chinese','math','english','exercise','dog'];
 function switchView(v){
+  if(!VIEWS.includes(v)) v='home';
   $$('.view').forEach(s=>s.classList.remove('on'));
   $('#v-'+v).classList.add('on');
   $$('#nav button').forEach(b=>b.classList.toggle('on', b.dataset.v===v));
@@ -1290,9 +1318,25 @@ function switchView(v){
   if(v==='exercise') renderEx();
   if(v==='dog') renderDog();
   window.scrollTo(0,0);
+  if(('#'+v)!==location.hash) history.replaceState(null,'','#'+v);
 }
 $$('#nav button').forEach(b=>b.onclick=()=>switchView(b.dataset.v));
 $$('[data-go]').forEach(b=>b.onclick=()=>switchView(b.dataset.go));
+/* hash 路由：刷新 / 分享链接直接定位到对应板块，像独立页面一样打开 */
+window.addEventListener('hashchange',()=>{
+  const v=(location.hash||'#home').slice(1);
+  if(VIEWS.includes(v) && !$('#v-'+v).classList.contains('on')) switchView(v);
+});
+/* 每个板块顶部加"← 首页"，强化独立页面观感 */
+function addBoardBars(){
+  $$('.view').forEach(sec=>{
+    if(sec.id==='v-home') return;
+    if(sec.querySelector('.boardbar')) return;
+    const bar=document.createElement('div'); bar.className='boardbar';
+    bar.innerHTML='<button class="bb-back" data-go="home">← 首页</button>';
+    sec.insertBefore(bar, sec.firstChild);
+  });
+}
 
 /* ============ home ============ */
 const SLOGANS=['今天也要元气满满地打卡哦！🌟','每天进步一点点，开学惊艳所有人✨','蛋蛋最棒啦，加油鸭！🦆','坚持就是胜利，阳光值蹭蹭涨☀️','读书破万卷，下笔如有神📚'];
@@ -1330,10 +1374,22 @@ $('#signBtn').onclick=()=>{
 };
 
 /* ============ chinese ============ */
-let cnMode='recite';
+let cnMode='recite', cnPage=0;
 function maybeCnSun(){
   if(S.cnQuiz>0 && S.cnQuiz%5===0){ S.sun+=1; toast('🎉 语文答题5题，☀️阳光+1！'); return true; }
   return false;
+}
+function cnPager(box,n,total){
+  if(total<=1) return;
+  const bar=el('div','cn-pager');
+  bar.innerHTML=`<button class="pg" data-d="-1" ${n<=0?'disabled':''}>← 上一页</button>`+
+    `<span class="pgi">第 ${n+1} / ${total} 页</span>`+
+    `<button class="pg" data-d="1" ${n>=total-1?'disabled':''}>下一页 →</button>`;
+  box.appendChild(bar);
+  bar.querySelectorAll('.pg').forEach(b=>b.onclick=()=>{
+    cnPage+=+b.dataset.d; if(cnPage<0)cnPage=0; if(cnPage>total-1)cnPage=total-1;
+    renderCN(); window.scrollTo(0,0);
+  });
 }
 function renderCN(){
   const seg=$('#cnSeg');
@@ -1342,14 +1398,16 @@ function renderCN(){
   modes.forEach(m=>{
     const b=document.createElement('button'); b.textContent=m.n; b.dataset.k=m.k;
     if(m.k===cnMode)b.classList.add('on');
-    b.onclick=()=>{ cnMode=m.k; renderCN(); };
+    b.onclick=()=>{ cnMode=m.k; cnPage=0; renderCN(); };
     seg.appendChild(b);
   });
   const box=$('#cnList'); box.innerHTML='';
   ({recite:renderCNRecite, words:renderCNWords, syn:renderCNSyn, mean:renderCNMean, read:renderCNRead}[cnMode])(box);
 }
 function renderCNRecite(box){
-  CN.forEach(it=>{
+  const PS=6, total=Math.ceil(CN.length/PS);
+  cnPage=Math.max(0,Math.min(cnPage,total-1));
+  CN.slice(cnPage*PS,cnPage*PS+PS).forEach(it=>{
     const done=S.cnDone.includes(it.id);
     const d=document.createElement('details'); d.className='rec'; if(done) d.open=true;
     d.innerHTML=`<summary>${done?'✅':''} ${it.title} <span class="pill">${it.tag}</span></summary>
@@ -1357,6 +1415,7 @@ function renderCNRecite(box){
       <button class="chk ${done?'on':''}" data-id="${it.id}">${done?'已背会 ✓':'我背会了'}</button>`;
     box.appendChild(d);
   });
+  cnPager(box,cnPage,total);
   $$('#cnList .chk').forEach(b=>b.onclick=()=>{
     const id=b.dataset.id;
     if(S.cnDone.includes(id)){ toast('已经记录过啦～'); return; }
@@ -1365,92 +1424,98 @@ function renderCNRecite(box){
   });
 }
 function renderCNWords(box){
-  const done=S.cnW;
-  CN_WORDS.forEach((it,i)=>{
-    const ok=done.includes(String(i));
+  const done=S.cnW, PS=6, total=Math.ceil(CN_WORDS.length/PS);
+  cnPage=Math.max(0,Math.min(cnPage,total-1));
+  CN_WORDS.slice(cnPage*PS,cnPage*PS+PS).forEach((it,i)=>{
+    const gi=cnPage*PS+i, ok=done.includes(String(gi));
     const d=document.createElement('div'); d.className='rec'+(ok?' done':'');
     d.innerHTML=`<div class="qprompt">${it.py}</div>
       <div class="qhint">看拼音写词语 ${ok?'✅ 已答对':''}</div>
-      ${ok?'':`<input type="text" id="wA${i}" placeholder="写出词语" autocomplete="off">
-      <button class="btn block mint" id="wB${i}">提交</button>`}
-      <div class="feedback" id="wF${i}"></div>`;
+      ${ok?'':`<input type="text" id="wA${gi}" placeholder="写出词语" autocomplete="off">
+      <button class="btn block mint" id="wB${gi}">提交</button>`}
+      <div class="feedback" id="wF${gi}"></div>`;
     box.appendChild(d);
     if(!ok){
       const sub=()=>{
-        const v=$('#wA'+i).value.trim();
-        const fb=$('#wF'+i);
-        if(v===it.w){ S.cnW.push(String(i)); S.cnQuiz++; S.today.c++; const got=maybeCnSun(); save(); renderHome(); renderCNWords(box);
+        const v=$('#wA'+gi).value.trim(); const fb=$('#wF'+gi);
+        if(v===it.w){ S.cnW.push(String(gi)); S.cnQuiz++; S.today.c++; const got=maybeCnSun(); save(); renderHome(); renderCNWords(box);
           toast('✅ 写对啦！'+(got?' 🌟☀️+1':'')); }
         else { fb.className='feedback no'; fb.innerHTML=`❌ 正确写法：<b>${it.w}</b>`; }
       };
-      $('#wB'+i).onclick=sub;
-      $('#wA'+i).addEventListener('keydown',e=>{if(e.key==='Enter')sub();});
+      $('#wB'+gi).onclick=sub;
+      $('#wA'+gi).addEventListener('keydown',e=>{if(e.key==='Enter')sub();});
     }
   });
+  cnPager(box,cnPage,total);
 }
 function renderCNSyn(box){
-  const done=S.cnS;
-  CN_SYN.forEach((it,i)=>{
-    const ok=done.includes(String(i));
+  const done=S.cnS, PS=6, total=Math.ceil(CN_SYN.length/PS);
+  cnPage=Math.max(0,Math.min(cnPage,total-1));
+  CN_SYN.slice(cnPage*PS,cnPage*PS+PS).forEach((it,i)=>{
+    const gi=cnPage*PS+i, ok=done.includes(String(gi));
     const d=document.createElement('div'); d.className='rec'+(ok?' done':'');
     d.innerHTML=`<div class="qhint">${it.type}：<b>${it.q}</b> → ? ${ok?'✅ 已答对':''}</div>
-      ${ok?'':`<input type="text" id="sA${i}" placeholder="写出对应词" autocomplete="off">
-      <button class="btn block mint" id="sB${i}">提交</button>`}
-      <div class="feedback" id="sF${i}"></div>`;
+      ${ok?'':`<input type="text" id="sA${gi}" placeholder="写出对应词" autocomplete="off">
+      <button class="btn block mint" id="sB${gi}">提交</button>`}
+      <div class="feedback" id="sF${gi}"></div>`;
     box.appendChild(d);
     if(!ok){
       const sub=()=>{
-        const v=$('#sA'+i).value.trim(); const fb=$('#sF'+i);
-        if(v===it.a){ S.cnS.push(String(i)); S.cnQuiz++; S.today.c++; const got=maybeCnSun(); save(); renderHome(); renderCNSyn(box); toast('✅ 答对啦！'+(got?' 🌟☀️+1':'')); }
+        const v=$('#sA'+gi).value.trim(); const fb=$('#sF'+gi);
+        if(v===it.a){ S.cnS.push(String(gi)); S.cnQuiz++; S.today.c++; const got=maybeCnSun(); save(); renderHome(); renderCNSyn(box); toast('✅ 答对啦！'+(got?' 🌟☀️+1':'')); }
         else { fb.className='feedback no'; fb.innerHTML=`❌ 正确答案：<b>${it.a}</b>`; }
       };
-      $('#sB'+i).onclick=sub;
-      $('#sA'+i).addEventListener('keydown',e=>{if(e.key==='Enter')sub();});
+      $('#sB'+gi).onclick=sub;
+      $('#sA'+gi).addEventListener('keydown',e=>{if(e.key==='Enter')sub();});
     }
   });
+  cnPager(box,cnPage,total);
 }
 function renderCNMean(box){
-  const done=S.cnM;
-  CN_MEAN.forEach((it,i)=>{
-    const ok=done.includes(String(i));
+  const done=S.cnM, PS=5, total=Math.ceil(CN_MEAN.length/PS);
+  cnPage=Math.max(0,Math.min(cnPage,total-1));
+  CN_MEAN.slice(cnPage*PS,cnPage*PS+PS).forEach((it,i)=>{
+    const gi=cnPage*PS+i, ok=done.includes(String(gi));
     const d=document.createElement('div'); d.className='rec'+(ok?' done':'');
     const optsHtml=it.opts.map((o,oi)=>`<button class="opt" data-o="${oi}" ${ok?'disabled':''}>${String.fromCharCode(65+oi)}. ${o}</button>`).join('');
     d.innerHTML=`<div class="qhint">词意解释：<b>${it.w}</b> ${ok?'✅ 已答对':''}</div>${optsHtml}
-      <div class="feedback" id="mF${i}"></div>`;
+      <div class="feedback" id="mF${gi}"></div>`;
     box.appendChild(d);
     if(!ok){
       d.querySelectorAll('.opt').forEach(btn=>btn.onclick=()=>{
-        const oi=+btn.dataset.o; const fb=$('#mF'+i);
-        if(oi===it.a){ S.cnM.push(String(i)); S.cnQuiz++; S.today.c++; const got=maybeCnSun(); save(); renderHome(); renderCNMean(box); toast('✅ 答对啦！'+(got?' 🌟☀️+1':'')); }
+        const oi=+btn.dataset.o; const fb=$('#mF'+gi);
+        if(oi===it.a){ S.cnM.push(String(gi)); S.cnQuiz++; S.today.c++; const got=maybeCnSun(); save(); renderHome(); renderCNMean(box); toast('✅ 答对啦！'+(got?' 🌟☀️+1':'')); }
         else { fb.className='feedback no'; fb.innerHTML='❌ 再想想，选另一个～'; }
       });
     }
   });
+  cnPager(box,cnPage,total);
 }
 function renderCNRead(box){
-  const done=S.cnR;
-  CN_READ.forEach((p,pi)=>{
-    const allDone=p.qs.every((q,qi)=>done.includes(pi+'-'+qi));
-    const d=document.createElement('details'); d.className='rec'; if(allDone)d.open=false;
-    d.innerHTML=`<summary>${allDone?'✅':''} ${p.title} <span class="pill">阅读理解</span></summary>
-      ${p.src?`<div class="src">📚 ${p.src}</div>`:''}<div class="poem">${p.passage}</div><div id="rd${pi}"></div>`;
-    box.appendChild(d);
-    const holder=$('#rd'+pi);
-    p.qs.forEach((q,qi)=>{
-      const id=pi+'-'+qi; const ok=done.includes(id);
-      const qd=document.createElement('div'); qd.className='rd-q';
-      const optsHtml=q.opts.map((o,oi)=>`<button class="opt" data-o="${oi}" ${ok?'disabled':''}>${String.fromCharCode(65+oi)}. ${o}</button>`).join('');
-      qd.innerHTML=`<div class="qhint">${qi+1}. ${q.q} ${ok?'✅':''}</div>${optsHtml}<div class="feedback" id="rF${id}"></div>`;
-      holder.appendChild(qd);
-      if(!ok){
-        qd.querySelectorAll('.opt').forEach(btn=>btn.onclick=()=>{
-          const oi=+btn.dataset.o; const fb=$('#rF'+id);
-          if(oi===q.a){ S.cnR.push(id); S.cnQuiz++; S.today.c++; const got=maybeCnSun(); save(); renderHome(); renderCNRead(box); toast('✅ 答对啦！'+(got?' 🌟☀️+1':'')); }
-          else { fb.className='feedback no'; fb.innerHTML='❌ 再想想，选另一个～'; }
-        });
-      }
-    });
+  const done=S.cnR, PS=1, total=CN_READ.length;
+  cnPage=Math.max(0,Math.min(cnPage,total-1));
+  const gpi=cnPage*PS, p=CN_READ[gpi];
+  const allDone=p.qs.every((q,qi)=>done.includes(gpi+'-'+qi));
+  const d=document.createElement('details'); d.className='rec'; d.open=!allDone;
+  d.innerHTML=`<summary>${allDone?'✅':''} ${p.title} <span class="pill">阅读理解 ${gpi+1}/${total}</span></summary>
+    ${p.src?`<div class="src">📚 ${p.src}</div>`:''}<div class="poem">${p.passage}</div><div id="rd${gpi}"></div>`;
+  box.appendChild(d);
+  const holder=$('#rd'+gpi);
+  p.qs.forEach((q,qi)=>{
+    const id=gpi+'-'+qi; const ok=done.includes(id);
+    const qd=document.createElement('div'); qd.className='rd-q';
+    const optsHtml=q.opts.map((o,oi)=>`<button class="opt" data-o="${oi}" ${ok?'disabled':''}>${String.fromCharCode(65+oi)}. ${o}</button>`).join('');
+    qd.innerHTML=`<div class="qhint">${qi+1}. ${q.q} ${ok?'✅':''}</div>${optsHtml}<div class="feedback" id="rF${id}"></div>`;
+    holder.appendChild(qd);
+    if(!ok){
+      qd.querySelectorAll('.opt').forEach(btn=>btn.onclick=()=>{
+        const oi=+btn.dataset.o; const fb=$('#rF'+id);
+        if(oi===q.a){ S.cnR.push(id); S.cnQuiz++; S.today.c++; const got=maybeCnSun(); save(); renderHome(); renderCNRead(box); toast('✅ 答对啦！'+(got?' 🌟☀️+1':'')); }
+        else { fb.className='feedback no'; fb.innerHTML='❌ 再想想，选另一个～'; }
+      });
+    }
   });
+  cnPager(box,cnPage,total);
 }
 
 /* ============ math ============ */
@@ -2009,18 +2074,32 @@ function maybeEngSun(){
 }
 
 /* ============ exercise ============ */
+let exPageS=0, exPageC=0;
+function exPager(box,n,total,setFn){
+  if(total<=1) return;
+  const bar=el('div','cn-pager');
+  bar.innerHTML=`<button class="pg" data-d="-1" ${n<=0?'disabled':''}>← 上一页</button>`+
+    `<span class="pgi">第 ${n+1} / ${total} 页</span>`+
+    `<button class="pg" data-d="1" ${n>=total-1?'disabled':''}>下一页 →</button>`;
+  box.appendChild(bar);
+  bar.querySelectorAll('.pg').forEach(b=>b.onclick=()=>{
+    let p=n+ +b.dataset.d; if(p<0)p=0; if(p>total-1)p=total-1; setFn(p); renderEx(); window.scrollTo(0,0);
+  });
+}
 function renderEx(){
   const box=$('#exList'); box.innerHTML='';
   const todayEx=S.exDone[todayStr()]||{};
   const groups=[
-    {title:'🏃 运动打卡', items:EX_SPORTS},
-    {title:'🧹 家务打卡', items:EX_CHORES},
+    {title:'🏃 运动打卡', items:EX_SPORTS, get:()=>exPageS, set:p=>exPageS=p},
+    {title:'🧹 家务打卡', items:EX_CHORES, get:()=>exPageC, set:p=>exPageC=p},
   ];
   groups.forEach(g=>{
     const title=document.createElement('div'); title.className='ex-group-title'; title.textContent=g.title;
     box.appendChild(title);
+    const PS=6, total=Math.ceil(g.items.length/PS);
+    let pg=Math.max(0,Math.min(g.get(),total-1)); g.set(pg);
     const grid=document.createElement('div'); grid.className='ex-grid';
-    g.items.forEach(it=>{
+    g.items.slice(pg*PS,pg*PS+PS).forEach(it=>{
       const done=!!todayEx[it.id];
       const added=todayEx[it.id]&&todayEx[it.id].add||0;
       const d=document.createElement('div'); d.className='ex-card';
@@ -2032,6 +2111,7 @@ function renderEx(){
       grid.appendChild(d);
     });
     box.appendChild(grid);
+    exPager(box,pg,total,g.set);
   });
   $$('#exList .chk').forEach(b=>b.onclick=()=>{
     const id=b.dataset.id;
@@ -2229,7 +2309,10 @@ function dogBurst(){
 
 /* ============ init ============ */
 function shuffle(a){ a=a.slice(); for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];} return a; }
+addBoardBars();
 renderHome();
+const _iv=(location.hash||'#home').slice(1);
+if(VIEWS.includes(_iv)) switchView(_iv); else switchView('home');
 
 /* ============ data backup ============ */
 function exportData(){
