@@ -2216,7 +2216,7 @@ const SHOP=[
   {key:'clothes',icon:'👕',name:'小衣服',price:20,grow:0,desc:'随机抽一件衣服'},
   {key:'medicine',icon:'💊',name:'药品',price:15,grow:9,desc:'喂养+9成长'},
 ];
-function dogLevel(g){ if(g>=150)return 3; if(g>=80)return 2; if(g>=30)return 1; return 0; }
+function dogLevel(g){ if(g>=300)return 3; if(g>=160)return 2; if(g>=60)return 1; return 0; }
 const DOG_NAMES=['幼崽小猫','可爱小猫','帅气大猫','超级神猫'];
 let catState='sit';                       // 当前随机状态（sit/play/sleep/sick/eat 互动态）
 let catFrameTimer=null, catReactTimer=null, catFrameIdx=0, catFrameList=null;
