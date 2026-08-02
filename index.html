@@ -426,7 +426,7 @@
   <section class="view" id="v-exercise">
     <div class="card">
       <h3>🏃 运动 & 🧹 家务打卡</h3>
-      <p class="muted">运动打卡 ☀️+2、家务打卡 ☀️+1（学习积分最高）；完成后还能再自选表扬加阳光哦！</p>
+      <p class="muted">运动打卡 ☀️+2（每日上限5）、家务打卡 ☀️+1（每日上限3）；完成后还能再自选表扬加阳光哦！</p>
       <div id="exList"></div>
     </div>
   </section>
@@ -2136,6 +2136,19 @@ function maybeEngSun(){
 }
 
 /* ============ exercise ============ */
+const EX_SUN_CAP={sport:5, chore:3};          // 运动每日阳光上限5、家务每日上限3（含打卡基础分+表扬分）
+function isSportId(id){ return id.indexOf('sp_')===0; }
+// 统计当天某类任务已累计获得的阳光（打卡基础分 base + 表扬分 add），用于每日上限判定
+function todayExSun(isSport){
+  const d=S.exDone[todayStr()]||{}; let sum=0;
+  for(const id in d){
+    if(isSportId(id)!==isSport) continue;
+    const e=d[id]; if(!e||!e.done) continue;
+    const base=(e.base!==undefined)? e.base : (isSport?2:1);   // 旧数据无 base 字段时按原规则还原
+    sum += base + (e.add||0);
+  }
+  return sum;
+}
 let exPageS=0, exPageC=0;
 function exPager(box,n,total,setFn){
   if(total<=1) return;
@@ -2178,10 +2191,15 @@ function renderEx(){
   $$('#exList .chk').forEach(b=>b.onclick=()=>{
     const id=b.dataset.id;
     if((S.exDone[todayStr()]||{})[id]){ toast('今天已经打过卡啦～'); return; }
-    const isSport = id.indexOf('sp_')===0;
-    S.exDone[todayStr()]=S.exDone[todayStr()]||{}; S.exDone[todayStr()][id]={done:true};
-    S.sun += isSport ? 2 : 1;
-    save(); renderEx(); renderHome(); toast(isSport ? '运动打卡成功！🎉 ☀️+2 可再表扬加阳光' : '家务打卡成功！🎉 ☀️+1 可再表扬加阳光');
+    const isSport = isSportId(id);
+    const cap = isSport ? EX_SUN_CAP.sport : EX_SUN_CAP.chore;
+    const base = isSport ? 2 : 1;
+    const give = Math.min(base, Math.max(0, cap - todayExSun(isSport)));   // 封顶到当日上限
+    S.exDone[todayStr()]=S.exDone[todayStr()]||{}; S.exDone[todayStr()][id]={done:true, base:give, add:0, praised:false};
+    S.sun += give;
+    save(); renderEx(); renderHome();
+    if(give < base){ toast(isSport ? `运动打卡成功！🎉 今日运动阳光已达上限${cap}，本次仅+${give}` : `家务打卡成功！🎉 今日家务阳光已达上限${cap}，本次仅+${give}`); }
+    else { toast(isSport ? '运动打卡成功！🎉 ☀️+2 可再表扬加阳光' : '家务打卡成功！🎉 ☀️+1 可再表扬加阳光'); }
   });
   $$('#exList [data-add]').forEach(b=>b.onclick=()=>{
     const n=+b.dataset.add;
@@ -2189,10 +2207,17 @@ function renderEx(){
     const chk=card.querySelector('.chk');
     const id=chk.dataset.id;
     const rec=S.exDone[todayStr()]&&S.exDone[todayStr()][id];
-    if(rec && rec.add){ return; }
+    if(rec && (rec.praised || rec.add)){ return; }   // 已表扬过则不再加
     // 兼容旧数据：如果存的是 true，转成对象
-    if(rec===true){ S.exDone[todayStr()][id]={done:true}; }
-    S.sun+=n; S.exDone[todayStr()][id].add=n; save(); renderEx(); renderHome(); toast('🎉 表扬蛋蛋！☀️+'+n);
+    if(rec===true){ S.exDone[todayStr()][id]={done:true,base:2,add:0,praised:false}; }
+    const isSport = isSportId(id);
+    const cap = isSport ? EX_SUN_CAP.sport : EX_SUN_CAP.chore;
+    const give = Math.min(n, Math.max(0, cap - todayExSun(isSport)));   // 封顶到当日上限
+    S.sun += give;
+    const entry = S.exDone[todayStr()][id];
+    entry.add = give; entry.praised = true;
+    save(); renderEx(); renderHome();
+    toast(give < n ? (`🎉 表扬蛋蛋！今日上限${cap}，本次仅+${give}`) : ('🎉 表扬蛋蛋！☀️+'+give));
   });
 }
 
