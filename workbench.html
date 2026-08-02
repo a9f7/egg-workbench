@@ -229,22 +229,19 @@
   /* 衣柜缩略图 */
   .wardrobe .wi img{width:46px;height:46px;object-fit:contain;display:block;margin:0 auto 4px;border-radius:8px}
 
-  /* ═══ 动态小猫：状态动画 + 互动特效 ═══ */
+  /* ═══ 动态小猫：帧动画由 JS 切换 catImg.src 实现（猫咪本体真正换帧） ═══ */
   .dog-stage{cursor:pointer}
   .cat-fx{position:absolute;inset:0;pointer-events:none;overflow:visible}
-  /* 随机状态：坐等 / 自娱 / 睡觉 / 生病（覆盖在基础呼吸之上） */
-  .dog.state-sit   .cat-img{animation:catIdle 3.2s ease-in-out infinite}
-  .dog.state-play  .cat-img{animation:catPlay 1.1s ease-in-out infinite}
-  .dog.state-sleep .cat-img{animation:catSleep 4s ease-in-out infinite;filter:drop-shadow(0 8px 10px rgba(80,60,90,.18)) brightness(.96) saturate(.9)}
-  .dog.state-sick  .cat-img{animation:catSick 2.4s ease-in-out infinite;filter:drop-shadow(0 8px 10px rgba(80,60,90,.18)) grayscale(.5) brightness(.94)}
-  @keyframes catIdle{0%,100%{transform:translateY(0) rotate(0)}50%{transform:translateY(-3px) rotate(-1.5deg)}}
-  @keyframes catPlay{0%,100%{transform:translateY(0) scale(1)}30%{transform:translateY(-22px) scale(1.04)}60%{transform:translateY(0) scale(.97)}80%{transform:translateY(-10px) scale(1.02)}}
-  @keyframes catSleep{0%,100%{transform:translateY(0) scaleY(1)}50%{transform:translateY(2px) scaleY(1.06)}}
-  @keyframes catSick{0%,100%{transform:translateY(0) rotate(0)}50%{transform:translateY(3px) rotate(2deg)}}
-  /* 互动：吃 / 吃药（munch），须在状态动画之后定义以覆盖 */
-  .dog.react-eat .cat-img{animation:catEat .5s ease-in-out 3}
-  @keyframes catEat{0%,100%{transform:translateY(0) scaleY(1)}50%{transform:translateY(4px) scaleY(.92)}}
-  /* 粒子特效层：Zzz / 爱心 / 汗滴 / 道具 */
+  /* 状态滤镜：姿势差异由帧图本身表达，这里仅做轻微氛围 */
+  .dog.state-sick  .cat-img{filter:drop-shadow(0 8px 10px rgba(80,60,90,.18)) grayscale(.45) brightness(.94)}
+  .dog.state-sleep .cat-img{filter:drop-shadow(0 8px 10px rgba(80,60,90,.18)) brightness(.97) saturate(.92)}
+  /* 换装状态下（无逐帧动画）给静态图加轻微呼吸，避免完全静止 */
+  .dog.has-outfit .cat-img{animation:catBob 3.4s ease-in-out infinite}
+  @keyframes catBob{0%,100%{transform:translateY(0)}50%{transform:translateY(-4px)}}
+  /* 进食时的轻啃动（叠加在吃帧之上） */
+  .dog.react-eat .cat-img{animation:catNibble .28s ease-in-out 4}
+  @keyframes catNibble{0%,100%{transform:translateY(0) scaleY(1)}50%{transform:translateY(5px) scaleY(.93)}}
+  /* 粒子特效层：爱心 / 道具 / 汗滴 */
   .fx{position:absolute;font-size:22px;line-height:1;will-change:transform,opacity;animation:fxFloat 1.6s ease-out forwards}
   .fx.big{font-size:30px}
   @keyframes fxFloat{0%{transform:translateY(0) scale(.6);opacity:0}15%{opacity:1}100%{transform:translateY(-72px) scale(1.1);opacity:0}}
@@ -1364,6 +1361,7 @@ function switchView(v){
   if(v==='math') renderMath();
   if(v==='english') renderEN();
   if(v==='exercise') renderEx();
+  if(v!=='dog') stopCat();                 // 离开小猫页时停掉帧循环，避免空转
   if(v==='dog'){ pickCatState(); renderDog(); }
   window.scrollTo(0,0);
   if(('#'+v)!==location.hash) history.replaceState(null,'','#'+v);
@@ -2205,12 +2203,40 @@ const SHOP=[
 ];
 function dogLevel(g){ if(g>=150)return 3; if(g>=80)return 2; if(g>=30)return 1; return 0; }
 const DOG_NAMES=['幼崽小猫','可爱小猫','帅气大猫','超级神猫'];
-let catState='sit';                       // 当前随机状态（sit/play/sleep/sick）
-// 已生成的“睡/病”专属姿态图（生成失败则不含，自动回退 CSS 动效）
-const CAT_STATE_IMAGES=new Set([
-  'assets/cat-sleep-lv0.png','assets/cat-sleep-lv1.png','assets/cat-sleep-lv2.png','assets/cat-sleep-lv3.png',
-  'assets/cat-sick-lv0.png','assets/cat-sick-lv1.png','assets/cat-sick-lv2.png','assets/cat-sick-lv3.png'
-]);
+let catState='sit';                       // 当前随机状态（sit/play/sleep/sick/eat 互动态）
+let catFrameTimer=null, catReactTimer=null, catFrameIdx=0, catFrameList=null;
+// 每种状态 × 成长级别的帧文件名（均由 AI 生成的多姿势动作帧）
+const CAT_FRAME_MS={sit:520, play:380, eat:420, sleep:1500, sick:520};
+function catFrameFiles(state, lv){
+  const p='assets/cat-anim-';
+  if(state==='play')  return [p+'p'+lv+'a.png', p+'p'+lv+'b.png'];
+  if(state==='eat')   return [p+'e'+lv+'a.png', p+'e'+lv+'b.png', p+'e'+lv+'c.png'];
+  if(state==='sleep') return [p+'z'+lv+'a.png', p+'z'+lv+'b.png'];
+  if(state==='sick')  return [p+'k'+lv+'a.png', p+'k'+lv+'b.png'];
+  return [p+'s'+lv+'a.png', p+'s'+lv+'b.png', p+'s'+lv+'c.png']; // sit 默认（呼吸/摆尾/眨眼）
+}
+function stopCat(){ if(catFrameTimer){ clearInterval(catFrameTimer); catFrameTimer=null; } }
+// 帧动画播放器：循环切换 catImg.src，让猫咪本体真正“动”起来
+function catPlay(state, lv){
+  stopCat();
+  const list=catFrameFiles(state, lv); catFrameList=list; catFrameIdx=0;
+  const img=$('#catImg');
+  list.forEach(s=>{ const im=new Image(); im.src=s; });    // 预加载，切换不闪烁
+  const step=()=>{ if(!catFrameList) return; img.src=catFrameList[catFrameIdx]; catFrameIdx=(catFrameIdx+1)%catFrameList.length; };
+  step(); catFrameTimer=setInterval(step, CAT_FRAME_MS[state]||500);
+}
+// 根据当前状态/级别/换装，决定小猫显示什么（帧动画 or 静态换装图）
+function updateCatVisual(){
+  const g=S.dog.growth, lv=dogLevel(g);
+  const dog=$('#dog'); dog.className='dog lv'+lv;
+  const catImg=$('#catImg');
+  if(S.dog.equipped){
+    const eq=CLOTHES_POOL.find(c=>c.id===S.dog.equipped);
+    if(eq){ catImg.src='assets/outfit-'+eq.id+'.png'; dog.classList.add('has-outfit'); stopCat(); return; } // 换装时用静态图+轻微 bob
+  }
+  dog.classList.add('state-'+catState);
+  catPlay(catState, lv);
+}
 function renderDog(){
   const g=S.dog.growth, lv=dogLevel(g);
   const dog=$('#dog'); dog.className='dog lv'+lv;
@@ -2218,24 +2244,8 @@ function renderDog(){
   $('#dogGrow').textContent='成长值 '+g;
   const next=[30,80,150,9999][lv];
   $('#dogBar').style.width=Math.min(100, g/next*100)+'%';
-  // ═══ 换装系统：切换 AI 插画资源 ═══
-  const dogEl=$('#dog');
-  const catImg=$('#catImg');
-  dogEl.className='dog lv'+lv;                 // 重置类名，仅保留成长阶段
-  let catSrc='assets/cat-lv'+lv+'.png';        // 默认按成长阶段显示基础小猫
-  if(S.dog.equipped){
-    const eq=CLOTHES_POOL.find(c=>c.id===S.dog.equipped);
-    if(eq){ catSrc='assets/outfit-'+eq.id+'.png'; dogEl.classList.add('has-outfit'); }
-  }
-  // 状态专属姿态图（睡/病），存在才替换，否则保持基础/换装图
-  if(catState==='sleep' && CAT_STATE_IMAGES.has('assets/cat-sleep-lv'+lv+'.png')) catSrc='assets/cat-sleep-lv'+lv+'.png';
-  if(catState==='sick'  && CAT_STATE_IMAGES.has('assets/cat-sick-lv'+lv+'.png'))  catSrc='assets/cat-sick-lv'+lv+'.png';
-  if(catImg.getAttribute('src')!==catSrc){
-    catImg.src=catSrc;                          // 14 张图会被浏览器缓存，切换即时
-    const eqName=(CLOTHES_POOL.find(c=>c.id===S.dog.equipped)||{}).name||'';
-    catImg.alt=DOG_NAMES[lv]+(S.dog.equipped?'（'+eqName+'）':'');
-  }
-  dogEl.classList.add('state-'+catState);   // 应用随机状态动画类
+  // ═══ 动态小猫：由帧动画引擎 updateCatVisual() 驱动（猫咪本体按状态切换动作帧） ═══
+  updateCatVisual();
 
   // shop
   const shop=$('#shop'); shop.innerHTML='';
@@ -2333,7 +2343,7 @@ function renderDog(){
     S.dog.lastFeed=todayStr();                // 记录最后进食日 → 影响生病判定
     const after=dogLevel(S.dog.growth);
     save(); renderDog();
-    catReact(k==='food'?'eat':'medicine');     // 播放对应道具互动动画
+    catFeedReact(k==='food'?'eat':'medicine');     // 播放吃/吃药帧动画
     if(after>before) dogBurst();
     else toast('喂养成功，小猫成长值+'+item.grow+' ❤️');
   });
@@ -2357,14 +2367,13 @@ function pickCatState(){
   if(chosen==='sleep') spawnFx(fx,['💤','💤'],2);
   else if(chosen==='sick') spawnFx(fx,['🤒','💧'],2);
 }
-// 道具互动：吃猫粮 / 吃药 → 播放对应 munch + 道具飘字
-function catReact(type){
-  const dog=$('#dog'); if(!dog) return;
-  if(type==='eat'||type==='medicine'){
-    dog.classList.remove('react-eat'); void dog.offsetWidth; dog.classList.add('react-eat');
-    spawnFx($('#catFx'), type==='eat'?['🍚','🐟','😋']:['💊','✨'], 3);
-    if(type==='medicine') toast('💊 吃药药，早日康复～');
-  }
+// 道具互动：吃猫粮 / 吃药 → 临时切到 eat 帧动画 ~1.3s，再恢复原本随机状态
+function catFeedReact(type){
+  const prev=catState; catState='eat'; updateCatVisual();
+  spawnFx($('#catFx'), type==='eat'?['🍚','🐟','😋']:['💊','✨'], 3);
+  if(type==='medicine') toast('💊 吃药药，早日康复～');
+  clearTimeout(catReactTimer);
+  catReactTimer=setTimeout(()=>{ catState=prev; updateCatVisual(); }, 1300);
 }
 // 生成漂浮粒子（emoji）
 function spawnFx(fx, emojis, n){
