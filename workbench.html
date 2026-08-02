@@ -124,6 +124,14 @@
     background:#fff7fb;border-radius:14px;padding:12px;margin-top:6px}
   details.rec{border:1px solid var(--line);border-radius:14px;padding:10px 12px;margin-bottom:8px;background:#fff}
   details.rec summary{font-weight:700;cursor:pointer;font-size:15px}
+  div.rec{border:1px solid var(--line);border-radius:14px;padding:10px 12px;margin-bottom:10px;background:#fff}
+  .rec.done{background:#f3fbf4;border-color:#bfe6c8}
+  .opt{display:block;width:100%;text-align:left;font-family:inherit;font-size:15px;padding:10px 12px;margin:6px 0;
+    border:2px solid var(--line);border-radius:12px;background:#fff;color:var(--ink);cursor:pointer}
+  .opt:hover{background:#fff7fb}
+  .opt:disabled{opacity:.55;cursor:default}
+  .rd-q{padding:8px 0;border-top:1px dashed var(--line)}
+  .rd-q:first-child{border-top:none}
   /* buttons */
   .btn{display:inline-block;border:none;background:var(--pink);color:#fff;font-weight:800;
     padding:12px 18px;border-radius:16px;font-size:15px;cursor:pointer;font-family:inherit;
@@ -300,8 +308,9 @@
   <!-- CHINESE -->
   <section class="view" id="v-chinese">
     <div class="card">
-      <h3>📖 语文专区 · 四年级上册必背</h3>
-      <p class="muted">假期每天背几段，点「我背会了」记录进度～</p>
+      <h3>📖 语文专区 · 四年级上册</h3>
+      <p class="muted">背诵 + 生字生词 + 近义反义 + 词意解释 + 阅读理解，点子栏目切换～</p>
+      <div class="seg" id="cnSeg"></div>
       <div id="cnList"></div>
     </div>
   </section>
@@ -325,7 +334,8 @@
   <section class="view" id="v-english">
     <div class="card">
       <h3>🔤 英语专区 · 人教版四上</h3>
-      <p class="muted">选单元自测：看汉字拼单词 / 英译中朗读，自动判对错，每5题 ☀️+1</p>
+      <p class="muted">选单元自测：单词记忆（拼写+朗读）/ 听写（看英文写中文），自动判对错，每5题 ☀️+1</p>
+      <div class="seg" id="enModeSeg"></div>
       <div class="seg" id="enUnitSeg"></div>
       <div id="enBox"></div>
     </div>
@@ -414,6 +424,11 @@ function normalize(s){
   s.lastSign = s.lastSign||'';      // 上次签到日期
   s.streak = s.streak||0;           // 连续打卡
   s.cnDone = Array.isArray(s.cnDone)?s.cnDone:[];            // 已背语文id
+  s.cnQuiz = s.cnQuiz||0;                                     // 语文非背诵题累计正确
+  s.cnW = Array.isArray(s.cnW)?s.cnW:[];                      // 生字生词已完成id
+  s.cnS = Array.isArray(s.cnS)?s.cnS:[];                      // 近义反义已完成id
+  s.cnM = Array.isArray(s.cnM)?s.cnM:[];                      // 词意解释已完成id
+  s.cnR = Array.isArray(s.cnR)?s.cnR:[];                      // 阅读理解已完成题id
   s.mathCorrect = s.mathCorrect||0; // 累计口算正确
   s.engCorrect = s.engCorrect||0;   // 累计英语正确
   s.total = s.total||{c:0,m:0,e:0}; // 累计各科完成
@@ -549,6 +564,78 @@ const CN = [
   }
 ];
 const CN_TARGET = CN.length;
+
+/* —— 语文新栏目数据（依据人教版四上教材词语表 / 课文编写）—— */
+/* 生字生词：看拼音写词语 */
+const CN_WORDS = [
+  {py:'qí guān', w:'奇观'}, {py:'nóng lì', w:'农历'}, {py:'kuān kuò', w:'宽阔'},
+  {py:'gǔn dòng', w:'滚动'}, {py:'dùn shí', w:'顿时'}, {py:'zhú jiàn', w:'逐渐'},
+  {py:'yóu rú', w:'犹如'}, {py:'shà shí', w:'霎时'}, {py:'yú bō', w:'余波'},
+  {py:'yī jiù', w:'依旧'}, {py:'róu hé', w:'柔和'}, {py:'hé chuáng', w:'河床'},
+  {py:'xīn xiān', w:'新鲜'}, {py:'xiū bǔ', w:'修补'}, {py:'mǎn yì', w:'满意'},
+  {py:'jiāo guàn', w:'浇灌'}, {py:'zhuāng jia', w:'庄稼'}, {py:'pú tao', w:'葡萄'},
+  {py:'shuǐ dào', w:'水稻'}, {py:'chéng shú', w:'成熟'}, {py:'chāo guò', w:'超过'},
+  {py:'yán jiū', w:'研究'}, {py:'wān dòu', w:'豌豆'}, {py:'nuǎn huo', w:'暖和'},
+  {py:'nài xīn', w:'耐心'}, {py:'shū shì', w:'舒适'}, {py:'hēi àn', w:'黑暗'},
+  {py:'kǒng pà', w:'恐怕'}, {py:'ào mì', w:'奥秘'}, {py:'zhé xué', w:'哲学'}
+];
+
+/* 近义词 / 反义词：写出对应词 */
+const CN_SYN = [
+  {type:'近义词', q:'宽阔', a:'宽广'}, {type:'近义词', q:'顿时', a:'立刻'},
+  {type:'近义词', q:'逐渐', a:'渐渐'}, {type:'近义词', q:'犹如', a:'好像'},
+  {type:'近义词', q:'依旧', a:'依然'}, {type:'近义词', q:'满意', a:'满足'},
+  {type:'近义词', q:'准备', a:'预备'}, {type:'近义词', q:'温和', a:'温顺'},
+  {type:'近义词', q:'似乎', a:'好像'}, {type:'近义词', q:'周围', a:'四周'},
+  {type:'反义词', q:'宽阔', a:'狭窄'}, {type:'反义词', q:'平静', a:'喧闹'},
+  {type:'反义词', q:'熟悉', a:'陌生'}, {type:'反义词', q:'喜欢', a:'讨厌'},
+  {type:'反义词', q:'安全', a:'危险'}, {type:'反义词', q:'上升', a:'下降'},
+  {type:'反义词', q:'光明', a:'黑暗'}, {type:'反义词', q:'清楚', a:'模糊'},
+  {type:'反义词', q:'缓慢', a:'迅速'}, {type:'反义词', q:'温暖', a:'寒冷'}
+];
+
+/* 词意解释：选出正确的意思（多选一） */
+const CN_MEAN = [
+  {w:'顿时', opts:['立刻','缓慢','经常','从来'], a:0},
+  {w:'笼罩', opts:['像笼子一样罩住、覆盖','打开','举起','离开'], a:0},
+  {w:'屹立', opts:['像山峰一样高耸而稳固地立着','躺下','跑动','消失'], a:0},
+  {w:'依旧', opts:['依然，同以前一样','改变','停止','开始'], a:0},
+  {w:'奇妙', opts:['稀奇巧妙，多形容新奇事物','普通','丑陋','安静'], a:0},
+  {w:'舒适', opts:['舒服安逸','难受','拥挤','吵闹'], a:0},
+  {w:'随遇而安', opts:['能适应各种环境并感到满足','挑剔环境','不安分','懒惰'], a:0},
+  {w:'浩浩荡荡', opts:['形容水势或队伍壮大','很小','安静','缓慢'], a:0},
+  {w:'山崩地裂', opts:['山塌地裂，形容声响巨大','小声','平静','开心'], a:0},
+  {w:'呼风唤雨', opts:['比喻能支配自然或左右局面','刮风下雨','种地','睡觉'], a:0},
+  {w:'腾云驾雾', opts:['乘云雾飞行，形容奔驰快或头脑迷糊','走路','游泳','爬山'], a:0},
+  {w:'归根到底', opts:['归结到根本上','开始','中间','表面'], a:0},
+  {w:'敏捷', opts:['（动作）迅速灵敏','迟钝','沉重','缓慢'], a:0},
+  {w:'隐蔽', opts:['借别物遮蔽藏起来','暴露','显示','打开'], a:0},
+  {w:'慎重', opts:['谨慎认真','马虎','随意','大胆'], a:0}
+];
+
+/* 阅读理解：原创短文 + 选择题（不照抄课文，测试细节/主旨） */
+const CN_READ = [
+  {
+    title:'《观察蜗牛》',
+    passage:'星期天，我在阳台的花盆里发现了一只小蜗牛。它的身体软软的，背上背着一座螺旋形的“小房子”。蜗牛爬得很慢，爬过的地方会留下一条亮亮的痕迹。我拿一片嫩绿的菜叶放在它前面，它慢慢伸出两根细细的触角，碰了碰菜叶，然后开始慢慢地吃。我静静地看了半个小时，发现它一直朝着菜叶的方向爬。原来，蜗牛虽然爬得慢，却很认准目标。',
+    qs:[
+      {q:'蜗牛背上的“小房子”指的是什么？', opts:['螺旋形的壳','菜叶','花盆','触角'], a:0},
+      {q:'蜗牛爬过的地方为什么会留下亮亮的痕迹？', opts:['它分泌的黏液','雨水','露水','菜汁'], a:0},
+      {q:'从“它一直朝着菜叶的方向爬”，可以看出蜗牛怎样？', opts:['认准目标','跑得很快','不喜欢菜叶','很调皮'], a:0},
+      {q:'这篇文章主要讲了什么？', opts:['作者观察蜗牛的有趣发现','怎样做菜','下雨的情景','养猫的方法'], a:0}
+    ]
+  },
+  {
+    title:'《小松鼠的约定》',
+    passage:'秋天到了，小松鼠储藏了一树洞的坚果。它和小兔子约定：“冬天大雪封山时，我分你一半。”冬天来了，大雪真的封了山。小兔子又冷又饿，来到树洞找小松鼠。小松鼠还记得约定，搬出坚果说：“说好的，咱们一起过冬！”两个好朋友围着火堆，吃着坚果，一点儿也不觉得冷了。第二年春天，它们又一起去森林里种下了新的坚果树。',
+    qs:[
+      {q:'小松鼠和小兔子约定了什么事？', opts:['冬天分一半坚果','一起爬山','交换玩具','不来往'], a:0},
+      {q:'冬天小兔子为什么又冷又饿？', opts:['大雪封山找不到食物','它懒','它生病','它迷路'], a:0},
+      {q:'小松鼠是一个怎样的小伙伴？', opts:['守信、愿意分享','小气','爱睡觉','调皮'], a:0},
+      {q:'这个故事告诉我们什么道理？', opts:['答应别人的事要守信','冬天要冬眠','坚果不好吃','兔子很笨'], a:0}
+    ]
+  }
+];
 
 const EN_UNITS = [
   {
@@ -1151,8 +1238,25 @@ $('#signBtn').onclick=()=>{
 };
 
 /* ============ chinese ============ */
+let cnMode='recite';
+function maybeCnSun(){
+  if(S.cnQuiz>0 && S.cnQuiz%5===0){ S.sun+=1; toast('🎉 语文答题5题，☀️阳光+1！'); return true; }
+  return false;
+}
 function renderCN(){
+  const seg=$('#cnSeg');
+  const modes=[{k:'recite',n:'📜 背诵'},{k:'words',n:'🔤 生字生词'},{k:'syn',n:'🔁 近义反义'},{k:'mean',n:'📖 词意解释'},{k:'read',n:'📝 阅读理解'}];
+  seg.innerHTML='';
+  modes.forEach(m=>{
+    const b=document.createElement('button'); b.textContent=m.n; b.dataset.k=m.k;
+    if(m.k===cnMode)b.classList.add('on');
+    b.onclick=()=>{ cnMode=m.k; renderCN(); };
+    seg.appendChild(b);
+  });
   const box=$('#cnList'); box.innerHTML='';
+  ({recite:renderCNRecite, words:renderCNWords, syn:renderCNSyn, mean:renderCNMean, read:renderCNRead}[cnMode])(box);
+}
+function renderCNRecite(box){
   CN.forEach(it=>{
     const done=S.cnDone.includes(it.id);
     const d=document.createElement('details'); d.className='rec'; if(done) d.open=true;
@@ -1166,6 +1270,94 @@ function renderCN(){
     if(S.cnDone.includes(id)){ toast('已经记录过啦～'); return; }
     S.cnDone.push(id); S.total.c++; S.today.c++; S.sun+=3; save(); renderCN(); renderHome();
     toast('太棒了！背诵完成 ☀️+3 📖');
+  });
+}
+function renderCNWords(box){
+  const done=S.cnW;
+  CN_WORDS.forEach((it,i)=>{
+    const ok=done.includes(String(i));
+    const d=document.createElement('div'); d.className='rec'+(ok?' done':'');
+    d.innerHTML=`<div class="qprompt">${it.py}</div>
+      <div class="qhint">看拼音写词语 ${ok?'✅ 已答对':''}</div>
+      ${ok?'':`<input type="text" id="wA${i}" placeholder="写出词语" autocomplete="off">
+      <button class="btn block mint" id="wB${i}">提交</button>`}
+      <div class="feedback" id="wF${i}"></div>`;
+    box.appendChild(d);
+    if(!ok){
+      const sub=()=>{
+        const v=$('#wA'+i).value.trim();
+        const fb=$('#wF'+i);
+        if(v===it.w){ S.cnW.push(String(i)); S.cnQuiz++; S.today.c++; const got=maybeCnSun(); save(); renderHome(); renderCNWords(box);
+          toast('✅ 写对啦！'+(got?' 🌟☀️+1':'')); }
+        else { fb.className='feedback no'; fb.innerHTML=`❌ 正确写法：<b>${it.w}</b>`; }
+      };
+      $('#wB'+i).onclick=sub;
+      $('#wA'+i).addEventListener('keydown',e=>{if(e.key==='Enter')sub();});
+    }
+  });
+}
+function renderCNSyn(box){
+  const done=S.cnS;
+  CN_SYN.forEach((it,i)=>{
+    const ok=done.includes(String(i));
+    const d=document.createElement('div'); d.className='rec'+(ok?' done':'');
+    d.innerHTML=`<div class="qhint">${it.type}：<b>${it.q}</b> → ? ${ok?'✅ 已答对':''}</div>
+      ${ok?'':`<input type="text" id="sA${i}" placeholder="写出对应词" autocomplete="off">
+      <button class="btn block mint" id="sB${i}">提交</button>`}
+      <div class="feedback" id="sF${i}"></div>`;
+    box.appendChild(d);
+    if(!ok){
+      const sub=()=>{
+        const v=$('#sA'+i).value.trim(); const fb=$('#sF'+i);
+        if(v===it.a){ S.cnS.push(String(i)); S.cnQuiz++; S.today.c++; const got=maybeCnSun(); save(); renderHome(); renderCNSyn(box); toast('✅ 答对啦！'+(got?' 🌟☀️+1':'')); }
+        else { fb.className='feedback no'; fb.innerHTML=`❌ 正确答案：<b>${it.a}</b>`; }
+      };
+      $('#sB'+i).onclick=sub;
+      $('#sA'+i).addEventListener('keydown',e=>{if(e.key==='Enter')sub();});
+    }
+  });
+}
+function renderCNMean(box){
+  const done=S.cnM;
+  CN_MEAN.forEach((it,i)=>{
+    const ok=done.includes(String(i));
+    const d=document.createElement('div'); d.className='rec'+(ok?' done':'');
+    const optsHtml=it.opts.map((o,oi)=>`<button class="opt" data-o="${oi}" ${ok?'disabled':''}>${String.fromCharCode(65+oi)}. ${o}</button>`).join('');
+    d.innerHTML=`<div class="qhint">词意解释：<b>${it.w}</b> ${ok?'✅ 已答对':''}</div>${optsHtml}
+      <div class="feedback" id="mF${i}"></div>`;
+    box.appendChild(d);
+    if(!ok){
+      d.querySelectorAll('.opt').forEach(btn=>btn.onclick=()=>{
+        const oi=+btn.dataset.o; const fb=$('#mF'+i);
+        if(oi===it.a){ S.cnM.push(String(i)); S.cnQuiz++; S.today.c++; const got=maybeCnSun(); save(); renderHome(); renderCNMean(box); toast('✅ 答对啦！'+(got?' 🌟☀️+1':'')); }
+        else { fb.className='feedback no'; fb.innerHTML='❌ 再想想，选另一个～'; }
+      });
+    }
+  });
+}
+function renderCNRead(box){
+  const done=S.cnR;
+  CN_READ.forEach((p,pi)=>{
+    const allDone=p.qs.every((q,qi)=>done.includes(pi+'-'+qi));
+    const d=document.createElement('details'); d.className='rec'; if(allDone)d.open=false;
+    d.innerHTML=`<summary>${allDone?'✅':''} ${p.title} <span class="pill">阅读理解</span></summary>
+      <div class="poem">${p.passage}</div><div id="rd${pi}"></div>`;
+    box.appendChild(d);
+    const holder=$('#rd'+pi);
+    p.qs.forEach((q,qi)=>{
+      const id=pi+'-'+qi; const ok=done.includes(id);
+      const qd=document.createElement('div'); qd.className='rd-q';
+      const optsHtml=q.opts.map((o,oi)=>`<button class="opt" data-o="${oi}" ${ok?'disabled':''}>${String.fromCharCode(65+oi)}. ${o}</button>`).join('');
+      qd.innerHTML=`<div class="qhint">${qi+1}. ${q.q} ${ok?'✅':''}</div>${optsHtml}<div class="feedback" id="rF${id}"></div>`;
+      holder.appendChild(qd);
+      if(!ok){
+        qd.querySelectorAll('.opt').forEach(btn=>btn.onclick=()=>{
+          const oi=+btn.dataset.o; const fb=$('#rF'+id);
+          if(oi===q.a){ S.cnR.push(id); S.cnQuiz++; S.today.c++; const got=maybeCnSun(); save(); renderHome(); renderCNRead(box); toast('✅ 答对啦！'+(got?' 🌟☀️+1':'')); }
+          else { fb.className='feedback no'; fb.innerHTML='❌ 再想想，选另一个～'; }
+        });
+      }
+    });
   });
 }
 
@@ -1613,7 +1805,17 @@ function maybeMathSun(){
 }
 
 /* ============ english ============ */
-let enUnit='all', enQueue=[], enIdx=0;
+let enUnit='all', enMode='memory', enQueue=[], enIdx=0;
+function buildENModeSeg(){
+  const seg=$('#enModeSeg'); seg.innerHTML='';
+  const opts=[{k:'memory',n:'🧠 单词记忆'},{k:'dictate',n:'✍️ 听写'}];
+  opts.forEach(o=>{
+    const b=document.createElement('button'); b.textContent=o.n; b.dataset.k=o.k;
+    if(o.k===enMode)b.classList.add('on');
+    b.onclick=()=>{ enMode=o.k; enIdx=0; enQueue=[]; buildENModeSeg(); buildENSeg(); renderEN(); };
+    seg.appendChild(b);
+  });
+}
 function buildENSeg(){
   const seg=$('#enUnitSeg'); seg.innerHTML='';
   const opts=[{k:'all',n:'全部单元'},...EN_UNITS.map((u,i)=>({k:'u'+i,n:u.unit.split(' ')[0]+' '+u.unit.split(' ')[1]}))];
@@ -1628,26 +1830,38 @@ function buildENQueue(){
   let items=[];
   const units = enUnit==='all'?EN_UNITS:EN_UNITS.filter((_,i)=>'u'+i===enUnit);
   units.forEach(u=>{
-    u.words.forEach(w=>items.push({type:'spell', q:w[1], a:w[0], ex:w[1]}));
-    u.sentences.forEach(s=>items.push({type:'read', q:s[0], zh:s[1]}));
+    if(enMode==='memory'){
+      u.words.forEach(w=>items.push({type:'spell', q:w[1], a:w[0]}));
+      u.sentences.forEach(s=>items.push({type:'read', q:s[0], zh:s[1]}));
+    } else {
+      u.words.forEach(w=>items.push({type:'dictate', q:w[0], a:w[1]}));
+    }
   });
   enQueue=shuffle(items);
 }
 function renderEN(){
-  buildENSeg();
+  buildENModeSeg(); buildENSeg();
   const box=$('#enBox');
   if(!enQueue.length||enIdx>=enQueue.length){ buildENQueue(); enIdx=0; }
   const it=enQueue[enIdx];
   if(!it){ box.innerHTML='<p class="muted">暂无题目</p>'; return; }
   if(it.type==='spell'){
-    box.innerHTML=`<div class="quiz-top"><span>拼写练习 ${enIdx+1}/${enQueue.length}</span><span>每5题 ☀️+1</span></div>
+    box.innerHTML=`<div class="quiz-top"><span>单词记忆·拼写 ${enIdx+1}/${enQueue.length}</span><span>每5题 ☀️+1</span></div>
       <div class="qprompt">${it.q}</div>
       <div class="qhint">看中文写出英文单词</div>
       <input type="text" id="eA" placeholder="英文单词" autocomplete="off">
       <button class="btn block mint" id="eSub">提交</button>
       <div class="feedback" id="eFb"></div>`;
+  } else if(it.type==='dictate'){
+    box.innerHTML=`<div class="quiz-top"><span>听写 ${enIdx+1}/${enQueue.length}</span><span>每5题 ☀️+1</span></div>
+      <div class="qprompt">${it.q} <button class="speak" id="eSp">🔊</button></div>
+      <div class="qhint">看英文写出中文意思</div>
+      <input type="text" id="eA" placeholder="中文意思" autocomplete="off">
+      <button class="btn block mint" id="eSub">提交</button>
+      <div class="feedback" id="eFb"></div>`;
+    $('#eSp').onclick=()=>speak(it.q);
   } else {
-    box.innerHTML=`<div class="quiz-top"><span>朗读练习 ${enIdx+1}/${enQueue.length}</span><span>每5题 ☀️+1</span></div>
+    box.innerHTML=`<div class="quiz-top"><span>单词记忆·朗读 ${enIdx+1}/${enQueue.length}</span><span>每5题 ☀️+1</span></div>
       <div class="qprompt">${it.q} <button class="speak" id="eSp">🔊</button></div>
       <div class="qhint">中文意思：${it.zh} ｜ 点🔊听读音，读完后点完成</div>
       <button class="btn block mint" id="eSub">我读完啦 ✓</button>
@@ -1663,6 +1877,13 @@ function renderEN(){
       if(ok){ S.engCorrect++; S.total.e++; S.today.e++; const got=maybeEngSun();
         fb.className='feedback ok'; fb.innerHTML='✅ 拼写正确！'+(got?' 🌟☀️+1':''); }
       else { fb.className='feedback no'; fb.innerHTML=`❌ 正确拼写：<b>${it.a}</b>`; }
+    } else if(it.type==='dictate'){
+      const v=$('#eA').value.trim();
+      ok = v===it.a;
+      const fb=$('#eFb');
+      if(ok){ S.engCorrect++; S.total.e++; S.today.e++; const got=maybeEngSun();
+        fb.className='feedback ok'; fb.innerHTML='✅ 写对啦！'+(got?' 🌟☀️+1':''); }
+      else { fb.className='feedback no'; fb.innerHTML=`❌ 正确意思：<b>${it.a}</b>`; }
     } else {
       S.engCorrect++; S.total.e++; S.today.e++; const got=maybeEngSun();
       const fb=$('#eFb'); fb.className='feedback ok'; fb.innerHTML='✅ 完成朗读！'+(got?' 🌟☀️+1':'');
@@ -1671,7 +1892,7 @@ function renderEN(){
     setTimeout(renderEN, 750);
   };
   $('#eSub').onclick=submit;
-  if(it.type==='spell'){ const e=$('#eA'); e.addEventListener('keydown',ev=>{if(ev.key==='Enter')submit();}); setTimeout(()=>e.focus(),50); }
+  if(it.type!=='read'){ const e=$('#eA'); e.addEventListener('keydown',ev=>{if(ev.key==='Enter')submit();}); setTimeout(()=>e.focus(),50); }
 }
 function maybeEngSun(){
   if(S.engCorrect>0 && S.engCorrect%5===0){ S.sun+=1; toast('🎉 英语答对5题，☀️阳光+1！'); return true; }
