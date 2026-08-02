@@ -229,6 +229,26 @@
   /* 衣柜缩略图 */
   .wardrobe .wi img{width:46px;height:46px;object-fit:contain;display:block;margin:0 auto 4px;border-radius:8px}
 
+  /* ═══ 动态小猫：状态动画 + 互动特效 ═══ */
+  .dog-stage{cursor:pointer}
+  .cat-fx{position:absolute;inset:0;pointer-events:none;overflow:visible}
+  /* 随机状态：坐等 / 自娱 / 睡觉 / 生病（覆盖在基础呼吸之上） */
+  .dog.state-sit   .cat-img{animation:catIdle 3.2s ease-in-out infinite}
+  .dog.state-play  .cat-img{animation:catPlay 1.1s ease-in-out infinite}
+  .dog.state-sleep .cat-img{animation:catSleep 4s ease-in-out infinite;filter:drop-shadow(0 8px 10px rgba(80,60,90,.18)) brightness(.96) saturate(.9)}
+  .dog.state-sick  .cat-img{animation:catSick 2.4s ease-in-out infinite;filter:drop-shadow(0 8px 10px rgba(80,60,90,.18)) grayscale(.5) brightness(.94)}
+  @keyframes catIdle{0%,100%{transform:translateY(0) rotate(0)}50%{transform:translateY(-3px) rotate(-1.5deg)}}
+  @keyframes catPlay{0%,100%{transform:translateY(0) scale(1)}30%{transform:translateY(-22px) scale(1.04)}60%{transform:translateY(0) scale(.97)}80%{transform:translateY(-10px) scale(1.02)}}
+  @keyframes catSleep{0%,100%{transform:translateY(0) scaleY(1)}50%{transform:translateY(2px) scaleY(1.06)}}
+  @keyframes catSick{0%,100%{transform:translateY(0) rotate(0)}50%{transform:translateY(3px) rotate(2deg)}}
+  /* 互动：吃 / 吃药（munch），须在状态动画之后定义以覆盖 */
+  .dog.react-eat .cat-img{animation:catEat .5s ease-in-out 3}
+  @keyframes catEat{0%,100%{transform:translateY(0) scaleY(1)}50%{transform:translateY(4px) scaleY(.92)}}
+  /* 粒子特效层：Zzz / 爱心 / 汗滴 / 道具 */
+  .fx{position:absolute;font-size:22px;line-height:1;will-change:transform,opacity;animation:fxFloat 1.6s ease-out forwards}
+  .fx.big{font-size:30px}
+  @keyframes fxFloat{0%{transform:translateY(0) scale(.6);opacity:0}15%{opacity:1}100%{transform:translateY(-72px) scale(1.1);opacity:0}}
+
   /* 衣柜样式 */
   .wardrobe{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:8px}
   .wardrobe .wc{background:#fff;border-radius:14px;padding:10px;text-align:center;box-shadow:var(--shadow);cursor:pointer;transition:transform .15s;position:relative;border:2px solid transparent}
@@ -412,6 +432,7 @@
         <div class="dog" id="dog">
           <img class="cat-img" id="catImg" src="assets/cat-lv0.png" alt="蛋蛋的小猫">
         </div>
+        <div class="cat-fx" id="catFx"></div>
       </div>
       <div style="text-align:center">
         <div style="font-weight:800;font-size:16px" id="dogName">幼崽小猫</div>
@@ -489,6 +510,7 @@ function normalize(s){
   s.wrong = Array.isArray(s.wrong)?s.wrong:[];              // 数学错题
   s.exDone = s.exDone||{};          // 运动完成(按日期)
   s.dog = s.dog||{growth:0, inv:{food:0,clothes:0,medicine:0}, wardrobe:[], equipped:null};
+  s.dog.lastFeed = s.dog.lastFeed||'';   // 最后进食日期，用于“生病”触发判定
   return s;
 }
 function load(raw){
@@ -1342,7 +1364,7 @@ function switchView(v){
   if(v==='math') renderMath();
   if(v==='english') renderEN();
   if(v==='exercise') renderEx();
-  if(v==='dog') renderDog();
+  if(v==='dog'){ pickCatState(); renderDog(); }
   window.scrollTo(0,0);
   if(('#'+v)!==location.hash) history.replaceState(null,'','#'+v);
 }
@@ -2183,6 +2205,12 @@ const SHOP=[
 ];
 function dogLevel(g){ if(g>=150)return 3; if(g>=80)return 2; if(g>=30)return 1; return 0; }
 const DOG_NAMES=['幼崽小猫','可爱小猫','帅气大猫','超级神猫'];
+let catState='sit';                       // 当前随机状态（sit/play/sleep/sick）
+// 已生成的“睡/病”专属姿态图（生成失败则不含，自动回退 CSS 动效）
+const CAT_STATE_IMAGES=new Set([
+  'assets/cat-sleep-lv0.png','assets/cat-sleep-lv1.png','assets/cat-sleep-lv2.png','assets/cat-sleep-lv3.png',
+  'assets/cat-sick-lv0.png','assets/cat-sick-lv1.png','assets/cat-sick-lv2.png','assets/cat-sick-lv3.png'
+]);
 function renderDog(){
   const g=S.dog.growth, lv=dogLevel(g);
   const dog=$('#dog'); dog.className='dog lv'+lv;
@@ -2199,11 +2227,15 @@ function renderDog(){
     const eq=CLOTHES_POOL.find(c=>c.id===S.dog.equipped);
     if(eq){ catSrc='assets/outfit-'+eq.id+'.png'; dogEl.classList.add('has-outfit'); }
   }
+  // 状态专属姿态图（睡/病），存在才替换，否则保持基础/换装图
+  if(catState==='sleep' && CAT_STATE_IMAGES.has('assets/cat-sleep-lv'+lv+'.png')) catSrc='assets/cat-sleep-lv'+lv+'.png';
+  if(catState==='sick'  && CAT_STATE_IMAGES.has('assets/cat-sick-lv'+lv+'.png'))  catSrc='assets/cat-sick-lv'+lv+'.png';
   if(catImg.getAttribute('src')!==catSrc){
     catImg.src=catSrc;                          // 14 张图会被浏览器缓存，切换即时
     const eqName=(CLOTHES_POOL.find(c=>c.id===S.dog.equipped)||{}).name||'';
     catImg.alt=DOG_NAMES[lv]+(S.dog.equipped?'（'+eqName+'）':'');
   }
+  dogEl.classList.add('state-'+catState);   // 应用随机状态动画类
 
   // shop
   const shop=$('#shop'); shop.innerHTML='';
@@ -2298,11 +2330,55 @@ function renderDog(){
     if((S.dog.inv[k]||0)<=0) return;
     const before=dogLevel(S.dog.growth);
     S.dog.inv[k]--; S.dog.growth+=item.grow;
+    S.dog.lastFeed=todayStr();                // 记录最后进食日 → 影响生病判定
     const after=dogLevel(S.dog.growth);
     save(); renderDog();
+    catReact(k==='food'?'eat':'medicine');     // 播放对应道具互动动画
     if(after>before) dogBurst();
     else toast('喂养成功，小猫成长值+'+item.grow+' ❤️');
   });
+}
+function daysBetween(a,b){ const da=new Date(a+'T00:00:00'), db=new Date(b+'T00:00:00'); return Math.round((db-da)/86400000); }
+// 是否达到“生病”触发条件：连续 2 天未进食
+function isSickEligible(){
+  const lf=S.dog.lastFeed||'';
+  if(!lf) return false;                 // 从未喂过 → 不生病（保持初始健康态）
+  return daysBetween(lf, todayStr())>=2;
+}
+// 进入小猫页时随机抽取随机状态（坐等70% / 自娱10% / 睡觉10% / 生病5%，生病需满足触发条件）
+function pickCatState(){
+  const eligible=isSickEligible();
+  const w = eligible ? {sit:70, play:10, sleep:10, sick:5} : {sit:70, play:10, sleep:10};
+  const total=Object.values(w).reduce((a,b)=>a+b,0);
+  let r=Math.random()*total, chosen='sit';
+  for(const k in w){ r-=w[k]; if(r<=0){ chosen=k; break; } }
+  catState=chosen;
+  const fx=$('#catFx');                 // 状态专属氛围特效（进入时播一次）
+  if(chosen==='sleep') spawnFx(fx,['💤','💤'],2);
+  else if(chosen==='sick') spawnFx(fx,['🤒','💧'],2);
+}
+// 道具互动：吃猫粮 / 吃药 → 播放对应 munch + 道具飘字
+function catReact(type){
+  const dog=$('#dog'); if(!dog) return;
+  if(type==='eat'||type==='medicine'){
+    dog.classList.remove('react-eat'); void dog.offsetWidth; dog.classList.add('react-eat');
+    spawnFx($('#catFx'), type==='eat'?['🍚','🐟','😋']:['💊','✨'], 3);
+    if(type==='medicine') toast('💊 吃药药，早日康复～');
+  }
+}
+// 生成漂浮粒子（emoji）
+function spawnFx(fx, emojis, n){
+  if(!fx) return;
+  for(let i=0;i<n;i++){
+    const s=document.createElement('span');
+    s.className='fx'+(Math.random()<.4?' big':'');
+    s.textContent=emojis[i%emojis.length];
+    s.style.left=(28+Math.random()*44)+'%';
+    s.style.top =(22+Math.random()*30)+'%';
+    s.style.animationDelay=(i*0.18)+'s';
+    fx.appendChild(s);
+    setTimeout(()=>s.remove(), 2200);
+  }
 }
 function equipClothes(id){
   S.dog.equipped=id; save(); renderDog();
@@ -2315,10 +2391,11 @@ function equipClothes(id){
 }
 $('#dog').addEventListener('click',()=>{
   const dog=$('#dog'); dog.classList.remove('jump'); void dog.offsetWidth; dog.classList.add('jump');
-  const stage=$('#dogStage'), r=stage.getBoundingClientRect();
+  const stage=$('#dogStage');
   const h=document.createElement('div'); h.className='heart'; h.textContent='❤️';
   h.style.left=(stage.clientWidth/2-10+Math.random()*40-20)+'px'; h.style.bottom='60px';
   stage.appendChild(h); setTimeout(()=>h.remove(),1000);
+  spawnFx($('#catFx'),['💗','💕','✨'],3);   // 撒娇：飘爱心特效
 });
 function dogBurst(){
   const stage=$('#dogStage');
