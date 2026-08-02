@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-title" content="蛋蛋打卡">
 <meta name="theme-color" content="#ff8fb8">
 <link rel="manifest" href="data:application/manifest+json,%7B%22name%22:%22%E8%9B%8B%E8%9B%8B%E7%9A%84%E5%81%87%E6%9C%9F%E9%A2%84%E4%B9%A0%E6%89%93%E5%8D%A1%22,%22short_name%22:%22%E8%9B%8B%E8%9B%8B%E6%89%93%E5%8D%A1%22,%22start_url%22:%22.%22,%22display%22:%22standalone%22,%22background_color%22:%22%23fff7fb%22,%22theme_color%22:%22%23ff8fb8%22%7D">
-<meta name="description" content="蛋蛋的假期预习打卡工作台：语文背诵、数学口算、英语拼写、运动打卡、阳光值与小猫养成，三升四年级假期预习好帮手。">
+<meta name="description" content="蛋蛋的假期预习打卡工作台：三年级下册·四年级上册 语文背诵、数学口算、英语拼写（含复习预习）、运动打卡、阳光值与小猫养成，假期预习好帮手。">
 <title>蛋蛋的假期预习打卡工作台</title>
 <style>
   :root{
@@ -389,7 +389,8 @@
   <!-- CHINESE -->
   <section class="view" id="v-chinese">
     <div class="card">
-      <h3>📖 语文专区 · 四年级上册</h3>
+      <h3>📖 语文专区</h3>
+      <div class="seg" id="cnGradeSeg" style="margin-bottom:8px"></div>
       <p class="muted">背诵 + 生字生词 + 近义反义 + 词意解释 + 阅读理解，点子栏目切换～</p>
       <div class="seg" id="cnSeg"></div>
       <div id="cnList"></div>
@@ -400,6 +401,7 @@
   <section class="view" id="v-math">
     <div class="card">
       <h3>➗ 数学专区 · 口算练习</h3>
+      <div class="seg" id="mathGradeSeg" style="margin-bottom:8px"></div>
       <div class="seg" id="mathSeg">
         <button class="on" data-mode="mental">口算刷题</button>
         <button data-mode="unit">单元重点题</button>
@@ -414,8 +416,9 @@
   <!-- ENGLISH -->
   <section class="view" id="v-english">
     <div class="card">
-      <h3>🔤 英语专区 · 人教版四上</h3>
-      <p class="muted">选单元自测：单词记忆（拼写+朗读）/ 英译中（看英文写中文）/ 听写（听音写单词），自动判对错，每5题 ☀️+1</p>
+      <h3>🔤 英语专区</h3>
+      <div class="seg" id="enGradeSeg" style="margin-bottom:8px"></div>
+      <p class="muted">选单元自测：单词记忆（拼写+朗读）/ 英译中 / 听写 / 复习预习（结合教材），自动判对错，每5题 ☀️+1</p>
       <div class="seg" id="enModeSeg"></div>
       <div class="seg" id="enUnitSeg"></div>
       <div id="enBox"></div>
@@ -515,6 +518,8 @@ function normalize(s){
   s.cnS = Array.isArray(s.cnS)?s.cnS:[];                      // 近义反义已完成id
   s.cnM = Array.isArray(s.cnM)?s.cnM:[];                      // 词意解释已完成id
   s.cnR = Array.isArray(s.cnR)?s.cnR:[];                      // 阅读理解已完成题id
+  s.enPrev = Array.isArray(s.enPrev)?s.enPrev:[];            // 英语预习·已记住单词key
+  s.enRev = Array.isArray(s.enRev)?s.enRev:[];              // 英语复习·句型自测已完成key
   s.mathCorrect = s.mathCorrect||0; // 累计口算正确
   s.engCorrect = s.engCorrect||0;   // 累计英语正确
   s.total = s.total||{c:0,m:0,e:0}; // 累计各科完成
@@ -810,6 +815,117 @@ const CN_READ = [
       {q:'一开始“我”的陀螺招来什么？', opts:['一顿嘲笑','掌声','奖状','害怕'], a:0},
       {q:'比赛结果，大陀螺怎样了？', opts:['彻底溃败','赢了','平手','逃走'], a:0},
       {q:'“人不可貌相，海水不可斗量”意思是？', opts:['不能只凭外表判断，小东西也有大本事','人长得丑','海水很深','陀螺要漂亮'], a:0}
+    ]
+  }
+];
+
+/* ═══════════ 三年级下册 · 语文（依据人教版三下教材编写） ═══════════ */
+const CN3 = [
+  {id:'1', tag:'古诗', title:'《绝句》[唐]杜甫', text:'迟日江山丽，春风花草香。\n泥融飞燕子，沙暖睡鸳鸯。'},
+  {id:'2', tag:'古诗', title:'《惠崇春江晚景》[宋]苏轼', text:'竹外桃花三两枝，春江水暖鸭先知。\n蒌蒿满地芦芽短，正是河豚欲上时。'},
+  {id:'3', tag:'古诗', title:'《三衢道中》[宋]曾几', text:'梅子黄时日日晴，小溪泛尽却山行。\n绿阴不减来时路，添得黄鹂四五声。'},
+  {id:'4', tag:'古诗', title:'《忆江南》[唐]白居易', text:'江南好，风景旧曾谙。\n日出江花红胜火，春来江水绿如蓝。能不忆江南？'},
+  {id:'5', tag:'文言文', title:'《守株待兔》', text:'宋人有耕者。田中有株。兔走触株，折颈而死。\n因释其耒而守株，冀复得兔。兔不可复得，而身为宋国笑。'},
+  {id:'6', tag:'古诗', title:'《元日》[宋]王安石', text:'爆竹声中一岁除，春风送暖入屠苏。\n千门万户曈曈日，总把新桃换旧符。'},
+  {id:'7', tag:'古诗', title:'《清明》[唐]杜牧', text:'清明时节雨纷纷，路上行人欲断魂。\n借问酒家何处有？牧童遥指杏花村。'},
+  {id:'8', tag:'古诗', title:'《九月九日忆山东兄弟》[唐]王维', text:'独在异乡为异客，每逢佳节倍思亲。\n遥知兄弟登高处，遍插茱萸少一人。'},
+  {id:'9', tag:'古诗', title:'《滁州西涧》[唐]韦应物', text:'独怜幽草涧边生，上有黄鹂深树鸣。\n春潮带雨晚来急，野渡无人舟自横。'},
+  {id:'10', tag:'古诗', title:'《大林寺桃花》[唐]白居易', text:'人间四月芳菲尽，山寺桃花始盛开。\n长恨春归无觅处，不知转入此中来。'}
+];
+/* 三年级下册 · 生字生词（看拼音写词语） */
+const CN3_WORDS = [
+  {py:'yàn zi', w:'燕子'}, {py:'wū hēi', w:'乌黑'}, {py:'qīng kuài', w:'轻快'},
+  {py:'chì bǎng', w:'翅膀'}, {py:'jiǎn dāo', w:'剪刀'}, {py:'wěi ba', w:'尾巴'},
+  {py:'huó pō', w:'活泼'}, {py:'jī líng', w:'机灵'}, {py:'wēi fēng', w:'微风'},
+  {py:'gǎn jí', w:'赶集'}, {py:'jù lǒng', w:'聚拢'}, {py:'zēng tiān', w:'增添'},
+  {py:'shēng qù', w:'生趣'}, {py:'lüè guò', w:'掠过'}, {py:'dào tián', w:'稻田'},
+  {py:'ǒu ěr', w:'偶尔'}, {py:'dàng yàng', w:'荡漾'}, {py:'yīn fú', w:'音符'},
+  {py:'yǎn zòu', w:'演奏'}, {py:'zàn gē', w:'赞歌'}, {py:'hé huā', w:'荷花'},
+  {py:'qīng xiāng', w:'清香'}, {py:'bì lǜ', w:'碧绿'}, {py:'lián péng', w:'莲蓬'},
+  {py:'bǎo zhàng', w:'饱胀'}, {py:'pò liè', w:'破裂'}, {py:'zī shì', w:'姿势'},
+  {py:'fǎng fú', w:'仿佛'}, {py:'yī shang', w:'衣裳'}, {py:'piān piān qǐ wǔ', w:'翩翩起舞'},
+  {py:'wǔ dǎo', w:'舞蹈'}, {py:'shǒu zhū dài tù', w:'守株待兔'}, {py:'sòng rén', w:'宋人'},
+  {py:'gēng zhě', w:'耕者'}, {py:'chù zhū', w:'触株'}, {py:'zhé jǐng', w:'折颈'},
+  {py:'shì lěi', w:'释耒'}, {py:'jì fù dé tù', w:'冀复得兔'}, {py:'tú sū', w:'屠苏'},
+  {py:'táo fú', w:'桃符'}, {py:'duàn hún', w:'断魂'}, {py:'zhū yú', w:'茱萸'},
+  {py:'zhào zhōu qiáo', w:'赵州桥'}, {py:'shè jì', w:'设计'}, {py:'cān jiā', w:'参加'},
+  {py:'lì shǐ', w:'历史'}, {py:'chuàng jǔ', w:'创举'}, {py:'zhì huì', w:'智慧'},
+  {py:'jié shěng', w:'节省'}
+];
+/* 三年级下册 · 近义词 / 反义词 */
+const CN3_SYN = [
+  {type:'近义词', q:'聚拢', a:'聚集'}, {type:'近义词', q:'偶尔', a:'偶然'},
+  {type:'近义词', q:'增添', a:'增加'}, {type:'近义词', q:'活泼', a:'活跃'},
+  {type:'近义词', q:'轻快', a:'轻盈'}, {type:'近义词', q:'姿势', a:'姿态'},
+  {type:'近义词', q:'忽然', a:'突然'}, {type:'近义词', q:'珍贵', a:'宝贵'},
+  {type:'近义词', q:'节省', a:'节约'}, {type:'近义词', q:'坚固', a:'牢固'},
+  {type:'反义词', q:'乌黑', a:'雪白'}, {type:'反义词', q:'轻快', a:'沉重'},
+  {type:'反义词', q:'偶尔', a:'经常'}, {type:'反义词', q:'活泼', a:'呆板'},
+  {type:'反义词', q:'增添', a:'减少'}, {type:'反义词', q:'展开', a:'收拢'},
+  {type:'反义词', q:'快乐', a:'悲伤'}, {type:'反义词', q:'干燥', a:'湿润'},
+  {type:'反义词', q:'节省', a:'浪费'}, {type:'反义词', q:'悠闲', a:'忙碌'}
+];
+/* 三年级下册 · 词意解释 */
+const CN3_MEAN = [
+  {w:'挨挨挤挤', opts:['荷叶一个挨着一个，形容拥挤','分散','稀少','干净'], a:0},
+  {w:'翩翩起舞', opts:['轻快地跳舞，多形容飞舞','走路','睡觉','站立'], a:0},
+  {w:'光彩夺目', opts:['颜色和光泽鲜艳耀眼','暗淡','普通','陈旧'], a:0},
+  {w:'守株待兔', opts:['死守经验、妄想不劳而获','勤劳耕作','跑步','种树'], a:0},
+  {w:'偶尔', opts:['有时候、不经常','经常','总是','从来'], a:0},
+  {w:'荡漾', opts:['水波一起一伏地动','静止','结冰','干涸'], a:0},
+  {w:'饱胀', opts:['饱满得发胀，形容花骨朵','干瘪','很小','枯萎'], a:0},
+  {w:'仿佛', opts:['好像、似乎','一定','从不','很少'], a:0},
+  {w:'清香', opts:['清淡的香味','臭味','辣味','腥味'], a:0},
+  {w:'创举', opts:['前所未有的、了不起的举动','小事','错误','重复'], a:0},
+  {w:'智慧', opts:['辨析判断、发明创造的能力','力气','身高','年龄'], a:0},
+  {w:'节省', opts:['使可能被耗费的不被耗费','浪费','增加','丢弃'], a:0},
+  {w:'坚固', opts:['结实、牢固','松散','脆弱','易碎'], a:0},
+  {w:'悠闲', opts:['闲适自得','忙碌','着急','生气'], a:0}
+];
+/* 三年级下册 · 阅读理解（教材课文原文 + 选择题） */
+const CN3_READ = [
+  {
+    src:'课文《燕子》 · 三年级下册',
+    title:'《燕子》（节选）',
+    passage:'一身乌黑的羽毛，一对轻快有力的翅膀，加上剪刀似的尾巴，凑成了那样可爱的活泼的小燕子。\n二三月的春日里，轻风微微地吹拂着，如毛的细雨由天上洒落着，千条万条的柔柳，红的白的黄的花，青的草，绿的叶，都像赶集似的聚拢来，形成了烂漫无比的春天。这时候，那些小燕子，那么伶俐可爱的小燕子，也由南方飞来，加入这光彩夺目的图画中，为春光平添了许多生趣。',
+    qs:[
+      {q:'作者写燕子的外形，依次写了哪三部分？', opts:['羽毛、翅膀、尾巴','头、身子、脚','眼睛、嘴、爪','毛、皮、骨'], a:0},
+      {q:'“如毛的细雨”把细雨比作什么？', opts:['毛','针','线','沙'], a:0},
+      {q:'“都像赶集似的聚拢来”写的是什么聚拢来？', opts:['花草叶和柔柳等春天景物','人群','燕子','云朵'], a:0},
+      {q:'小燕子为春光平添了什么？', opts:['许多生趣','喧闹','寒冷','黑暗'], a:0}
+    ]
+  },
+  {
+    src:'课文《荷花》 · 三年级下册',
+    title:'《荷花》（节选）',
+    passage:'荷花已经开了不少了。荷叶挨挨挤挤的，像一个个碧绿的大圆盘。白荷花在这些大圆盘之间冒出来。有的才展开两三片花瓣儿。有的花瓣儿全展开了，露出嫩黄色的小莲蓬。有的还是花骨朵儿，看起来饱胀得马上要破裂似的。\n这么多的白荷花，一朵有一朵的姿势。看看这一朵，很美；看看那一朵，也很美。如果把眼前的一池荷花看作一大幅活的画，那画家的本领可真了不起。',
+    qs:[
+      {q:'“荷叶挨挨挤挤的，像一个个碧绿的大圆盘”把荷叶比作？', opts:['大圆盘','雨伞','扇子','小船'], a:0},
+      {q:'“白荷花在这些大圆盘之间冒出来”中“冒”字说明荷花怎样？', opts:['使劲、有力地钻出来，生机勃勃','慢慢枯萎','被风吹走','躲起来'], a:0},
+      {q:'文中写了荷花的几种不同姿态？', opts:['三种（才展开/全展开/花骨朵）','一种','两种','四种'], a:0},
+      {q:'作者把一池荷花比作什么？', opts:['一大幅活的画','一张照片','一本书','一首诗'], a:0}
+    ]
+  },
+  {
+    src:'课文《赵州桥》 · 三年级下册',
+    title:'《赵州桥》（节选）',
+    passage:'赵州桥非常雄伟。桥长五十多米，有九米多宽，中间行车马，两旁走人。这么长的桥，全部用石头砌成，下面没有桥墩，只有一个拱形的大桥洞，横跨在三十七米多宽的河面上。\n大桥洞顶上的左右两边，还各有两个拱形的小桥洞。平时，河水从大桥洞流过，发大水的时候，河水还可以从四个小桥洞流过。这种设计，在建桥史上是一个创举，既减轻了流水对桥身的冲击力，使桥不容易被大水冲毁，又减轻了桥身的重量，节省了石料。',
+    qs:[
+      {q:'赵州桥的设计有什么特别之处？', opts:['没有桥墩，只有一个大桥洞加四个小桥洞','有很多桥墩','是木头的','很矮'], a:0},
+      {q:'大桥洞两边的小桥洞有什么作用？', opts:['减轻冲击力、省石料','好看','乘凉','养鱼'], a:0},
+      {q:'这种设计被称为什么？', opts:['建桥史上的创举','普通设计','失败','实验'], a:0},
+      {q:'赵州桥表现了劳动人民的什么？', opts:['智慧和才干','懒惰','贫穷','粗心'], a:0}
+    ]
+  },
+  {
+    src:'课文《花钟》 · 三年级下册',
+    title:'《花钟》（节选）',
+    passage:'鲜花朵朵，争奇斗艳，芬芳迷人。要是我们留心观察，就会发现，一天之内，不同的花开放的时间是不同的。凌晨四点，牵牛花吹起了紫色的小喇叭；五点左右，艳丽的蔷薇绽开了笑脸；七点，睡莲从梦中醒来；中午十二点左右，午时花开花了；下午三点，万寿菊欣然怒放；傍晚六点，烟草花在暮色中苏醒。',
+    qs:[
+      {q:'不同植物的花开放时间有什么特点？', opts:['一天之内开放时间不同','都在早上开','都在晚上开','都一样'], a:0},
+      {q:'“牵牛花吹起了紫色的小喇叭”用了什么写法？', opts:['拟人','比喻成动物','夸张','说明'], a:0},
+      {q:'“欣然怒放”一般形容哪种花在下午三点开放？', opts:['万寿菊','牵牛花','睡莲','蔷薇'], a:0},
+      {q:'这段话主要告诉我们什么？', opts:['要留心观察，花开放时间不同','花都很香','花是红色的','时间很准'], a:0}
     ]
   }
 ];
@@ -1330,6 +1446,98 @@ const EN_UNITS = [
     ]
   }
 ];
+/* ═══════════ 三年级下册 · 英语（人教版PEP三下 6个单元） ═══════════ */
+const EN3_UNITS = [
+  {
+    "unit": "Unit 1 Welcome back to school",
+    "words": [
+      ["UK","英国"],["Canada","加拿大"],["USA","美国"],["China","中国"],
+      ["she","她"],["he","他"],["student","学生"],["pupil","小学生"],["teacher","教师"],
+      ["friend","朋友"],["new","新的"],["today","今天"],["boy","男孩"],["girl","女孩"]
+    ],
+    "sentences": [
+      ["We have two new friends today.","今天我们有两位新朋友。"],
+      ["Where are you from?","你来自哪里？"],
+      ["I'm from the UK.","我来自英国。"],
+      ["This is Amy. She's a student.","这是埃米。她是一名学生。"]
+    ]
+  },
+  {
+    "unit": "Unit 2 My family",
+    "words": [
+      ["father","父亲"],["dad","爸爸"],["mother","母亲"],["mum","妈妈"],
+      ["man","男人"],["woman","女人"],["grandmother","祖母"],["grandma","奶奶"],
+      ["grandfather","祖父"],["grandpa","爷爷"],["sister","姐妹"],["brother","兄弟"],
+      ["family","家庭"],["parents","父母"]
+    ],
+    "sentences": [
+      ["Who's that man?","那个男人是谁？"],
+      ["He's my father.","他是我的父亲。"],
+      ["Who's that woman?","那个女人是谁？"],
+      ["She's my mother.","她是我的母亲。"],
+      ["Is she your mother? Yes, she is.","她是你的妈妈吗？是的，她是。"]
+    ]
+  },
+  {
+    "unit": "Unit 3 At the zoo",
+    "words": [
+      ["thin","瘦的"],["fat","胖的"],["tall","高的"],["short","矮的"],
+      ["long","长的"],["small","小的"],["big","大的"],["giraffe","长颈鹿"],
+      ["deer","鹿"],["so","这么"],["children","孩子们"],["tail","尾巴"]
+    ],
+    "sentences": [
+      ["Look at that monkey. It's fat!","看那只猴子。它真胖！"],
+      ["It has a long nose.","它有一个长鼻子。"],
+      ["It is so tall.","它好高啊。"],
+      ["Make your eyes small.","把你的眼睛变小。"]
+    ]
+  },
+  {
+    "unit": "Unit 4 Where is my car?",
+    "words": [
+      ["on","在……上"],["in","在……里"],["under","在……下面"],["chair","椅子"],
+      ["desk","书桌"],["cap","帽子"],["ball","球"],["car","小汽车"],
+      ["boat","小船"],["map","地图"],["toy","玩具"],["box","盒；箱"]
+    ],
+    "sentences": [
+      ["Where is my car?","我的小汽车在哪儿？"],
+      ["Is it in your bag?","它在你的包里吗？"],
+      ["Yes, it is.","是的，它在。"],
+      ["No, it isn't.","不，它不在。"],
+      ["Put your arm in your desk.","把你的胳膊放进书桌里。"]
+    ]
+  },
+  {
+    "unit": "Unit 5 Do you like pears?",
+    "words": [
+      ["pear","梨"],["apple","苹果"],["orange","橙子"],["banana","香蕉"],
+      ["watermelon","西瓜"],["strawberry","草莓"],["grape","葡萄"],["buy","买"],
+      ["fruit","水果"],["like","喜欢"]
+    ],
+    "sentences": [
+      ["Do you like oranges?","你喜欢橙子吗？"],
+      ["Yes, I do.","是的，我喜欢。"],
+      ["No, I don't.","不，我不喜欢。"],
+      ["What about you?","你呢？"],
+      ["I don't like watermelons.","我不喜欢西瓜。"]
+    ]
+  },
+  {
+    "unit": "Unit 6 How many?",
+    "words": [
+      ["eleven","11"],["twelve","12"],["thirteen","13"],["fourteen","14"],
+      ["fifteen","15"],["sixteen","16"],["seventeen","17"],["eighteen","18"],
+      ["nineteen","19"],["twenty","20"],["kite","风筝"],["beautiful","美丽的"]
+    ],
+    "sentences": [
+      ["How many kites do you see?","你看见多少只风筝？"],
+      ["I see twelve.","我看见十二只。"],
+      ["How many crayons do you have?","你有多少支蜡笔？"],
+      ["I have sixteen.","我有十六支。"]
+    ]
+  }
+];
+
 const EN_ALL_WORDS = EN_UNITS.reduce((a,u)=>a+u.words.length,0);
 
 /* 运动打卡项目（与家务分开） */
@@ -1408,11 +1616,12 @@ function renderHome(){
   $('#mSun').textContent=S.sun;
   const tdone=S.today.c+S.today.m+S.today.e + (S.exDone[todayStr()]?Object.keys(S.exDone[todayStr()]).length:0);
   $('#stDone').textContent=tdone;
-  const pctC=Math.min(1,S.total.c/CN_TARGET), pctM=Math.min(1,S.total.m/200), pctE=Math.min(1,S.total.e/EN_ALL_WORDS);
+  const cnT=cnSet().recite.length, enT=enSet().reduce((a,u)=>a+u.words.length,0);
+  const pctC=Math.min(1,S.total.c/cnT), pctM=Math.min(1,S.total.m/200), pctE=Math.min(1,S.total.e/enT);
   const pct=Math.round((pctC+pctM+pctE)/3*100);
   $('#stPct').textContent=pct+'%';
   $('#stStreak').textContent=S.streak;
-  $('#pbC').style.width=(pctC*100)+'%'; $('#pvC').textContent=S.total.c+'/'+CN_TARGET;
+  $('#pbC').style.width=(pctC*100)+'%'; $('#pvC').textContent=S.total.c+'/'+cnT;
   $('#pbM').style.width=(pctM*100)+'%'; $('#pvM').textContent=S.total.m;
   $('#pbE').style.width=(pctE*100)+'%'; $('#pvE').textContent=S.total.e;
   $('#mC').textContent=S.total.c; $('#mM').textContent=S.total.m; $('#mE').textContent=S.total.e;
@@ -1437,6 +1646,17 @@ $('#signBtn').onclick=()=>{
 
 /* ============ chinese ============ */
 let cnMode='recite', cnPage=0;
+let cnGrade='4s', mathGrade='4s', enGrade='4s';
+let cnDS=null;
+const GRADES=[{k:'3x',n:'三年级下册'},{k:'4s',n:'四年级上册'}];
+function cnSet(){ return cnGrade==='3x'
+  ? {recite:CN3, words:CN3_WORDS, syn:CN3_SYN, mean:CN3_MEAN, read:CN3_READ}
+  : {recite:CN, words:CN_WORDS, syn:CN_SYN, mean:CN_MEAN, read:CN_READ}; }
+function enSet(){ return enGrade==='3x' ? EN3_UNITS : EN_UNITS; }
+function mathSet(){ return mathGrade==='3x'
+  ? {book:MATH3_BOOK, unit:UNIT3_MATH, star:STAR3_MATH}
+  : {book:MATH_BOOK, unit:UNIT_MATH, star:STAR_MATH}; }
+function ck(g,k){ return (g==='4s')? String(k) : g+':'+String(k); }
 function maybeCnSun(){
   if(S.cnQuiz>0 && S.cnQuiz%5===0){ S.sun+=1; toast('🎉 语文答题5题，☀️阳光+1！'); return true; }
   return false;
@@ -1454,6 +1674,14 @@ function cnPager(box,n,total){
   });
 }
 function renderCN(){
+  cnDS=cnSet();
+  const gseg=$('#cnGradeSeg'); gseg.innerHTML='';
+  GRADES.forEach(g=>{
+    const b=document.createElement('button'); b.textContent=g.n; b.dataset.k=g.k;
+    if(g.k===cnGrade)b.classList.add('on');
+    b.onclick=()=>{ cnGrade=g.k; cnPage=0; renderCN(); };
+    gseg.appendChild(b);
+  });
   const seg=$('#cnSeg');
   const modes=[{k:'recite',n:'📜 背诵'},{k:'words',n:'🔤 生字生词'},{k:'syn',n:'🔁 近义反义'},{k:'mean',n:'📖 词意解释'},{k:'read',n:'📝 阅读理解'}];
   seg.innerHTML='';
@@ -1467,11 +1695,12 @@ function renderCN(){
   ({recite:renderCNRecite, words:renderCNWords, syn:renderCNSyn, mean:renderCNMean, read:renderCNRead}[cnMode])(box);
 }
 function renderCNRecite(box){
-  const PS=6, total=Math.ceil(CN.length/PS);
+  const arr=cnDS.recite;
+  const PS=6, total=Math.ceil(arr.length/PS);
   cnPage=Math.max(0,Math.min(cnPage,total-1));
-  CN.slice(cnPage*PS,cnPage*PS+PS).forEach(it=>{
-    const done=S.cnDone.includes(it.id);
-    const d=document.createElement('details'); d.className='rec'; if(done) d.open=true;
+  arr.slice(cnPage*PS,cnPage*PS+PS).forEach(it=>{
+    const done=S.cnDone.includes(ck(cnGrade,it.id));
+    const d=document.createElement('details'); d.className='rec'+(done?' done':''); d.open=done;
     d.innerHTML=`<summary>${done?'✅':''} ${it.title} <span class="pill">${it.tag}</span></summary>
       <div class="poem">${it.text}</div>
       <button class="chk ${done?'on':''}" data-id="${it.id}">${done?'已背会 ✓':'我背会了'}</button>`;
@@ -1480,16 +1709,16 @@ function renderCNRecite(box){
   cnPager(box,cnPage,total);
   $$('#cnList .chk').forEach(b=>b.onclick=()=>{
     const id=b.dataset.id;
-    if(S.cnDone.includes(id)){ toast('已经记录过啦～'); return; }
-    S.cnDone.push(id); S.total.c++; S.today.c++; S.sun+=3; save(); renderCN(); renderHome();
+    if(S.cnDone.includes(ck(cnGrade,id))){ toast('已经记录过啦～'); return; }
+    S.cnDone.push(ck(cnGrade,id)); S.total.c++; S.today.c++; S.sun+=3; save(); renderCN(); renderHome();
     toast('太棒了！背诵完成 ☀️+3 📖');
   });
 }
 function renderCNWords(box){
-  const done=S.cnW, PS=6, total=Math.ceil(CN_WORDS.length/PS);
+  const arr=cnDS.words; const done=S.cnW, PS=6, total=Math.ceil(arr.length/PS);
   cnPage=Math.max(0,Math.min(cnPage,total-1));
-  CN_WORDS.slice(cnPage*PS,cnPage*PS+PS).forEach((it,i)=>{
-    const gi=cnPage*PS+i, ok=done.includes(String(gi));
+  arr.slice(cnPage*PS,cnPage*PS+PS).forEach((it,i)=>{
+    const gi=cnPage*PS+i, k=ck(cnGrade,gi), ok=done.includes(k);
     const d=document.createElement('div'); d.className='rec'+(ok?' done':'');
     d.innerHTML=`<div class="qprompt">${it.py}</div>
       <div class="qhint">看拼音写词语 ${ok?'✅ 已答对':''}</div>
@@ -1500,7 +1729,7 @@ function renderCNWords(box){
     if(!ok){
       const sub=()=>{
         const v=$('#wA'+gi).value.trim(); const fb=$('#wF'+gi);
-        if(v===it.w){ S.cnW.push(String(gi)); S.cnQuiz++; S.today.c++; const got=maybeCnSun(); save(); renderHome(); renderCNWords(box);
+        if(v===it.w){ S.cnW.push(k); S.cnQuiz++; S.today.c++; const got=maybeCnSun(); save(); renderHome(); renderCNWords(box);
           toast('✅ 写对啦！'+(got?' 🌟☀️+1':'')); }
         else { fb.className='feedback no'; fb.innerHTML=`❌ 正确写法：<b>${it.w}</b>`; }
       };
@@ -1511,10 +1740,10 @@ function renderCNWords(box){
   cnPager(box,cnPage,total);
 }
 function renderCNSyn(box){
-  const done=S.cnS, PS=6, total=Math.ceil(CN_SYN.length/PS);
+  const arr=cnDS.syn; const done=S.cnS, PS=6, total=Math.ceil(arr.length/PS);
   cnPage=Math.max(0,Math.min(cnPage,total-1));
-  CN_SYN.slice(cnPage*PS,cnPage*PS+PS).forEach((it,i)=>{
-    const gi=cnPage*PS+i, ok=done.includes(String(gi));
+  arr.slice(cnPage*PS,cnPage*PS+PS).forEach((it,i)=>{
+    const gi=cnPage*PS+i, k=ck(cnGrade,gi), ok=done.includes(k);
     const d=document.createElement('div'); d.className='rec'+(ok?' done':'');
     d.innerHTML=`<div class="qhint">${it.type}：<b>${it.q}</b> → ? ${ok?'✅ 已答对':''}</div>
       ${ok?'':`<input type="text" id="sA${gi}" placeholder="写出对应词" autocomplete="off">
@@ -1524,7 +1753,7 @@ function renderCNSyn(box){
     if(!ok){
       const sub=()=>{
         const v=$('#sA'+gi).value.trim(); const fb=$('#sF'+gi);
-        if(v===it.a){ S.cnS.push(String(gi)); S.cnQuiz++; S.today.c++; const got=maybeCnSun(); save(); renderHome(); renderCNSyn(box); toast('✅ 答对啦！'+(got?' 🌟☀️+1':'')); }
+        if(v===it.a){ S.cnS.push(k); S.cnQuiz++; S.today.c++; const got=maybeCnSun(); save(); renderHome(); renderCNSyn(box); toast('✅ 答对啦！'+(got?' 🌟☀️+1':'')); }
         else { fb.className='feedback no'; fb.innerHTML=`❌ 正确答案：<b>${it.a}</b>`; }
       };
       $('#sB'+gi).onclick=sub;
@@ -1534,10 +1763,10 @@ function renderCNSyn(box){
   cnPager(box,cnPage,total);
 }
 function renderCNMean(box){
-  const done=S.cnM, PS=5, total=Math.ceil(CN_MEAN.length/PS);
+  const arr=cnDS.mean; const done=S.cnM, PS=5, total=Math.ceil(arr.length/PS);
   cnPage=Math.max(0,Math.min(cnPage,total-1));
-  CN_MEAN.slice(cnPage*PS,cnPage*PS+PS).forEach((it,i)=>{
-    const gi=cnPage*PS+i, ok=done.includes(String(gi));
+  arr.slice(cnPage*PS,cnPage*PS+PS).forEach((it,i)=>{
+    const gi=cnPage*PS+i, k=ck(cnGrade,gi), ok=done.includes(k);
     const d=document.createElement('div'); d.className='rec'+(ok?' done':'');
     const optsHtml=it.opts.map((o,oi)=>`<button class="opt" data-o="${oi}" ${ok?'disabled':''}>${String.fromCharCode(65+oi)}. ${o}</button>`).join('');
     d.innerHTML=`<div class="qhint">词意解释：<b>${it.w}</b> ${ok?'✅ 已答对':''}</div>${optsHtml}
@@ -1546,7 +1775,7 @@ function renderCNMean(box){
     if(!ok){
       d.querySelectorAll('.opt').forEach(btn=>btn.onclick=()=>{
         const oi=+btn.dataset.o; const fb=$('#mF'+gi);
-        if(oi===it.a){ S.cnM.push(String(gi)); S.cnQuiz++; S.today.c++; const got=maybeCnSun(); save(); renderHome(); renderCNMean(box); toast('✅ 答对啦！'+(got?' 🌟☀️+1':'')); }
+        if(oi===it.a){ S.cnM.push(k); S.cnQuiz++; S.today.c++; const got=maybeCnSun(); save(); renderHome(); renderCNMean(box); toast('✅ 答对啦！'+(got?' 🌟☀️+1':'')); }
         else { fb.className='feedback no'; fb.innerHTML='❌ 再想想，选另一个～'; }
       });
     }
@@ -1554,17 +1783,17 @@ function renderCNMean(box){
   cnPager(box,cnPage,total);
 }
 function renderCNRead(box){
-  const done=S.cnR, PS=1, total=CN_READ.length;
+  const arr=cnDS.read; const done=S.cnR, PS=1, total=arr.length;
   cnPage=Math.max(0,Math.min(cnPage,total-1));
-  const gpi=cnPage*PS, p=CN_READ[gpi];
-  const allDone=p.qs.every((q,qi)=>done.includes(gpi+'-'+qi));
+  const gpi=cnPage*PS, p=arr[gpi];
+  const allDone=p.qs.every((q,qi)=>done.includes(ck(cnGrade,gpi+'-'+qi)));
   const d=document.createElement('details'); d.className='rec'; d.open=!allDone;
   d.innerHTML=`<summary>${allDone?'✅':''} ${p.title} <span class="pill">阅读理解 ${gpi+1}/${total}</span></summary>
     ${p.src?`<div class="src">📚 ${p.src}</div>`:''}<div class="poem">${p.passage}</div><div id="rd${gpi}"></div>`;
   box.appendChild(d);
   const holder=$('#rd'+gpi);
   p.qs.forEach((q,qi)=>{
-    const id=gpi+'-'+qi; const ok=done.includes(id);
+    const id=ck(cnGrade,gpi+'-'+qi); const ok=done.includes(id);
     const qd=document.createElement('div'); qd.className='rd-q';
     const optsHtml=q.opts.map((o,oi)=>`<button class="opt" data-o="${oi}" ${ok?'disabled':''}>${String.fromCharCode(65+oi)}. ${o}</button>`).join('');
     qd.innerHTML=`<div class="qhint">${qi+1}. ${q.q} ${ok?'✅':''}</div>${optsHtml}<div class="feedback" id="rF${id}"></div>`;
@@ -1620,6 +1849,98 @@ function genMath(){
     return {q:`${a} ÷ ${b} = ?`, a:a/b};
   }
 }
+/* ═══════════ 三年级下册 · 数学（人教版三下 8个单元） ═══════════ */
+const MATH3_BOOK=[
+  /* 第一单元：位置与方向（一） */
+  {q:'早上，太阳从（    ）方升起。', a:'东', free:true, tip:'位置与方向'},
+  {q:'傍晚，太阳从（    ）方落下。', a:'西', free:true, tip:'位置与方向'},
+  {q:'晚上，北极星所在的方向是（    ）方。', a:'北', free:true, tip:'位置与方向'},
+  {q:'旗杆的影子在东边，说明太阳在（    ）边。', a:'西', free:true, tip:'位置与方向'},
+  {q:'小明面向北，他的后面是（    ）方。', a:'南', free:true, tip:'位置与方向'},
+  /* 第二单元：除数是一位数的除法 */
+  {q:'125 ÷ 5 = （    ）。', a:'25', free:true, tip:'除数是一位数的除法'},
+  {q:'306 ÷ 3 = （    ）。', a:'102', free:true, tip:'除数是一位数的除法'},
+  {q:'480 ÷ 6 = （    ）。', a:'80', free:true, tip:'除数是一位数的除法'},
+  {q:'315 ÷ 7 = （    ）。', a:'45', free:true, tip:'除数是一位数的除法'},
+  {q:'208 ÷ 4 = （    ）。', a:'52', free:true, tip:'除数是一位数的除法'},
+  {q:'736 ÷ 8 = （    ）。', a:'92', free:true, tip:'除数是一位数的除法'},
+  {q:'900 ÷ 3 = （    ）。', a:'300', free:true, tip:'除数是一位数的除法'},
+  {q:'420 ÷ 7 = （    ）。', a:'60', free:true, tip:'除数是一位数的除法'},
+  {q:'639 ÷ 3 = （    ）。', a:'213', free:true, tip:'除数是一位数的除法'},
+  /* 第四单元：两位数乘两位数 */
+  {q:'23 × 12 = （    ）。', a:'276', free:true, tip:'两位数乘两位数'},
+  {q:'34 × 21 = （    ）。', a:'714', free:true, tip:'两位数乘两位数'},
+  {q:'12 × 13 = （    ）。', a:'156', free:true, tip:'两位数乘两位数'},
+  {q:'24 × 25 = （    ）。', a:'600', free:true, tip:'两位数乘两位数'},
+  {q:'16 × 18 = （    ）。', a:'288', free:true, tip:'两位数乘两位数'},
+  {q:'33 × 22 = （    ）。', a:'726', free:true, tip:'两位数乘两位数'},
+  {q:'45 × 11 = （    ）。', a:'495', free:true, tip:'两位数乘两位数'},
+  {q:'14 × 12 = （    ）。', a:'168', free:true, tip:'两位数乘两位数'},
+  /* 第五单元：面积 */
+  {q:'一个长方形长12厘米、宽8厘米，面积是（    ）平方厘米。', a:'96', free:true, tip:'长方形面积'},
+  {q:'一个正方形边长9厘米，面积是（    ）平方厘米。', a:'81', free:true, tip:'正方形面积'},
+  {q:'1平方米 = （    ）平方分米。', a:'100', free:true, tip:'面积单位换算'},
+  {q:'1平方分米 = （    ）平方厘米。', a:'100', free:true, tip:'面积单位换算'},
+  {q:'边长为1米的正方形，面积是（    ）平方米。', a:'1', free:true, tip:'正方形面积'},
+  /* 第六单元：年、月、日 */
+  {q:'一年有（    ）个月。', a:'12', free:true, tip:'年、月、日'},
+  {q:'大月一共有（    ）个。', a:'7', free:true, tip:'年、月、日'},
+  {q:'平年的2月有（    ）天。', a:'28', free:true, tip:'年、月、日'},
+  {q:'闰年的2月有（    ）天。', a:'29', free:true, tip:'年、月、日'},
+  {q:'2024年是（    ）年。（填“平”或“闰”）', a:'闰', free:true, tip:'平年与闰年'},
+  {q:'儿童节是（    ）月（    ）日。', a:'6月1日', free:true, tip:'年、月、日'},
+  /* 第七单元：小数的初步认识 */
+  {q:'0.5 + 0.3 = （    ）。', a:'0.8', free:true, tip:'小数加减'},
+  {q:'1.2 - 0.7 = （    ）。', a:'0.5', free:true, tip:'小数加减'},
+  {q:'3.4元 + 2.5元 = （    ）元。', a:'5.9', free:true, tip:'小数加减'},
+  {q:'比较大小：0.8 ○ 1.2（填“>”或“<”）', a:'<', free:true, tip:'小数比较'},
+  {q:'读出小数：0.6 读作（        ）。', a:'零点六', free:true, tip:'小数读法'},
+  /* 第八单元：数学广角——搭配（二） */
+  {q:'2件上衣和3条裤子，一共有（    ）种不同的穿法。', a:'6', free:true, tip:'搭配问题'},
+  {q:'4个小朋友打乒乓球，每2人赛一场，一共要赛（    ）场。', a:'6', free:true, tip:'搭配问题'},
+  {q:'早餐有3种饮料和2种点心，各选一种一共有（    ）种搭配。', a:'6', free:true, tip:'搭配问题'}
+];
+const UNIT3_MATH=[
+  /* 三下 单元重点题 */
+  {q:'面向东时，左面是（    ）方，右面是（    ）方。', a:'北 南', free:true, tip:'位置与方向'},
+  {q:'估算：181 ÷ 3 ≈ （    ）。', a:'60', free:true, tip:'除法估算'},
+  {q:'□28 ÷ 6，要使商是三位数，□里最小填（    ）。', a:'6', free:true, tip:'商的位数'},
+  {q:'48 × 25 = （    ）。', a:'1200', free:true, tip:'两位数乘两位数'},
+  {q:'一个长方形花坛长15米、宽8米，周长是（    ）米。', a:'46', free:true, tip:'周长计算'},
+  {q:'周长40米、宽8米的长方形，长是（    ）米。', a:'12', free:true, tip:'长方形周长'},
+  {q:'一个正方形边长10分米，面积是（    ）平方分米。', a:'100', free:true, tip:'正方形面积'},
+  {q:'300平方厘米 = （    ）平方分米。', a:'3', free:true, tip:'面积换算'},
+  {q:'连续两个月都是大月的月份是（    ）月和（    ）月。', a:'7 8', free:true, tip:'年、月、日'},
+  {q:'2025年是（    ）年，全年有（    ）天。', a:'平 365', free:true, tip:'平年闰年'},
+  {q:'比较：2.4 ○ 2.1（填“>”或“<”）', a:'>', free:true, tip:'小数比较'},
+  {q:'4.5元 = （    ）元（    ）角。', a:'4 5', free:true, tip:'元角分'},
+  {q:'一套衣服上衣3件、裤子2件，共有（    ）种搭配。', a:'6', free:true, tip:'搭配问题'},
+  {q:'从4、5、6三个数字中选两个组成两位数，能组成（    ）个不同的两位数。', a:'6', free:true, tip:'排列问题'},
+  {q:'25 × 40 的积的末尾有（    ）个0。', a:'3', free:true, tip:'末尾0的个数'},
+  {q:'一个数的5倍是450，这个数是（    ）。', a:'90', free:true, tip:'除法应用'}
+];
+const STAR3_MATH=[
+  /* 三下 星级口算 */
+  {q:'15 × 3 =', a:'45', free:true, tip:'口算乘法'},
+  {q:'24 × 2 =', a:'48', free:true, tip:'口算乘法'},
+  {q:'13 × 4 =', a:'52', free:true, tip:'口算乘法'},
+  {q:'11 × 6 =', a:'66', free:true, tip:'口算乘法'},
+  {q:'12 × 12 =', a:'144', free:true, tip:'两位数乘两位数'},
+  {q:'23 × 11 =', a:'253', free:true, tip:'两位数乘两位数'},
+  {q:'60 ÷ 3 =', a:'20', free:true, tip:'口算除法'},
+  {q:'84 ÷ 4 =', a:'21', free:true, tip:'口算除法'},
+  {q:'96 ÷ 3 =', a:'32', free:true, tip:'口算除法'},
+  {q:'720 ÷ 9 =', a:'80', free:true, tip:'口算除法'},
+  {q:'480 ÷ 6 =', a:'80', free:true, tip:'口算除法'},
+  {q:'540 ÷ 6 =', a:'90', free:true, tip:'口算除法'},
+  {q:'350 + 70 =', a:'420', free:true, tip:'口算加法'},
+  {q:'600 - 240 =', a:'360', free:true, tip:'口算减法'},
+  {q:'0.3 + 0.4 =', a:'0.7', free:true, tip:'小数口算'},
+  {q:'1.5 - 0.8 =', a:'0.7', free:true, tip:'小数口算'},
+  {q:'7 × 90 =', a:'630', free:true, tip:'口算乘法'},
+  {q:'25 × 4 =', a:'100', free:true, tip:'口算乘法'}
+];
+
 const UNIT_MATH=[
   /* ═══════════ 第一单元：大数的认识（教材·做一做/练习一~三） ═══════════ */
   {q:'从个位起，第几位是万位？', a:'5', free:true, tip:'数位顺序表'},
@@ -1832,9 +2153,19 @@ const MATH_BOOK = [
   {q:'72-48', a:'24', free:true, tip:'条形统计图'},
   {q:'360+90', a:'450', free:true, tip:'条形统计图'},
 ];
+function buildMathGradeSeg(){
+  const seg=$('#mathGradeSeg'); if(!seg)return; seg.innerHTML='';
+  GRADES.forEach(g=>{
+    const b=document.createElement('button'); b.textContent=g.n; b.dataset.k=g.k;
+    if(g.k===mathGrade)b.classList.add('on');
+    b.onclick=()=>{ mathGrade=g.k; mathQ=null; buildMathGradeSeg(); renderMath(); };
+    seg.appendChild(b);
+  });
+}
 function renderMath(){
   const box=$('#mathBox');
   if(!box)return;
+  buildMathGradeSeg();
   /* ── 错题本模式 ── */
   if(mathMode==='wrong'){
     if(!S.wrong.length){ box.innerHTML='<p class="muted">🎉 还没有错题，真厉害！</p>'; return; }
@@ -1845,7 +2176,7 @@ function renderMath(){
   /* ── 单元重点题模式（教材原题） ── */
   if(mathMode==='unit'){
     try {
-      if(!mathQ||mathQ._unit!==true){ mathQ={_unit:true, idx:0, list:shuffle(UNIT_MATH.slice())}; }
+      if(!mathQ||mathQ._unit!==true){ mathQ={_unit:true, idx:0, list:shuffle(mathSet().unit.slice())}; }
       const item=mathQ.list[mathQ.idx];
       if(!item){ box.innerHTML='<p class="muted">⚠️ 题目加载失败</p>'; return; }
       box.innerHTML='<div class="quiz-top"><span>📚 单元重点题 '+(mathQ.idx+1)+'/'+mathQ.list.length+'</span><span style="font-size:12px">'+(item.tip||'')+'</span></div>'+
@@ -1874,7 +2205,7 @@ function renderMath(){
             box.innerHTML='<div style="text-align:center;padding:30px 0">'+
               '<div style="font-size:48px">🏆</div>'+
               '<h3 style="margin:8px 0">单元重点题全部做完！</h3>'+
-              '<p class="muted" style="margin-bottom:16px">共 '+UNIT_MATH.length+' 道教材原题</p>'+
+              '<p class="muted" style="margin-bottom:16px">共 '+mathSet().unit.length+' 道教材原题</p>'+
               '<button class="btn mint" id="mRetry" style="margin-right:8px">🔄 再做一遍</button>'+
               '<button class="btn" id="mBack">🔢 回到口算</button></div>';
             document.getElementById('mRetry').onclick=function(){ mathMode='unit'; mathQ=null; renderMath(); };
@@ -1899,7 +2230,7 @@ function renderMath(){
   }
   /* ── ★ 星级口算模式（教材原题） ── */
   if(mathMode==='star'){
-    if(!mathQ||mathQ._star!==true){ mathQ={_star:true, idx:0, list:shuffle(STAR_MATH.slice())}; }
+    if(!mathQ||mathQ._star!==true){ mathQ={_star:true, idx:0, list:shuffle(mathSet().star.slice())}; }
     const item=mathQ.list[mathQ.idx];
     if(!item){ box.innerHTML='<p class="muted">⚠️ 题目加载失败</p>'; return; }
     box.innerHTML='<div class="quiz-top"><span>★ 星级口算 '+(mathQ.idx+1)+'/'+mathQ.list.length+'</span><span style="font-size:12px">'+(item.tip||'')+'</span></div>'+
@@ -1948,7 +2279,7 @@ function renderMath(){
   }
   /* ── 📘 教材习题模式（教材课后练习原题） ── */
   if(mathMode==='book'){
-    if(!mathQ||mathQ._book!==true){ mathQ={_book:true, idx:0, list:shuffle(MATH_BOOK.slice())}; }
+    if(!mathQ||mathQ._book!==true){ mathQ={_book:true, idx:0, list:shuffle(mathSet().book.slice())}; }
     const item=mathQ.list[mathQ.idx];
     if(!item){ box.innerHTML='<p class="muted">⚠️ 题目加载失败</p>'; return; }
     box.innerHTML='<div class="quiz-top"><span>📘 教材习题 '+(mathQ.idx+1)+'/'+mathQ.list.length+'</span><span style="font-size:12px">'+(item.tip||'')+'</span></div>'+
@@ -2027,7 +2358,7 @@ function maybeMathSun(){
 let enUnit='all', enMode='memory', enQueue=[], enIdx=0;
 function buildENModeSeg(){
   const seg=$('#enModeSeg'); seg.innerHTML='';
-  const opts=[{k:'memory',n:'🧠 单词记忆'},{k:'trans',n:'🌐 英译中'},{k:'dictate',n:'🎧 听写'}];
+  const opts=[{k:'memory',n:'🧠 单词记忆'},{k:'trans',n:'🌐 英译中'},{k:'dictate',n:'🎧 听写'},{k:'review',n:'📚 复习预习'}];
   opts.forEach(o=>{
     const b=document.createElement('button'); b.textContent=o.n; b.dataset.k=o.k;
     if(o.k===enMode)b.classList.add('on');
@@ -2035,9 +2366,18 @@ function buildENModeSeg(){
     seg.appendChild(b);
   });
 }
+function buildENGradeSeg(){
+  const seg=$('#enGradeSeg'); if(!seg)return; seg.innerHTML='';
+  GRADES.forEach(g=>{
+    const b=document.createElement('button'); b.textContent=g.n; b.dataset.k=g.k;
+    if(g.k===enGrade)b.classList.add('on');
+    b.onclick=()=>{ enGrade=g.k; enUnit='all'; enIdx=0; enQueue=[]; buildENGradeSeg(); buildENSeg(); renderEN(); };
+    seg.appendChild(b);
+  });
+}
 function buildENSeg(){
   const seg=$('#enUnitSeg'); seg.innerHTML='';
-  const opts=[{k:'all',n:'全部单元'},...EN_UNITS.map((u,i)=>({k:'u'+i,n:u.unit.split(' ')[0]+' '+u.unit.split(' ')[1]}))];
+  const opts=[{k:'all',n:'全部单元'},...enSet().map((u,i)=>({k:'u'+i,n:u.unit.split(' ')[0]+' '+u.unit.split(' ')[1]}))];
   opts.forEach(o=>{
     const b=document.createElement('button'); b.textContent=o.n; b.dataset.k=o.k;
     if(o.k===enUnit)b.classList.add('on');
@@ -2061,8 +2401,9 @@ function buildENQueue(){
   enQueue=shuffle(items);
 }
 function renderEN(){
-  buildENModeSeg(); buildENSeg();
+  buildENGradeSeg(); buildENModeSeg(); buildENSeg();
   const box=$('#enBox');
+  if(enMode==='review'){ renderENReview(box); return; }
   if(!enQueue.length||enIdx>=enQueue.length){ buildENQueue(); enIdx=0; }
   const it=enQueue[enIdx];
   if(!it){ box.innerHTML='<p class="muted">暂无题目</p>'; return; }
@@ -2133,6 +2474,57 @@ function renderEN(){
 function maybeEngSun(){
   if(S.engCorrect>0 && S.engCorrect%5===0){ S.sun+=1; toast('🎉 英语答对5题，☀️阳光+1！'); return true; }
   return false;
+}
+/* 复习预习板：结合教材，预习单元新词（听读+记住）+ 复习重点句型（中→英自测） */
+function renderENReview(box){
+  S.enPrev=S.enPrev||[]; S.enRev=S.enRev||[];
+  const units = enUnit==='all'?enSet():enSet().filter((_,i)=>'u'+i===enUnit);
+  box.innerHTML='';
+  const prev=document.createElement('div'); prev.className='rec';
+  prev.innerHTML='<div class="qhint">📖 <b>预习 · 单元新单词</b>（点🔊听读，记住后点“我记住了”）</div>';
+  units.forEach(u=>{
+    u.words.forEach(w=>{
+      const key=enGrade+'|'+u.unit+'|'+w[0];
+      const done=S.enPrev.includes(key);
+      const row=document.createElement('div'); row.className='rd-q'+(done?' done':'');
+      row.innerHTML=`<div class="qhint"><b>${w[0]}</b> — ${w[1]} ${done?'✅':''}</div>
+        <button class="speak" data-w="${w[0]}">🔊</button>
+        <button class="btn small ${done?'on':''}" data-prev="${key}">${done?'已记住 ✓':'我记住了'}</button>`;
+      prev.appendChild(row);
+    });
+  });
+  box.appendChild(prev);
+  const rev=document.createElement('div'); rev.className='rec';
+  rev.innerHTML='<div class="qhint">🔁 <b>复习 · 重点句型</b>（看中文，写出英文，点🔊核对读音）</div>';
+  units.forEach(u=>{
+    u.sentences.forEach(s=>{
+      const qid='rv_'+enGrade+'_'+enUnit+'_'+u.unit.replace(/\s+/g,'')+'_'+s[1].length;
+      const done=S.enRev.includes(qid);
+      const qd=document.createElement('div'); qd.className='rd-q';
+      qd.innerHTML=`<div class="qhint">${s[1]} ${done?'✅':''}</div>
+        <input type="text" id="${qid}" placeholder="写出英文句子" autocomplete="off" style="width:100%;padding:8px;margin:6px 0;font-size:15px">
+        <button class="speak" data-w="${s[0]}">🔊 听读</button>
+        <button class="btn small mint" data-check="${qid}" data-ans="${s[0]}">核对</button>
+        <span class="feedback" id="${qid}f"></span>`;
+      rev.appendChild(qd);
+    });
+  });
+  box.appendChild(rev);
+  box.querySelectorAll('[data-w]').forEach(b=>b.onclick=()=>speak(b.dataset.w));
+  box.querySelectorAll('[data-prev]').forEach(b=>b.onclick=()=>{
+    const k=b.dataset.prev;
+    if(S.enPrev.includes(k)) S.enPrev=S.enPrev.filter(x=>x!==k); else S.enPrev.push(k);
+    save(); renderEN();
+  });
+  box.querySelectorAll('[data-check]').forEach(b=>b.onclick=()=>{
+    const id=b.dataset.check, ans=b.dataset.ans;
+    const norm=t=>t.toLowerCase().replace(/[^a-z\s]/g,'').trim();
+    const v=norm(document.getElementById(id).value), a=norm(ans);
+    const fb=document.getElementById(id+'f');
+    if(v===a){ fb.className='feedback ok'; fb.innerHTML='✅ 正确！';
+      if(!S.enRev.includes(id)){ S.enRev.push(id); S.total.e++; S.today.e++; save(); renderHome(); } }
+    else { fb.className='feedback no'; fb.innerHTML='❌ 正确句子：<b>'+ans+'</b>'; }
+  });
 }
 
 /* ============ exercise ============ */
