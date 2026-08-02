@@ -2206,13 +2206,15 @@ const DOG_NAMES=['幼崽小猫','可爱小猫','帅气大猫','超级神猫'];
 let catState='sit';                       // 当前随机状态（sit/play/sleep/sick/eat 互动态）
 let catFrameTimer=null, catReactTimer=null, catFrameIdx=0, catFrameList=null;
 // 每种状态 × 成长级别的帧文件名（均由 AI 生成的多姿势动作帧）
-const CAT_FRAME_MS={sit:520, play:380, eat:420, sleep:1500, sick:520};
+const CAT_FRAME_MS={sit:520, play:380, eat:420, sleep:1500, sick:520, react:260, medicine:480};
 function catFrameFiles(state, lv){
   const p='assets/cat-anim-';
   if(state==='play')  return [p+'p'+lv+'a.png', p+'p'+lv+'b.png'];
   if(state==='eat')   return [p+'e'+lv+'a.png', p+'e'+lv+'b.png', p+'e'+lv+'c.png'];
   if(state==='sleep') return [p+'z'+lv+'a.png', p+'z'+lv+'b.png'];
   if(state==='sick')  return [p+'k'+lv+'a.png', p+'k'+lv+'b.png'];
+  if(state==='react')   return [p+'h'+lv+'a.png', p+'h'+lv+'b.png', p+'h'+lv+'c.png']; // 点击撒娇
+  if(state==='medicine')return [p+'m'+lv+'a.png', p+'m'+lv+'b.png', p+'m'+lv+'c.png']; // 吃药反应
   return [p+'s'+lv+'a.png', p+'s'+lv+'b.png', p+'s'+lv+'c.png']; // sit 默认（呼吸/摆尾/眨眼）
 }
 function stopCat(){ if(catFrameTimer){ clearInterval(catFrameTimer); catFrameTimer=null; } }
@@ -2369,7 +2371,9 @@ function pickCatState(){
 }
 // 道具互动：吃猫粮 / 吃药 → 临时切到 eat 帧动画 ~1.3s，再恢复原本随机状态
 function catFeedReact(type){
-  const prev=catState; catState='eat'; updateCatVisual();
+  const prev=catState;
+  catState = (type==='medicine') ? 'medicine' : 'eat';   // 吃药用专属 m 帧，不再复用进食帧
+  updateCatVisual();
   spawnFx($('#catFx'), type==='eat'?['🍚','🐟','😋']:['💊','✨'], 3);
   if(type==='medicine') toast('💊 吃药药，早日康复～');
   clearTimeout(catReactTimer);
@@ -2398,6 +2402,13 @@ function equipClothes(id){
     toast('脱下了衣服 🙀');
   }
 }
+// 点击小猫：播放撒娇动作帧（h）约 1.3s 后回到当前随机状态；进食/吃药/撒娇进行中不打断
+function catClickReact(){
+  if(catState==='eat'||catState==='medicine'||catState==='react') return;
+  const prev=catState; catState='react'; updateCatVisual();
+  clearTimeout(catReactTimer);
+  catReactTimer=setTimeout(()=>{ if(catState==='react'){ catState=prev; updateCatVisual(); } }, 1300);
+}
 $('#dog').addEventListener('click',()=>{
   const dog=$('#dog'); dog.classList.remove('jump'); void dog.offsetWidth; dog.classList.add('jump');
   const stage=$('#dogStage');
@@ -2405,6 +2416,7 @@ $('#dog').addEventListener('click',()=>{
   h.style.left=(stage.clientWidth/2-10+Math.random()*40-20)+'px'; h.style.bottom='60px';
   stage.appendChild(h); setTimeout(()=>h.remove(),1000);
   spawnFx($('#catFx'),['💗','💕','✨'],3);   // 撒娇：飘爱心特效
+  catClickReact();                          // 切换撒娇动作帧
 });
 function dogBurst(){
   const stage=$('#dogStage');
