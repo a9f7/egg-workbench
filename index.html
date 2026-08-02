@@ -334,7 +334,7 @@
   <section class="view" id="v-english">
     <div class="card">
       <h3>🔤 英语专区 · 人教版四上</h3>
-      <p class="muted">选单元自测：单词记忆（拼写+朗读）/ 听写（看英文写中文），自动判对错，每5题 ☀️+1</p>
+      <p class="muted">选单元自测：单词记忆（拼写+朗读）/ 英译中（看英文写中文）/ 听写（听音写单词），自动判对错，每5题 ☀️+1</p>
       <div class="seg" id="enModeSeg"></div>
       <div class="seg" id="enUnitSeg"></div>
       <div id="enBox"></div>
@@ -1808,7 +1808,7 @@ function maybeMathSun(){
 let enUnit='all', enMode='memory', enQueue=[], enIdx=0;
 function buildENModeSeg(){
   const seg=$('#enModeSeg'); seg.innerHTML='';
-  const opts=[{k:'memory',n:'🧠 单词记忆'},{k:'dictate',n:'✍️ 听写'}];
+  const opts=[{k:'memory',n:'🧠 单词记忆'},{k:'trans',n:'🌐 英译中'},{k:'dictate',n:'🎧 听写'}];
   opts.forEach(o=>{
     const b=document.createElement('button'); b.textContent=o.n; b.dataset.k=o.k;
     if(o.k===enMode)b.classList.add('on');
@@ -1833,8 +1833,10 @@ function buildENQueue(){
     if(enMode==='memory'){
       u.words.forEach(w=>items.push({type:'spell', q:w[1], a:w[0]}));
       u.sentences.forEach(s=>items.push({type:'read', q:s[0], zh:s[1]}));
+    } else if(enMode==='trans'){
+      u.words.forEach(w=>items.push({type:'trans', q:w[0], a:w[1]}));
     } else {
-      u.words.forEach(w=>items.push({type:'dictate', q:w[0], a:w[1]}));
+      u.words.forEach(w=>items.push({type:'dictate', q:w[0], a:w[0]}));
     }
   });
   enQueue=shuffle(items);
@@ -1852,12 +1854,20 @@ function renderEN(){
       <input type="text" id="eA" placeholder="英文单词" autocomplete="off">
       <button class="btn block mint" id="eSub">提交</button>
       <div class="feedback" id="eFb"></div>`;
-  } else if(it.type==='dictate'){
-    box.innerHTML=`<div class="quiz-top"><span>听写 ${enIdx+1}/${enQueue.length}</span><span>每5题 ☀️+1</span></div>
+  } else if(it.type==='trans'){
+    box.innerHTML=`<div class="quiz-top"><span>英译中 ${enIdx+1}/${enQueue.length}</span><span>每5题 ☀️+1</span></div>
       <div class="qprompt">${it.q} <button class="speak" id="eSp">🔊</button></div>
       <div class="qhint">看英文写出中文意思</div>
       <input type="text" id="eA" placeholder="中文意思" autocomplete="off">
       <button class="btn block mint" id="eSub">提交</button>
+      <div class="feedback" id="eFb"></div>`;
+    $('#eSp').onclick=()=>speak(it.q);
+  } else if(it.type==='dictate'){
+    box.innerHTML=`<div class="quiz-top"><span>听写 ${enIdx+1}/${enQueue.length}</span><span>每5题 ☀️+1</span></div>
+      <div class="qprompt" style="font-size:28px;text-align:center;padding:20px 0"><button class="speak" id="eSp" style="font-size:40px;border:none;background:rgba(0,200,120,.1);border-radius:50%;width:80px;height:80px;cursor:pointer">🔊</button></div>
+      <div class="qhint">点击喇叭听发音，写出你听到的英文单词</div>
+      <input type="text" id="eA" placeholder="听到的英文单词" autocomplete="off" style="font-size:18px;text-align:center;letter-spacing:2px">
+      <button class="btn block mint" id="eSub">提交答案</button>
       <div class="feedback" id="eFb"></div>`;
     $('#eSp').onclick=()=>speak(it.q);
   } else {
@@ -1877,13 +1887,20 @@ function renderEN(){
       if(ok){ S.engCorrect++; S.total.e++; S.today.e++; const got=maybeEngSun();
         fb.className='feedback ok'; fb.innerHTML='✅ 拼写正确！'+(got?' 🌟☀️+1':''); }
       else { fb.className='feedback no'; fb.innerHTML=`❌ 正确拼写：<b>${it.a}</b>`; }
-    } else if(it.type==='dictate'){
+    } else if(it.type==='trans'){
       const v=$('#eA').value.trim();
       ok = v===it.a;
       const fb=$('#eFb');
       if(ok){ S.engCorrect++; S.total.e++; S.today.e++; const got=maybeEngSun();
-        fb.className='feedback ok'; fb.innerHTML='✅ 写对啦！'+(got?' 🌟☀️+1':''); }
+        fb.className='feedback ok'; fb.innerHTML='✅ 翻译正确！'+(got?' 🌟☀️+1':''); }
       else { fb.className='feedback no'; fb.innerHTML=`❌ 正确意思：<b>${it.a}</b>`; }
+    } else if(it.type==='dictate'){
+      const v=$('#eA').value.trim().toLowerCase().replace(/\s+/g,'');
+      ok = v===it.a.toLowerCase().replace(/\s+/g,'');
+      const fb=$('#eFb');
+      if(ok){ S.engCorrect++; S.total.e++; S.today.e++; const got=maybeEngSun();
+        fb.className='feedback ok'; fb.innerHTML='✅ 听写正确！单词是：<b>'+it.a+'</b>'+(got?' 🌟☀️+1':''); }
+      else { fb.className='feedback no'; fb.innerHTML='❌ 正确单词是：<b>'+it.a+'</b>'; }
     } else {
       S.engCorrect++; S.total.e++; S.today.e++; const got=maybeEngSun();
       const fb=$('#eFb'); fb.className='feedback ok'; fb.innerHTML='✅ 完成朗读！'+(got?' 🌟☀️+1':'');
