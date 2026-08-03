@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="zh-CN" data-app-version="20260804.0037">
+<html lang="zh-CN" data-app-version="20260804.0047">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
@@ -3062,9 +3062,10 @@ function renderCNMean(box){
     '<div class="qprompt">选出 <b>'+it.w+'</b> 的正确意思</div>'+
     '<div class="opts">'+optsHtml+'</div>'+
     '<div class="feedback" id="mQF"></div>';
-  box.querySelectorAll('.opt').forEach(btn=>btn.onclick=>{
-    if(btn.disabled) return;
-    const oi=+btn.dataset.o; const fb=$('#mQF');
+  box.querySelectorAll('.opt').forEach(btn=>{
+    btn.onclick=()=>{
+      if(btn.disabled) return;
+      const oi=+btn.dataset.o; const fb=$('#mQF');
     box.querySelectorAll('.opt').forEach(b=>{b.disabled=true;});
     btn.classList.add(oi===it.a?'on-ok':'on-no');
     if(oi!==it.a){ var corr=box.querySelectorAll('.opt')[it.a]; if(corr) corr.classList.add('on-ok'); }
@@ -3077,6 +3078,7 @@ function renderCNMean(box){
       fb.className='feedback no'; fb.innerHTML='❌ 再想想，正确答案是 '+it.opts[it.a];
       setTimeout(()=>{ cnQ.idx++; cnQ=null; renderCNMean(box); },1400);
     }
+    };
   });
 }
 
@@ -3124,9 +3126,10 @@ function renderCNRead(box){
     '<div class="qprompt" style="font-size:16px">'+(doneQs+qiIdx-qAt+1)+'. '+q.q+'</div>'+
     '<div class="opts">'+optsHtml+'</div>'+
     '<div class="feedback" id="rQF"></div>';
-  box.querySelectorAll('.opt').forEach(btn=>btn.onclick=>{
-    if(btn.disabled) return;
-    const oi=+btn.dataset.o; const fb=$('#rQF');
+  box.querySelectorAll('.opt').forEach(btn=>{
+    btn.onclick=()=>{
+      if(btn.disabled) return;
+      const oi=+btn.dataset.o; const fb=$('#rQF');
     box.querySelectorAll('.opt').forEach(b=>{b.disabled=true;});
     btn.classList.add(oi===q.a?'on-ok':'on-no');
     if(oi!==q.a){ var corr=box.querySelectorAll('.opt')[q.a]; if(corr) corr.classList.add('on-ok'); }
@@ -3139,6 +3142,7 @@ function renderCNRead(box){
       fb.className='feedback no'; fb.innerHTML='❌ 再想想，正确答案是 '+q.opts[q.a];
       setTimeout(()=>{ cnQ.qIdx++; cnQ=null; renderCNRead(box); },1400);
     }
+    };
   });
 }
 
@@ -4063,7 +4067,7 @@ const SHOP=[
   {key:'medicine',icon:'💊',name:'药品',price:15,grow:11,desc:'治病+喂养 +11成长',medicine:true},
 ];
 const FOOD_ITEMS=SHOP.filter(s=>s.food);     // 多种食物（像衣服一样可在超市挑选）
-const APP_VERSION='2026-08-04 00:37';         // 版本时间戳：用于比对本地/GitHub 是否一致
+const APP_VERSION='2026-08-04 00:47';         // 版本时间戳：用于比对本地/GitHub 是否一致
 function dogLevel(g){ if(g>=300)return 3; if(g>=160)return 2; if(g>=60)return 1; return 0; }
 const DOG_NAMES=['幼崽小猫','可爱小猫','帅气大猫','超级神猫'];
 let catState='sit';                       // 当前随机状态（sit/play/sleep/sick/eat 互动态）
