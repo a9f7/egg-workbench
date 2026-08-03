@@ -2914,6 +2914,7 @@ $('#signBtn').onclick=()=>{
 
 /* ============ chinese ============ */
 let cnMode='recite', cnPage=0;
+let cnQ=null;  // 语文非背诵题的一题一题状态 {idx, list, mode, rIdx?}
 let cnGrade='4s', mathGrade='4s', enGrade='4s';
 let cnDS=null;
 const GRADES=[{k:'3x',n:'三年级下册'},{k:'4s',n:'四年级上册'}];
@@ -2956,7 +2957,7 @@ function renderCN(){
   modes.forEach(m=>{
     const b=document.createElement('button'); b.textContent=m.n; b.dataset.k=m.k;
     if(m.k===cnMode)b.classList.add('on');
-    b.onclick=()=>{ cnMode=m.k; cnPage=0; renderCN(); };
+    b.onclick=()=>{ cnMode=m.k; cnPage=0; cnQ=null; renderCN(); };
     seg.appendChild(b);
   });
   const box=$('#cnList'); box.innerHTML='';
@@ -2983,99 +2984,165 @@ function renderCNRecite(box){
   });
 }
 function renderCNWords(box){
-  const arr=cnDS.words; const done=S.cnW, PS=6, total=Math.ceil(arr.length/PS);
-  cnPage=Math.max(0,Math.min(cnPage,total-1));
-  arr.slice(cnPage*PS,cnPage*PS+PS).forEach((it,i)=>{
-    const gi=cnPage*PS+i, k=ck(cnGrade,gi), ok=done.includes(k);
-    const d=document.createElement('div'); d.className='rec'+(ok?' done':'');
-    d.innerHTML=`<div class="qprompt">${it.py}</div>
-      <div class="qhint">看拼音写词语 ${ok?'✅ 已答对':''}</div>
-      ${ok?'':`<input type="text" id="wA${gi}" placeholder="写出词语" autocomplete="off">
-      <button class="btn block mint" id="wB${gi}">提交</button>`}
-      <div class="feedback" id="wF${gi}"></div>`;
-    box.appendChild(d);
-    if(!ok){
-      const sub=()=>{
-        const v=$('#wA'+gi).value.trim(); const fb=$('#wF'+gi);
-        if(v===it.w){ S.cnW.push(k); S.cnQuiz++; S.today.c++; const got=maybeCnSun(); save(); renderHome(); renderCNWords(box);
-          toast('✅ 写对啦！'+(got?' 🌟☀️+1':'')); }
-        else { fb.className='feedback no'; fb.innerHTML=`❌ 正确写法：<b>${it.w}</b>`; }
-      };
-      $('#wB'+gi).onclick=sub;
-      $('#wA'+gi).addEventListener('keydown',e=>{if(e.key==='Enter')sub();});
+  const arr=cnDS.words.filter((_,i)=>!S.cnW.includes(ck(cnGrade,i)));
+  if(!arr.length){
+    box.innerHTML='<div style="text-align:center;padding:30px 0"><div style="font-size:48px">🏆</div><h3 style="margin:8px 0">生字生词全部完成！</h3><p class="muted">已写对 '+cnDS.words.length+' 个词语</p><button class="btn mint" id="wRetry">🔄 再练一遍</button></div>';
+    $('#wRetry').onclick=()=>{ S.cnW=[]; save(); cnQ=null; renderCN(); };
+    return;
+  }
+  if(!cnQ||cnQ.mode!=='words'){ cnQ={mode:'words', idx:0, list:shuffle(arr.slice())}; }
+  const it=cnQ.list[cnQ.idx];
+  const gi=cnDS.words.indexOf(it);
+  box.innerHTML='<div class="quiz-top"><span>🔤 生字生词 '+(cnQ.idx+1)+'/'+cnQ.list.length+'</span><span>剩余 '+arr.length+' 题</span></div>'+
+    '<div class="qprompt">'+it.py+'</div>'+
+    '<div class="qhint">看拼音写出词语</div>'+
+    '<input type="text" id="wQA" placeholder="写出词语" autocomplete="off">'+
+    '<button class="btn block mint" id="wQB" style="margin-top:12px">✅ 提交</button>'+
+    '<div class="feedback" id="wQF"></div>';
+  const sub=()=>{
+    const v=$('#wQA').value.trim(); const fb=$('#wQF');
+    if(!v){toast('✏️ 写一下答案吧');return;}
+    if(v===it.w){
+      const k=ck(cnGrade,gi); S.cnW.push(k); S.cnQuiz++; S.today.c++; const got=maybeCnSun(); save(); renderHome();
+      fb.className='feedback ok'; fb.innerHTML='✅ 写对啦！'+(got?' 🌟☀️+1':'');
+      cnQ.idx++;
+      setTimeout(()=>{ cnQ=null; renderCNWords(box); }, got?700:1200);
+    } else {
+      fb.className='feedback no'; fb.innerHTML='❌ 正确写法：<b>'+it.w+'</b>';
     }
-  });
-  cnPager(box,cnPage,total);
+  };
+  $('#wQB').onclick=sub;
+  $('#wQA').addEventListener('keydown',e=>{if(e.key==='Enter')sub();});
+  setTimeout(()=>{const el=$('#wQA');if(el)el.focus();},100);
 }
 function renderCNSyn(box){
-  const arr=cnDS.syn; const done=S.cnS, PS=6, total=Math.ceil(arr.length/PS);
-  cnPage=Math.max(0,Math.min(cnPage,total-1));
-  arr.slice(cnPage*PS,cnPage*PS+PS).forEach((it,i)=>{
-    const gi=cnPage*PS+i, k=ck(cnGrade,gi), ok=done.includes(k);
-    const d=document.createElement('div'); d.className='rec'+(ok?' done':'');
-    d.innerHTML=`<div class="qhint">${it.type}：<b>${it.q}</b> → ? ${ok?'✅ 已答对':''}</div>
-      ${ok?'':`<input type="text" id="sA${gi}" placeholder="写出对应词" autocomplete="off">
-      <button class="btn block mint" id="sB${gi}">提交</button>`}
-      <div class="feedback" id="sF${gi}"></div>`;
-    box.appendChild(d);
-    if(!ok){
-      const sub=()=>{
-        const v=$('#sA'+gi).value.trim(); const fb=$('#sF'+gi);
-        if(v===it.a){ S.cnS.push(k); S.cnQuiz++; S.today.c++; const got=maybeCnSun(); save(); renderHome(); renderCNSyn(box); toast('✅ 答对啦！'+(got?' 🌟☀️+1':'')); }
-        else { fb.className='feedback no'; fb.innerHTML=`❌ 正确答案：<b>${it.a}</b>`; }
-      };
-      $('#sB'+gi).onclick=sub;
-      $('#sA'+gi).addEventListener('keydown',e=>{if(e.key==='Enter')sub();});
+  const arr=cnDS.syn.filter((_,i)=>!S.cnS.includes(ck(cnGrade,i)));
+  if(!arr.length){
+    box.innerHTML='<div style="text-align:center;padding:30px 0"><div style="font-size:48px">🏆</div><h3 style="margin:8px 0">近义反义全部完成！</h3><p class="muted">已答对 '+cnDS.syn.length+' 题</p><button class="btn mint" id="sRetry">🔄 再练一遍</button></div>';
+    $('#sRetry').onclick=()=>{ S.cnS=[]; save(); cnQ=null; renderCN(); };
+    return;
+  }
+  if(!cnQ||cnQ.mode!=='syn'){ cnQ={mode:'syn', idx:0, list:shuffle(arr.slice())}; }
+  const it=cnQ.list[cnQ.idx];
+  const gi=cnDS.syn.indexOf(it);
+  box.innerHTML='<div class="quiz-top"><span>🔁 近义反义 '+(cnQ.idx+1)+'/'+cnQ.list.length+'</span><span>剩余 '+arr.length+' 题</span></div>'+
+    '<div class="qprompt">'+it.type+'：<b>'+it.q+'</b></div>'+
+    '<div class="qhint">写出对应的词</div>'+
+    '<input type="text" id="sQA" placeholder="写出对应词" autocomplete="off">'+
+    '<button class="btn block mint" id="sQB" style="margin-top:12px">✅ 提交</button>'+
+    '<div class="feedback" id="sQF"></div>';
+  const sub=()=>{
+    const v=$('#sQA').value.trim(); const fb=$('#sQF');
+    if(!v){toast('✏️ 写一下答案吧');return;}
+    if(v===it.a){
+      const k=ck(cnGrade,gi); S.cnS.push(k); S.cnQuiz++; S.today.c++; const got=maybeCnSun(); save(); renderHome();
+      fb.className='feedback ok'; fb.innerHTML='✅ 答对啦！'+(got?' 🌟☀️+1':'');
+      cnQ.idx++;
+      setTimeout(()=>{ cnQ=null; renderCNSyn(box); }, got?700:1200);
+    } else {
+      fb.className='feedback no'; fb.innerHTML='❌ 正确答案：<b>'+it.a+'</b>';
     }
-  });
-  cnPager(box,cnPage,total);
+  };
+  $('#sQB').onclick=sub;
+  $('#sQA').addEventListener('keydown',e=>{if(e.key==='Enter')sub();});
+  setTimeout(()=>{const el=$('#sQA');if(el)el.focus();},100);
 }
 function renderCNMean(box){
-  const arr=cnDS.mean; const done=S.cnM, PS=5, total=Math.ceil(arr.length/PS);
-  cnPage=Math.max(0,Math.min(cnPage,total-1));
-  arr.slice(cnPage*PS,cnPage*PS+PS).forEach((it,i)=>{
-    const gi=cnPage*PS+i, k=ck(cnGrade,gi), ok=done.includes(k);
-    const d=document.createElement('div'); d.className='rec'+(ok?' done':'');
-    const optsHtml=it.opts.map((o,oi)=>`<button class="opt" data-o="${oi}" ${ok?'disabled':''}>${String.fromCharCode(65+oi)}. ${o}</button>`).join('');
-    d.innerHTML=`<div class="qhint">词意解释：<b>${it.w}</b> ${ok?'✅ 已答对':''}</div>${optsHtml}
-      <div class="feedback" id="mF${gi}"></div>`;
-    box.appendChild(d);
-    if(!ok){
-      d.querySelectorAll('.opt').forEach(btn=>btn.onclick=()=>{
-        const oi=+btn.dataset.o; const fb=$('#mF'+gi);
-        if(oi===it.a){ S.cnM.push(k); S.cnQuiz++; S.today.c++; const got=maybeCnSun(); save(); renderHome(); renderCNMean(box); toast('✅ 答对啦！'+(got?' 🌟☀️+1':'')); }
-        else { fb.className='feedback no'; fb.innerHTML='❌ 再想想，选另一个～'; }
-      });
+  const arr=cnDS.mean.filter((_,i)=>!S.cnM.includes(ck(cnGrade,i)));
+  if(!arr.length){
+    box.innerHTML='<div style="text-align:center;padding:30px 0"><div style="font-size:48px">🏆</div><h3 style="margin:8px 0">词意解释全部完成！</h3><p class="muted">已答对 '+cnDS.mean.length+' 题</p><button class="btn mint" id="mRetry">🔄 再练一遍</button></div>';
+    $('#mRetry').onclick=()=>{ S.cnM=[]; save(); cnQ=null; renderCN(); };
+    return;
+  }
+  if(!cnQ||cnQ.mode!=='mean'){ cnQ={mode:'mean', idx:0, list:shuffle(arr.slice())}; }
+  const it=cnQ.list[cnQ.idx];
+  const gi=cnDS.mean.indexOf(it);
+  const optsHtml=it.opts.map((o,oi)=>`<button class="opt" data-o="${oi}">${String.fromCharCode(65+oi)}. ${o}</button>`).join('');
+  box.innerHTML='<div class="quiz-top"><span>📖 词意解释 '+(cnQ.idx+1)+'/'+cnQ.list.length+'</span><span>剩余 '+arr.length+' 题</span></div>'+
+    '<div class="qprompt">选出 <b>'+it.w+'</b> 的正确意思</div>'+
+    '<div class="opts">'+optsHtml+'</div>'+
+    '<div class="feedback" id="mQF"></div>';
+  box.querySelectorAll('.opt').forEach(btn=>btn.onclick=>{
+    if(btn.disabled) return;
+    const oi=+btn.dataset.o; const fb=$('#mQF');
+    box.querySelectorAll('.opt').forEach(b=>{b.disabled=true;});
+    btn.classList.add(oi===it.a?'on-ok':'on-no');
+    if(oi!==it.a){ var corr=box.querySelectorAll('.opt')[it.a]; if(corr) corr.classList.add('on-ok'); }
+    if(oi===it.a){
+      const k=ck(cnGrade,gi); S.cnM.push(k); S.cnQuiz++; S.today.c++; const got=maybeCnSun(); save(); renderHome();
+      fb.className='feedback ok'; fb.innerHTML='✅ 答对啦！'+(got?' 🌟☀️+1':'');
+      cnQ.idx++;
+      setTimeout(()=>{ cnQ=null; renderCNMean(box); }, got?700:1200);
+    } else {
+      fb.className='feedback no'; fb.innerHTML='❌ 再想想，正确答案是 '+it.opts[it.a];
+      setTimeout(()=>{ cnQ.idx++; cnQ=null; renderCNMean(box); },1400);
     }
   });
-  cnPager(box,cnPage,total);
 }
+
 function renderCNRead(box){
-  const arr=cnDS.read; const done=S.cnR, PS=1, total=arr.length;
-  cnPage=Math.max(0,Math.min(cnPage,total-1));
-  const gpi=cnPage*PS, p=arr[gpi];
-  const allDone=p.qs.every((q,qi)=>done.includes(ck(cnGrade,gpi+'-'+qi)));
-  const d=document.createElement('details'); d.className='rec'; d.open=!allDone;
-  d.innerHTML=`<summary>${allDone?'✅':''} ${p.title} <span class="pill">阅读理解 ${gpi+1}/${total}</span></summary>
-    ${p.src?`<div class="src">📚 ${p.src}</div>`:''}<div class="poem">${p.passage}</div><div id="rd${gpi}"></div>`;
-  box.appendChild(d);
-  const holder=$('#rd'+gpi);
-  p.qs.forEach((q,qi)=>{
-    const id=ck(cnGrade,gpi+'-'+qi); const ok=done.includes(id);
-    const qd=document.createElement('div'); qd.className='rd-q';
-    const optsHtml=q.opts.map((o,oi)=>`<button class="opt" data-o="${oi}" ${ok?'disabled':''}>${String.fromCharCode(65+oi)}. ${o}</button>`).join('');
-    qd.innerHTML=`<div class="qhint">${qi+1}. ${q.q} ${ok?'✅':''}</div>${optsHtml}<div class="feedback" id="rF${id}"></div>`;
-    holder.appendChild(qd);
-    if(!ok){
-      qd.querySelectorAll('.opt').forEach(btn=>btn.onclick=()=>{
-        const oi=+btn.dataset.o; const fb=$('#rF'+id);
-        if(oi===q.a){ S.cnR.push(id); S.cnQuiz++; S.today.c++; const got=maybeCnSun(); save(); renderHome(); renderCNRead(box); toast('✅ 答对啦！'+(got?' 🌟☀️+1':'')); }
-        else { fb.className='feedback no'; fb.innerHTML='❌ 再想想，选另一个～'; }
-      });
+  /* 筛选出还有未答题的段落 */
+  const arr=cnDS.read.map((p,pi)=>({
+    pi, p,
+    qs:p.qs.map((q,qi)=>({qi, q, id:ck(cnGrade,pi+'-'+qi), done:S.cnR.includes(ck(cnGrade,pi+'-'+qi))}))
+  })).filter(x=>x.qs.some(q=>!q.done));
+  /* 全部做完 */
+  if(!arr.length){
+    box.innerHTML='<div style="text-align:center;padding:30px 0"><div style="font-size:48px">🏆</div><h3 style="margin:8px 0">阅读理解全部完成！</h3><p class="muted">已读完 '+cnDS.read.length+' 篇阅读材料</p><button class="btn mint" id="rRetry">🔄 再练一遍</button></div>';
+    $('#rRetry').onclick=()=>{ S.cnR=[]; save(); cnQ=null; renderCN(); };
+    return;
+  }
+  /* 初始化或恢复状态 */
+  if(!cnQ||cnQ.mode!=='read'){
+    cnQ={mode:'read', rIdx:0, qIdx:0, list:arr};
+  }
+  const sec=cnQ.list[cnQ.rIdx];
+  const p=sec.p, qiIdx=cnQ.qIdx;
+  /* 找到当前段落的下一道未做题 */
+  let curQ=null, qAt=-1;
+  for(let i=0;i<sec.qs.length;i++){
+    if(!sec.qs[i].done){ curQ=sec.qs[i]; qAt=i; break; }
+  }
+  /* 当前段落全部做完了，跳下一段 */
+  if(!curQ){
+    cnQ.rIdx++; cnQ.qIdx=0;
+    if(cnQ.rIdx>=cnQ.list.length){
+      /* 全部做完 */
+      box.innerHTML='<div style="text-align:center;padding:30px 0"><div style="font-size:48px">🏆</div><h3 style="margin:8px 0">阅读理解全部完成！</h3><p class="muted">已读完 '+cnDS.read.length+' 篇阅读材料</p><button class="btn mint" id="rRetry2">🔄 再练一遍</button></div>';
+      $('#rRetry2').onclick=()=>{ S.cnR=[]; save(); cnQ=null; renderCN(); };
+      return;
+    }
+    return renderCNRead(box);
+  }
+  const q=curQ.q;
+  const totalQs=sec.qs.length, doneQs=sec.qs.filter(x=>x.done).length;
+  const optsHtml=q.opts.map((o,oi)=>`<button class="opt" data-o="${oi}">${String.fromCharCode(65+oi)}. ${o}</button>`).join('');
+  box.innerHTML='<div class="quiz-top"><span>📝 阅读理解 · '+p.title+'</span><span>第 '+(cnQ.rIdx+1)+'/'+cnQ.list.length+' 篇 · 第 '+(doneQs+1)+'/'+totalQs+' 题</span></div>'+
+    (p.src?`<div class="src">📚 ${p.src}</div>`:'')+
+    '<div class="poem">'+p.passage+'</div>'+
+    '<hr style="border:none;border-top:1px dashed var(--line);margin:10px 0">'+
+    '<div class="qprompt" style="font-size:16px">'+(doneQs+qiIdx-qAt+1)+'. '+q.q+'</div>'+
+    '<div class="opts">'+optsHtml+'</div>'+
+    '<div class="feedback" id="rQF"></div>';
+  box.querySelectorAll('.opt').forEach(btn=>btn.onclick=>{
+    if(btn.disabled) return;
+    const oi=+btn.dataset.o; const fb=$('#rQF');
+    box.querySelectorAll('.opt').forEach(b=>{b.disabled=true;});
+    btn.classList.add(oi===q.a?'on-ok':'on-no');
+    if(oi!==q.a){ var corr=box.querySelectorAll('.opt')[q.a]; if(corr) corr.classList.add('on-ok'); }
+    if(oi===q.a){
+      S.cnR.push(curQ.id); S.cnQuiz++; S.today.c++; const got=maybeCnSun(); save(); renderHome();
+      fb.className='feedback ok'; fb.innerHTML='✅ 答对啦！'+(got?' 🌟☀️+1':'');
+      cnQ.qIdx++;
+      setTimeout(()=>{ cnQ=null; renderCNRead(box); }, got?700:1200);
+    } else {
+      fb.className='feedback no'; fb.innerHTML='❌ 再想想，正确答案是 '+q.opts[q.a];
+      setTimeout(()=>{ cnQ.qIdx++; cnQ=null; renderCNRead(box); },1400);
     }
   });
-  cnPager(box,cnPage,total);
 }
+
+
 
 /* ============ math ============ */
 let mathMode='mental', mathQ=null;
