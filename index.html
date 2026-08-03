@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="zh-CN" data-app-version="20260803.2353">
+<html lang="zh-CN" data-app-version="20260804.0037">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
@@ -4054,16 +4054,16 @@ const CLOTHES_POOL=[
 ];
 const RARITY_COLOR={'普通':'#95a5a6','稀有':'#9b59b6','史诗':'#e67e22','传说':'#e74c3c'};
 const SHOP=[
-  {key:'fish',icon:'🐟',name:'小鱼干',price:10,grow:12,desc:'喂养+12成长',food:true},
+  {key:'fish',icon:'🐟',name:'小鱼干',price:10,grow:8,desc:'喂养+8成长',food:true},
   {key:'can',icon:'🥫',name:'猫罐头',price:18,grow:15,desc:'喂养+15成长',food:true},
   {key:'milk',icon:'🥛',name:'羊奶粉',price:12,grow:10,desc:'喂养+10成长',food:true},
-  {key:'jerky',icon:'🍗',name:'鸡肉干',price:20,grow:16,desc:'喂养+16成长',food:true},
-  {key:'biscuit',icon:'🍪',name:'猫饼干',price:8,grow:9,desc:'喂养+9成长',food:true},
+  {key:'jerky',icon:'🍗',name:'鸡肉干',price:20,grow:18,desc:'喂养+18成长（性价比最高）',food:true},
+  {key:'biscuit',icon:'🍪',name:'猫饼干',price:8,grow:6,desc:'喂养+6成长（零嘴）',food:true},
   {key:'clothes',icon:'👕',name:'小衣服',price:20,grow:0,desc:'随机抽一件衣服'},
-  {key:'medicine',icon:'💊',name:'药品',price:15,grow:9,desc:'喂养+9成长',medicine:true},
+  {key:'medicine',icon:'💊',name:'药品',price:15,grow:11,desc:'治病+喂养 +11成长',medicine:true},
 ];
 const FOOD_ITEMS=SHOP.filter(s=>s.food);     // 多种食物（像衣服一样可在超市挑选）
-const APP_VERSION='2026-08-03 23:53';         // 版本时间戳：用于比对本地/GitHub 是否一致
+const APP_VERSION='2026-08-04 00:37';         // 版本时间戳：用于比对本地/GitHub 是否一致
 function dogLevel(g){ if(g>=300)return 3; if(g>=160)return 2; if(g>=60)return 1; return 0; }
 const DOG_NAMES=['幼崽小猫','可爱小猫','帅气大猫','超级神猫'];
 let catState='sit';                       // 当前随机状态（sit/play/sleep/sick/eat 互动态）
