@@ -501,15 +501,13 @@ function speak(t){ try{ speechSynthesis.cancel(); const u=new SpeechSynthesisUtt
 /* ============ state ============ */
 const SKEY='egg_checkin_v1';
 const SVER=1;                       // 数据 schema 版本，便于日后迁移
-const WELCOME_SUN=200;              // 新手阳光礼包（仅首次发放，用于体验商店/喂养）
+const MATH_CAP=15;                   // 口算每日上限：做完 15 题后冻结
+const MATH_FREEZE_MS=12*60*60*1000; // 口算冻结时长：12 小时
 let S = load();
 function normalize(s){
   if(!s || typeof s!=='object') s={};
   s.v = SVER;
-  s.sun = s.sun||0;                 // 累计阳光
-  if(!s.bonusGiven){                // 首次进入发放新手阳光礼包（一次性）
-    s.sun += WELCOME_SUN; s.bonusGiven = true; s._welcome = true;
-  }
+  s.sun = s.sun||0;                 // 累计阳光（新用户从 0 开始，无新手礼包）
   s.lastSign = s.lastSign||'';      // 上次签到日期
   s.streak = s.streak||0;           // 连续打卡
   s.cnDone = Array.isArray(s.cnDone)?s.cnDone:[];            // 已背语文id
@@ -521,6 +519,8 @@ function normalize(s){
   s.enPrev = Array.isArray(s.enPrev)?s.enPrev:[];            // 英语预习·已记住单词key
   s.enRev = Array.isArray(s.enRev)?s.enRev:[];              // 英语复习·句型自测已完成key
   s.mathCorrect = s.mathCorrect||0; // 累计口算正确
+  s.mathMentalCount = s.mathMentalCount||0; // 本轮口算已做题目数（用于 15 题冻结）
+  s.mathFreezeUntil = s.mathFreezeUntil||0; // 口算冻结截止时间戳(ms)，0=未冻结
   s.engCorrect = s.engCorrect||0;   // 累计英语正确
   s.total = s.total||{c:0,m:0,e:0}; // 累计各科完成
   s.today = s.today||{date:'',c:0,m:0,e:0,ex:[]};
@@ -533,7 +533,6 @@ function normalize(s){
 function load(raw){
   if(raw===undefined){ try{ raw=JSON.parse(localStorage.getItem(SKEY)); }catch(e){ raw=null; } }
   const s=normalize(raw);
-  if(s._welcome){ toast('🎁 新手阳光礼包 +'+WELCOME_SUN+'☀️，去商店/喂养试试吧！'); delete s._welcome; }
   if(s.today.date!==todayStr()){
     s.today={date:todayStr(),c:0,m:0,e:0,ex:[]};
     s.exDone[s.today.date]=s.exDone[s.today.date]||{};
@@ -3327,6 +3326,22 @@ function renderMath(){
     $$('#mathBox [data-del]').forEach(b=>b.onclick=()=>{ S.wrong.splice(+b.dataset.del,1); save(); renderMath(); });
     return;
   }
+  /* ── 口算冻结（做完 MATH_CAP 题后冷却 MATH_FREEZE_MS） ── */
+  if(S.mathFreezeUntil && Date.now() >= S.mathFreezeUntil){
+    S.mathFreezeUntil=0; S.mathMentalCount=0; save();   // 冻结已过期，重置本轮计数
+  }
+  if(Date.now() < S.mathFreezeUntil){
+    const left = S.mathFreezeUntil - Date.now();
+    const h = Math.floor(left/3600000);
+    const m = Math.floor((left%3600000)/60000);
+    box.innerHTML='<div style="text-align:center;padding:36px 0">'+
+      '<div style="font-size:52px">⏸️</div>'+
+      '<h3 style="margin:10px 0">口算先休息一下</h3>'+
+      '<p class="muted">本轮口算已做 '+MATH_CAP+' 题，保护眼睛和脑袋～<br>约 '+h+' 小时 '+m+' 分后可继续</p>'+
+      '<button class="btn" id="mWrong">📒 看看错题本</button></div>';
+    document.getElementById('mWrong').onclick=function(){ mathMode='wrong'; renderMath(); };
+    return;
+  }
   /* ── 单元重点题模式（教材原题） ── */
   if(mathMode==='unit'){
     try {
@@ -3342,6 +3357,7 @@ function renderMath(){
       const sub=function(){
         const v=document.getElementById('mA').value.trim();
         if(!v){toast('✏️ 写一下答案吧');return;}
+      recordMathQuestion();
         const ok = item.free ? v===String(item.a) : Number(v)===item.a;
         const fb=document.getElementById('mFb');
         if(ok){
@@ -3396,6 +3412,7 @@ function renderMath(){
     const sub=function(){
       const v=document.getElementById('mA').value.trim();
       if(!v){toast('✏️ 写一下答案吧');return;}
+      recordMathQuestion();
       const ok = item.free ? v===String(item.a) : Number(v)===item.a;
       const fb=document.getElementById('mFb');
       if(ok){
@@ -3445,6 +3462,7 @@ function renderMath(){
     const sub=function(){
       const v=document.getElementById('mA').value.trim();
       if(!v){toast('✏️ 写一下答案吧');return;}
+      recordMathQuestion();
       const ok = item.free ? v===String(item.a) : Number(v)===item.a;
       const fb=document.getElementById('mFb');
       if(ok){
@@ -3489,6 +3507,7 @@ function renderMath(){
     '<div class="feedback" id="mFb"></div>';
   var sub2=function(){
     var v=document.getElementById('mA').value.trim(); if(!v){toast('写一下答案吧');return;}
+    recordMathQuestion();
     var ok=Number(v)===mathQ.a;
     var fb=document.getElementById('mFb');
     if(ok){ S.mathCorrect++; S.total.m++; S.today.m++; var got=maybeMathSun();
@@ -3506,6 +3525,10 @@ function renderMath(){
 function maybeMathSun(){
   if(S.mathCorrect>0 && S.mathCorrect%5===0){ S.sun+=1; toast('🎉 数学答对5题，☀️阳光+1！'); return true; }
   return false;
+}
+function recordMathQuestion(){
+  S.mathMentalCount++;
+  if(S.mathMentalCount >= MATH_CAP){ S.mathFreezeUntil = Date.now() + MATH_FREEZE_MS; }
 }
 
 /* ============ english ============ */
