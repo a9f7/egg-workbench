@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="zh-CN" data-app-version="20260803.2353">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
@@ -597,7 +597,11 @@ function normalize(s){
   s.today = s.today||{date:'',c:0,m:0,e:0,ex:[]};
   s.wrong = Array.isArray(s.wrong)?s.wrong:[];              // 数学错题
   s.exDone = s.exDone||{};          // 运动完成(按日期)
-  s.dog = s.dog||{growth:0, inv:{food:0,clothes:0,medicine:0}, wardrobe:[], equipped:null};
+  s.dog = s.dog||{growth:0, inv:{}, wardrobe:[], equipped:null};
+  // 确保各物品计数存在；旧版单「猫粮」(inv.food) 兼容迁移到 小鱼干(fish)
+  (s.dog.inv = s.dog.inv||{});
+  ['fish','can','milk','jerky','biscuit','medicine'].forEach(k=>{ if(typeof s.dog.inv[k]!=='number') s.dog.inv[k]=0; });
+  if(s.dog.inv.food){ s.dog.inv.fish=(s.dog.inv.fish||0)+s.dog.inv.food; delete s.dog.inv.food; }
   s.dog.lastFeed = s.dog.lastFeed||'';   // 最后进食日期，用于“生病”触发判定
   return s;
 }
@@ -3983,13 +3987,20 @@ const CLOTHES_POOL=[
 ];
 const RARITY_COLOR={'普通':'#95a5a6','稀有':'#9b59b6','史诗':'#e67e22','传说':'#e74c3c'};
 const SHOP=[
-  {key:'food',icon:'🐟',name:'猫粮',price:10,grow:12,desc:'喂养+12成长'},
+  {key:'fish',icon:'🐟',name:'小鱼干',price:10,grow:12,desc:'喂养+12成长',food:true},
+  {key:'can',icon:'🥫',name:'猫罐头',price:18,grow:15,desc:'喂养+15成长',food:true},
+  {key:'milk',icon:'🥛',name:'羊奶粉',price:12,grow:10,desc:'喂养+10成长',food:true},
+  {key:'jerky',icon:'🍗',name:'鸡肉干',price:20,grow:16,desc:'喂养+16成长',food:true},
+  {key:'biscuit',icon:'🍪',name:'猫饼干',price:8,grow:9,desc:'喂养+9成长',food:true},
   {key:'clothes',icon:'👕',name:'小衣服',price:20,grow:0,desc:'随机抽一件衣服'},
-  {key:'medicine',icon:'💊',name:'药品',price:15,grow:9,desc:'喂养+9成长'},
+  {key:'medicine',icon:'💊',name:'药品',price:15,grow:9,desc:'喂养+9成长',medicine:true},
 ];
+const FOOD_ITEMS=SHOP.filter(s=>s.food);     // 多种食物（像衣服一样可在超市挑选）
+const APP_VERSION='2026-08-03 23:53';         // 版本时间戳：用于比对本地/GitHub 是否一致
 function dogLevel(g){ if(g>=300)return 3; if(g>=160)return 2; if(g>=60)return 1; return 0; }
 const DOG_NAMES=['幼崽小猫','可爱小猫','帅气大猫','超级神猫'];
 let catState='sit';                       // 当前随机状态（sit/play/sleep/sick/eat 互动态）
+let catEatFood=null;                      // 当前正在吃的「食物 id」（用于切换专属进食帧）
 let catFrameTimer=null, catReactTimer=null, catFrameIdx=0, catFrameList=null;
 // 每种状态 × 成长级别的帧文件名（均由 AI 生成的多姿势动作帧）
 const CAT_FRAME_MS={sit:520, play:380, eat:420, sleep:1500, sick:520, react:260, medicine:480};
@@ -4004,14 +4015,25 @@ const CAT_PHRASES={
     sleep:['呼…zzz…主人轻点吵…','再让我睡一小会儿嘛～','唔，被主人吵醒啦，人家困～'],
     sick:['主人，我有点不舒服…','抱抱我好不好，主人…','生病了，我也想陪着主人…']
   },
-  eat:['呜呜，这个真的好好吃！','吃饱啦，谢谢主人投喂🍚','肚子圆滚滚，好满足～','主人喂的饭最香最香啦！'],
+  eat:{  // 每种食物有专属互动短句（按食物 id 取，随机呈现不同食品的反应）
+    __default:['呜呜，这个真的好好吃！','吃饱啦，谢谢主人投喂🍚','肚子圆滚滚，好满足～','主人喂的饭最香最香啦！'],
+    fish:['呜呜，小鱼干脆脆的好香！','叼着小鱼干舍不得放，太好吃啦🐟','主人给的小鱼干最新鲜啦！'],
+    can:['猫罐头一开香晕我了🥫','大口吃罐头，幸福到转圈圈～','罐头控本猫表示极度满足！'],
+    milk:['羊奶暖暖的，喝完想睡觉🥛','小口抿牛奶，优雅猫猫上线～','主人冲的奶，甜到心里啦'],
+    jerky:['鸡肉干有嚼劲，嘎吱嘎吱🍗','嚼鸡肉干锻炼我的小下巴！','奖励级别的零食呀，谢谢主人！'],
+    biscuit:['猫饼干咔嚓咔嚓真好玩🍪','饼干屑掉了一地，主人别嫌弃～','脆脆的饼干，越吃越上头！']
+  },
   medicine:['药药好苦…但为了主人我喝！','苦死啦，不过会快点好','乖乖吃药，不让主人担心','吃完药就能陪主人玩啦']
 };
 let catBubbleTimer=null;
 function catSpeak(action){
   const b=$('#catBubble'); if(!b) return;
-  const set=CAT_PHRASES[action]; if(!set) return;
-  const arr = Array.isArray(set) ? set : (set[catState]||set.sit);
+  let arr;
+  if(action && CAT_PHRASES.eat && CAT_PHRASES.eat[action]){ arr=CAT_PHRASES.eat[action]; }   // 特定食物专属短句
+  else {
+    const set=CAT_PHRASES[action]; if(!set) return;
+    arr = Array.isArray(set) ? set : (set[catState]||set.sit);
+  }
   if(!arr||!arr.length) return;
   b.textContent = arr[Math.floor(Math.random()*arr.length)];
   b.classList.add('show');
@@ -4021,7 +4043,10 @@ function catSpeak(action){
 function catFrameFiles(state, lv){
   const p='assets/cat-anim-';
   if(state==='play')  return [p+'p'+lv+'a.png', p+'p'+lv+'b.png'];
-  if(state==='eat')   return [p+'e'+lv+'a.png', p+'e'+lv+'b.png', p+'e'+lv+'c.png'];
+  if(state==='eat'){
+    if(catEatFood) return ['assets/cat-eat-'+catEatFood+'-a.png','assets/cat-eat-'+catEatFood+'-b.png','assets/cat-eat-'+catEatFood+'-c.png'];
+    return [p+'e'+lv+'a.png', p+'e'+lv+'b.png', p+'e'+lv+'c.png'];   // 兜底通用进食帧
+  }
   if(state==='sleep') return [p+'z'+lv+'a.png', p+'z'+lv+'b.png'];
   if(state==='sick')  return [p+'k'+lv+'a.png', p+'k'+lv+'b.png'];
   if(state==='react')   return [p+'h'+lv+'a.png', p+'h'+lv+'b.png', p+'h'+lv+'c.png']; // 点击撒娇
@@ -4159,29 +4184,45 @@ function renderDog(){
   }
   const invEl2=document.getElementById('inv2'); if(invEl2) invEl2.innerHTML='';
   let hasInv=false;
-  ['food','medicine'].forEach(k=>{
-    const item=SHOP.find(x=>x.key===k);
-    const n=S.dog.inv[k]||0;
+  const ownedFoods=FOOD_ITEMS.filter(f=>(S.dog.inv[f.key]||0)>0);
+  // 每种食物一个「喂养」按钮（喂该食物，播其专属进食动画）
+  FOOD_ITEMS.concat([{key:'medicine',icon:'💊',name:'药品'}]).forEach(item=>{
+    const k=item.key, n=S.dog.inv[k]||0;
     if(n>0){ hasInv=true;
       const d=document.createElement('div'); d.className='ib';
       d.innerHTML=`${item.icon} ${item.name}×${n} <button class="btn sm mint" data-feed="${k}" style="margin-left:6px">喂养</button>`;
       (invEl2||document.getElementById('inv2')).appendChild(d);
     }
   });
-  if(!hasInv && invEl2) invEl2.innerHTML='<span class="muted">背包空空</span>';
+  // 🎲 随机喂一口：随机抽一种已有食物 → 随机呈现不同食品的动态反应
+  if(ownedFoods.length>0){
+    hasInv=true;
+    const d=document.createElement('div'); d.className='ib';
+    d.innerHTML=`🎲 随机喂一口 <button class="btn sm" data-randfeed="1" style="margin-left:6px">随机</button>`;
+    (invEl2||document.getElementById('inv2')).appendChild(d);
+  }
+  if(!hasInv && invEl2) invEl2.innerHTML='<span class="muted">背包空空，去超市买点吃的吧～</span>';
 
-  $$('#inv2 [data-feed]').forEach(b=>b.onclick=()=>{
-    const k=b.dataset.feed, item=SHOP.find(x=>x.key===k);
+  const doFeed=(k)=>{
+    const item=SHOP.find(x=>x.key===k);
     if((S.dog.inv[k]||0)<=0) return;
     const before=dogLevel(S.dog.growth);
     S.dog.inv[k]--; S.dog.growth+=item.grow;
     S.dog.lastFeed=todayStr();                // 记录最后进食日 → 影响生病判定
     const after=dogLevel(S.dog.growth);
     save(); renderDog();
-    catFeedReact(k==='food'?'eat':'medicine');     // 播放吃/吃药帧动画
+    catFeedReact(k);                           // 播放该食物/药品专属帧动画
     if(after>before) dogBurst();
     else toast('喂养成功，小猫成长值+'+item.grow+' ❤️');
-  });
+  };
+  $$('#inv2 [data-feed]').forEach(b=>b.onclick=()=>doFeed(b.dataset.feed));
+  const rb=document.querySelector('#inv2 [data-randfeed]');
+  if(rb) rb.onclick=()=>{
+    const owned=FOOD_ITEMS.filter(f=>(S.dog.inv[f.key]||0)>0);
+    if(!owned.length) return;
+    const pick=owned[Math.floor(Math.random()*owned.length)];
+    doFeed(pick.key);
+  };
 }
 function daysBetween(a,b){ const da=new Date(a+'T00:00:00'), db=new Date(b+'T00:00:00'); return Math.round((db-da)/86400000); }
 // 是否达到“生病”触发条件：连续 2 天未进食
@@ -4203,15 +4244,20 @@ function pickCatState(){
   else if(chosen==='sick') spawnFx(fx,['🤒','💧'],2);
 }
 // 道具互动：吃猫粮 / 吃药 → 临时切到 eat 帧动画 ~1.3s，再恢复原本随机状态
-function catFeedReact(type){
+function catFeedReact(foodId){
   const prev=catState;
-  catState = (type==='medicine') ? 'medicine' : 'eat';   // 吃药用专属 m 帧，不再复用进食帧
-  updateCatVisual();
-  spawnFx($('#catFx'), type==='eat'?['🍚','🐟','😋']:['💊','✨'], 3);
-  catSpeak(type==='medicine'?'medicine':'eat');   // 冒一句进食/吃药短句
-  if(type==='medicine') toast('💊 吃药药，早日康复～');
+  if(foodId==='medicine'){
+    catState='medicine'; catEatFood=null; updateCatVisual();
+    spawnFx($('#catFx'), ['💊','✨'], 3);
+    catSpeak('medicine'); toast('💊 吃药药，早日康复～');
+  } else {
+    catState='eat'; catEatFood=foodId; updateCatVisual();   // 播该食物专属进食帧
+    const fi=FOOD_ITEMS.find(f=>f.key===foodId)||SHOP.find(x=>x.key===foodId);
+    spawnFx($('#catFx'), [fi?fi.icon:'🍴','😋','🍴'], 3);
+    catSpeak(foodId);   // 冒一句该食物专属短句
+  }
   clearTimeout(catReactTimer);
-  catReactTimer=setTimeout(()=>{ catState=prev; updateCatVisual(); }, 1300);
+  catReactTimer=setTimeout(()=>{ catState=prev; catEatFood=null; updateCatVisual(); }, 1300);
 }
 // 生成漂浮粒子（emoji）
 function spawnFx(fx, emojis, n){
@@ -4271,6 +4317,7 @@ function dogBurst(){
 function shuffle(a){ a=a.slice(); for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];} return a; }
 addBoardBars();
 renderHome();
+console.log('[egg-workbench] 版本 '+APP_VERSION+' · data-app-version='+document.documentElement.getAttribute('data-app-version'));
 const _iv=(location.hash||'#home').slice(1);
 if(VIEWS.includes(_iv)) switchView(_iv); else switchView('home');
 
@@ -4310,5 +4357,7 @@ $('#btnReset').onclick=()=>{
 };
 window.addEventListener('beforeinstallprompt',e=>e.preventDefault());
 </script>
+<div id="verTag" title="页面版本时间戳，用于比对本地/GitHub 是否一致">v20260803.2353</div>
+<style>#verTag{position:fixed;right:6px;bottom:4px;font-size:11px;color:#c7b8c0;opacity:.7;z-index:50;pointer-events:none;font-family:ui-monospace,Menlo,Consolas,monospace}</style>
 </body>
 </html>
