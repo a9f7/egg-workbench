@@ -309,6 +309,22 @@
     font-size:14px;padding:10px 16px;border-radius:14px;cursor:pointer;box-shadow:0 3px 0 var(--pink-d)}
   .cn-pager .pg:disabled{background:#e8dde6;color:#bba;box-shadow:none;cursor:default}
   .cn-pager .pgi{font-weight:700;font-size:14px;color:var(--muted);min-width:84px;text-align:center}
+  /* ============ 家长模块 ============ */
+  .pwd-mask{position:fixed;inset:0;background:rgba(60,40,60,.55);z-index:60;display:none;align-items:center;justify-content:center}
+  .pwd-box{background:#fff;border-radius:20px;padding:22px;width:min(86vw,340px);box-shadow:0 20px 50px rgba(0,0,0,.25);text-align:center}
+  .pwd-box h3{margin:0 0 4px}
+  .pwd-box input{width:100%;box-sizing:border-box;margin:10px 0;padding:10px 12px;border:2px solid #ecd9e9;border-radius:12px;font-family:inherit;font-size:15px;text-align:center;outline:none}
+  .pwd-box input:focus{border-color:var(--pink)}
+  .parent-sun{font-size:15px;background:#fff7fb;border:1px solid #f3dcec;border-radius:14px;padding:12px;text-align:center;margin:10px 0}
+  .parent-sun b{font-size:22px;color:var(--pink-d)}
+  .prow2{display:flex;gap:12px;flex-wrap:wrap}
+  .pcard{flex:1;min-width:140px;background:#fff;border:1px solid #f0e2ee;border-radius:16px;padding:14px}
+  .pcard h4{margin:0 0 8px;font-size:14px}
+  .pcard input{width:100%;box-sizing:border-box;margin-bottom:8px;padding:9px 10px;border:2px solid #ecd9e9;border-radius:12px;font-family:inherit;font-size:14px;text-align:center;outline:none}
+  .pcard input:focus{border-color:var(--pink)}
+  .pcard button,.pwd-box .seg button{border:none;background:var(--pink);color:#fff;font-family:inherit;font-weight:800;padding:9px 14px;border-radius:12px;cursor:pointer;box-shadow:0 3px 0 var(--pink-d)}
+  .pcard button:active,.pwd-box .seg button:active{transform:translateY(1px)}
+  .pcard .pwarn{background:#e98aa6;box-shadow:0 3px 0 #c96a86}
 </style>
 </head>
 <body>
@@ -328,6 +344,7 @@
     <button class="dt" data-v="english"><span class="ni">🔤</span>英语</button>
     <button class="dt" data-v="exercise"><span class="ni">🏃</span>运动</button>
     <button class="dt" data-v="dog"><span class="ni">🐱</span>小猫</button>
+    <button class="dt" data-v="parent"><span class="ni">🔐</span>家长</button>
   </div>
 
   <!-- HOME -->
@@ -434,6 +451,37 @@
     </div>
   </section>
 
+  <!-- PARENT -->
+  <section class="view" id="v-parent">
+    <div class="card">
+      <h3>👨‍👩‍👧 家长专区</h3>
+      <p class="muted">可扣除或奖励孩子的阳光值，操作仅家长可见（需密码进入）。</p>
+      <div class="parent-sun">当前阳光值：☀️ <b id="pSun">0</b></div>
+      <div class="prow2">
+        <div class="pcard">
+          <h4>➖ 扣除阳光</h4>
+          <input type="number" id="pMinus" min="1" placeholder="扣除数量">
+          <button id="pMinusBtn">确认扣除</button>
+        </div>
+        <div class="pcard">
+          <h4>➕ 奖励阳光</h4>
+          <input type="number" id="pPlus" min="1" placeholder="奖励数量">
+          <button id="pPlusBtn">确认奖励</button>
+        </div>
+      </div>
+      <div class="pcard" style="margin-top:12px">
+        <h4>🔑 修改密码</h4>
+        <input type="password" id="pOld" placeholder="当前密码" autocomplete="off">
+        <input type="password" id="pNew" placeholder="新密码（≥4位）" autocomplete="off">
+        <input type="password" id="pNew2" placeholder="确认新密码" autocomplete="off">
+        <button id="pPwdBtn">保存新密码</button>
+      </div>
+      <div class="seg" style="margin-top:14px;justify-content:center">
+        <button id="pLockBtn" class="pwarn">🔒 锁定并退出</button>
+      </div>
+    </div>
+  </section>
+
   <!-- CAT -->
   <section class="view" id="v-dog">
     <div class="card">
@@ -477,10 +525,24 @@
     <button data-v="english"><span class="ni">🔤</span>英语</button>
     <button data-v="exercise"><span class="ni">🏃</span>运动</button>
     <button data-v="dog"><span class="ni">🐱</span>小猫</button>
+    <button data-v="parent"><span class="ni">🔐</span>家长</button>
   </nav>
 </div>
 
 <div class="toast" id="toast"></div>
+
+<!-- 家长密码验证弹窗 -->
+<div class="pwd-mask" id="pwdMask">
+  <div class="pwd-box">
+    <h3>🔐 家长验证</h3>
+    <p class="muted">请输入家长密码进入专区</p>
+    <input type="password" id="pwdInput" placeholder="请输入密码" autocomplete="off">
+    <div class="seg" style="margin-top:6px;justify-content:center">
+      <button id="pwdOk">进入</button>
+      <button id="pwdCancel" style="color:#888;background:#eee;box-shadow:0 3px 0 #ccc">取消</button>
+    </div>
+  </div>
+</div>
 
 <script>
 /* ============ utils ============ */
@@ -508,6 +570,7 @@ function normalize(s){
   if(!s || typeof s!=='object') s={};
   s.v = SVER;
   s.sun = s.sun||0;                 // 累计阳光（新用户从 0 开始，无新手礼包）
+  s.parentPwd = s.parentPwd||'4321'; // 家长专区密码（初始 4321；不随阳光清零，独立保存）
   s.lastSign = s.lastSign||'';      // 上次签到日期
   s.streak = s.streak||0;           // 连续打卡
   s.cnDone = Array.isArray(s.cnDone)?s.cnDone:[];            // 已背语文id
@@ -2722,9 +2785,11 @@ const EX_CHORES = [
 ];
 
 /* ============ nav ============ */
-const VIEWS=['home','chinese','math','english','exercise','dog'];
+const VIEWS=['home','chinese','math','english','exercise','dog','parent'];
+let parentUnlocked=false;          // 家长专区解锁状态（仅内存，刷新后需重新验证密码）
 function switchView(v){
   if(!VIEWS.includes(v)) v='home';
+  if(v==='parent' && !parentUnlocked){ openParentModal(); return; } // 家长专区需密码
   $$('.view').forEach(s=>s.classList.remove('on'));
   $('#v-'+v).classList.add('on');
   $$('#nav button').forEach(b=>b.classList.toggle('on', b.dataset.v===v));
@@ -2739,7 +2804,7 @@ function switchView(v){
   if(('#'+v)!==location.hash) history.replaceState(null,'','#'+v);
 }
 $$('#nav button').forEach(b=>b.onclick=()=>switchView(b.dataset.v));
-$$('[data-go]').forEach(b=>b.onclick=()=>switchView(b.dataset.go));
+document.addEventListener('click', e=>{ const g=e.target.closest('[data-go]'); if(g){ e.preventDefault(); switchView(g.dataset.go); } });
 $$('.desktabs .dt').forEach(b=>b.onclick=()=>switchView(b.dataset.v));
 /* hash 路由：刷新 / 分享链接直接定位到对应板块，像独立页面一样打开 */
 window.addEventListener('hashchange',()=>{
@@ -2756,6 +2821,48 @@ function addBoardBars(){
     sec.insertBefore(bar, sec.firstChild);
   });
 }
+
+/* ============ 家长专区 ============ */
+function openParentModal(){
+  const m=$('#pwdMask'); m.style.display='flex';
+  const inp=$('#pwdInput'); inp.value=''; setTimeout(()=>inp.focus(),60);
+}
+function closeParentModal(){ $('#pwdMask').style.display='none'; }
+function tryParentPwd(){
+  const v=$('#pwdInput').value;
+  if(v===S.parentPwd){ parentUnlocked=true; closeParentModal(); switchView('parent'); }
+  else { toast('密码错误，请重试'); const inp=$('#pwdInput'); inp.value=''; inp.focus(); }
+}
+function renderParent(){ $('#pSun').textContent=S.sun; }
+function pAdjustSun(delta){              // delta<0 扣除, delta>0 奖励
+  const amt=Math.abs(delta)|0;
+  if(amt<=0){ toast('请输入有效数量'); return; }
+  if(delta<0){
+    if(S.sun<=0){ toast('阳光值已经是 0 啦'); return; }
+    S.sun=Math.max(0,S.sun-amt);
+    toast('已扣除 ☀️'+amt+'，剩余 '+S.sun);
+  }else{
+    S.sun+=amt;
+    toast('已奖励 ☀️'+amt+'，现有 '+S.sun);
+  }
+  save(); renderHome(); renderParent();
+}
+$('#pwdOk').onclick=tryParentPwd;
+$('#pwdCancel').onclick=closeParentModal;
+$('#pwdInput').addEventListener('keydown',e=>{ if(e.key==='Enter') tryParentPwd(); });
+$('#pwdMask').addEventListener('click',e=>{ if(e.target.id==='pwdMask') closeParentModal(); });
+$('#pMinusBtn').onclick=()=>{ const v=parseInt($('#pMinus').value,10); pAdjustSun(-v); $('#pMinus').value=''; };
+$('#pPlusBtn').onclick=()=>{ const v=parseInt($('#pPlus').value,10); pAdjustSun(v); $('#pPlus').value=''; };
+$('#pPwdBtn').onclick=()=>{
+  const old=$('#pOld').value, nw=$('#pNew').value, nw2=$('#pNew2').value;
+  if(old!==S.parentPwd){ toast('当前密码不正确'); return; }
+  if(!nw || nw.length<4){ toast('新密码至少 4 位'); return; }
+  if(nw!==nw2){ toast('两次输入的新密码不一致'); return; }
+  S.parentPwd=nw; save();
+  $('#pOld').value=''; $('#pNew').value=''; $('#pNew2').value='';
+  toast('🔑 密码已更新');
+};
+$('#pLockBtn').onclick=()=>{ parentUnlocked=false; closeParentModal(); switchView('home'); toast('已锁定家长专区'); };
 
 /* ============ home ============ */
 const SLOGANS=['今天也要元气满满地打卡哦！🌟','每天进步一点点，开学惊艳所有人✨','蛋蛋最棒啦，加油鸭！🦆','坚持就是胜利，阳光值蹭蹭涨☀️','读书破万卷，下笔如有神📚'];
