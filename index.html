@@ -183,6 +183,14 @@
   .feedback.ok{display:block;background:#e6f9ec;color:#2e7a3f}
   .feedback.no{display:block;background:#ffeef2;color:#c23a5b}
   .feedback .fex{display:block;font-size:12px;color:var(--muted);margin-top:6px}
+  /* 选择题 */
+  .opts{display:flex;flex-direction:column;gap:10px;margin:6px 0 4px}
+  .opt{display:block;width:100%;text-align:left;padding:13px 16px;border:2px solid var(--line,#e7e7ef);
+    border-radius:14px;background:#fff;font-size:16px;cursor:pointer;transition:.15s;color:#2b2b3a}
+  .opt:hover{border-color:#ffb03a;background:#fff8ec}
+  .opt:disabled{cursor:default;opacity:.95}
+  .opt.on-ok{border-color:#2e7a3f;background:#e6f9ec;color:#2e7a3f;font-weight:700}
+  .opt.on-no{border-color:#c23a5b;background:#ffeef2;color:#c23a5b;font-weight:700}
   .speak{background:none;border:none;font-size:24px;cursor:pointer}
   /* exercise */
   .ex-card{display:flex;align-items:center;gap:12px;padding:14px;border-radius:16px;background:#fff;
@@ -3154,7 +3162,25 @@ const MATH3_BOOK=[
   /* 第八单元：数学广角——搭配（二） */
   {q:'2件上衣和3条裤子，一共有（    ）种不同的穿法。', a:'6', free:true, tip:'搭配问题'},
   {q:'4个小朋友打乒乓球，每2人赛一场，一共要赛（    ）场。', a:'6', free:true, tip:'搭配问题'},
-  {q:'早餐有3种饮料和2种点心，各选一种一共有（    ）种搭配。', a:'6', free:true, tip:'搭配问题'}
+  {q:'早餐有3种饮料和2种点心，各选一种一共有（    ）种搭配。', a:'6', free:true, tip:'搭配问题'},
+
+  {q:'学校买来 5 箱苹果，每箱 24 千克，每千克 6 元，一共花了多少元？', a:'720', free:true, tip:'应用题'},
+{q:'小明看一本 180 页的书，每天看 12 页，看了 9 天后还剩多少页？', a:'72', free:true, tip:'应用题'},
+{q:'一块长方形菜地长 15 米、宽 12 米，如果每平方米收白菜 8 千克，一共收多少千克？', a:'1440', free:true, tip:'应用题'},
+{q:'三年级有 4 个班，每班 42 人，每人发 3 本作业本，一共要发多少本？', a:'504', free:true, tip:'应用题'},
+{q:'一桶油连桶重 58 千克，倒出一半油后连桶重 30 千克，桶重多少千克？', a:'2', free:true, tip:'应用题'},
+{q:'商店运来 8 筐梨，每筐 25 千克，卖出 120 千克后，还剩多少千克？', a:'80', free:true, tip:'应用题'},
+{q:'最大的两位数是（    ），最小的三位数是（    ），它们相差（    ）。', a:'99 100 1', free:true, tip:'填空题'},
+{q:'25 × 40 = （    ），积的末尾有（    ）个 0。', a:'1000 3', free:true, tip:'填空题'},
+{q:'一个长方形长 20 厘米、宽 15 厘米，周长是（    ）厘米，面积是（    ）平方厘米。', a:'70 300', free:true, tip:'填空题'},
+{q:'2024 年的第一季度有（    ）天。', a:'91', free:true, tip:'填空题'},
+{q:'小数 3.05 读作（            ），它里面有（    ）个 0.01。', a:'三点零五 305', free:true, tip:'填空题'},
+{q:'填上合适的单位：一张课桌面的面积大约是 24（    ）。', a:'平方分米', free:true, tip:'填空题'},
+{q:'下面月份中，有 30 天的是（    ）。', opts:['七月','八月','九月','二月'], a:2, tip:'选择题'},
+{q:'一个正方形的边长扩大到原来的 3 倍，面积扩大到原来的（    ）倍。', opts:['3','6','9','12'], a:2, tip:'选择题'},
+{q:'下面算式中，积最接近 1000 的是（    ）。', opts:['31×29','48×21','19×49','52×18'], a:1, tip:'选择题'},
+{q:'下列年份中，是闰年的是（    ）。', opts:['2100','2023','2024','1900'], a:2, tip:'选择题'},
+{q:'小明从家出发先向东走，再向南走到学校，他家在学校的（    ）方向。', opts:['东北','西北','东南','西南'], a:1, tip:'选择题'},
 ];
 const UNIT3_MATH=[
   /* 三下 单元重点题 */
@@ -3408,6 +3434,24 @@ const MATH_BOOK = [
   {q:'497+498+499+500+501+502+503', a:'3500', free:true, tip:'条形统计图'},
   {q:'72-48', a:'24', free:true, tip:'条形统计图'},
   {q:'360+90', a:'450', free:true, tip:'条形统计图'},
+
+  {q:'一辆汽车从甲地开往乙地，每小时行 65 千米，行驶 4 小时后离乙地还有 120 千米，甲乙两地相距多少千米？', a:'380', free:true, tip:'应用题'},
+{q:'一个长方形花坛长 25 米、宽 16 米，四周各留出 1 米宽的小路，种花的实际面积是多少平方米？', a:'322', free:true, tip:'应用题'},
+{q:'商店运进 480 千克苹果，卖出 12 箱，每箱 15 千克，还剩多少千克？', a:'300', free:true, tip:'应用题'},
+{q:'工厂要生产 1000 个零件，已经生产 8 天，每天生产 95 个，还要生产多少个？', a:'240', free:true, tip:'应用题'},
+{q:'妈妈带 500 元买 3 袋大米，每袋 68 元，剩下的钱最多能买几瓶 16 元的油？', a:'18', free:true, tip:'应用题'},
+{q:'一个长方形游泳池长 50 米、宽 25 米，它的占地面积是多少平方米？', a:'1250', free:true, tip:'应用题'},
+{q:'修一条 840 米长的路，已经修了 12 天，每天修 45 米，剩下的要 10 天修完，剩下的平均每天要修多少米？', a:'30', free:true, tip:'应用题'},
+{q:'一个数由 6 个千万、5 个十万、3 个千和 8 个一组成，这个数写作（          ），读作（                    ）。', a:'60503008 六千零五十万三千零八', free:true, tip:'填空题'},
+{q:'钟面上 9 时整，时针和分针成（    ）角，是（    ）度。', a:'直 90', free:true, tip:'填空题'},
+{q:'两个因数的积是 240，一个因数乘 3，另一个因数除以 3，积是（    ）。', a:'240', free:true, tip:'填空题'},
+{q:'一个数四舍五入到万位约是 47 万，这个数最大可能是（        ），最小可能是（        ）。', a:'474999 465000', free:true, tip:'填空题'},
+{q:'在○里填“>”“<”或“=”：4500000 ○ 45 万。', a:'>', free:true, tip:'填空题'},
+{q:'下面各数中，一个“零”也不读的是（    ）。', opts:['3008000','3080000','3000800','3080800'], a:0, tip:'选择题'},
+{q:'下面说法正确的是（    ）。', opts:['永不相交的两条直线叫平行线','同一平面内，不相交的两条直线互相平行','平行四边形有 4 条高','梯形只有一组对边相等'], a:1, tip:'选择题'},
+{q:'估算 398×21 的积大约是（    ）。', opts:['8000','6000','800','600'], a:0, tip:'选择题'},
+{q:'煎 3 条鱼，两面都要煎，每面 2 分钟，锅里一次最多放 2 条，最少要（    ）分钟。', opts:['6','8','10','12'], a:0, tip:'选择题'},
+{q:'下面（    ）组长度的小棒能围成平行四边形。', opts:['3,3,5,5','3,4,5,6','2,2,2,3','4,4,4,5'], a:0, tip:'选择题'},
 ];
 function buildMathGradeSeg(){
   const seg=$('#mathGradeSeg'); if(!seg)return; seg.innerHTML='';
@@ -3556,24 +3600,32 @@ function renderMath(){
     if(!mathQ||mathQ._book!==true){ mathQ={_book:true, idx:0, list:shuffle(mathSet().book.slice())}; }
     const item=mathQ.list[mathQ.idx];
     if(!item){ box.innerHTML='<p class="muted">⚠️ 题目加载失败</p>'; return; }
-    box.innerHTML='<div class="quiz-top"><span>📘 教材习题 '+(mathQ.idx+1)+'/'+mathQ.list.length+'</span><span style="font-size:12px">'+(item.tip||'')+'</span></div>'+
-      '<div class="qprompt" style="font-size:17px;font-weight:600">'+item.q+'</div>'+
-      '<div class="qhint">'+(item.free?'💡 输入文字或数字答案（比较大小填 &lt; &gt; 或 =）':'💡 输入数字答案')+'</div>'+
-      '<input type="text" id="mA" placeholder="输入答案" '+(item.free?'':'inputmode="numeric"')+' autocomplete="off">'+
-      '<button class="btn block" id="mSub" style="margin-top:12px">✅ 提交答案</button>'+
-      '<div class="feedback" id="mFb"></div>';
-    const sub=function(){
-      const v=document.getElementById('mA').value.trim();
-      if(!v){toast('✏️ 写一下答案吧');return;}
-      recordMathQuestion();
-      const ok = item.free ? v===String(item.a) : Number(v)===item.a;
-      const fb=document.getElementById('mFb');
+    const fbId='mFb';
+    let body;
+    if(Array.isArray(item.opts)){
+      /* 选择题：点击选项作答 */
+      const optsHtml=item.opts.map(function(o,k){ return '<button class="opt" data-opt="'+k+'">'+String.fromCharCode(65+k)+'. '+o+'</button>'; }).join('');
+      body='<div class="qprompt" style="font-size:17px;font-weight:600">'+item.q+'</div>'+
+        '<div class="qhint">💡 点击正确选项（选择题）</div>'+
+        '<div class="opts">'+optsHtml+'</div>'+
+        '<div class="feedback" id="'+fbId+'"></div>';
+    } else {
+      body='<div class="qprompt" style="font-size:17px;font-weight:600">'+item.q+'</div>'+
+        '<div class="qhint">'+(item.free?'💡 输入文字或数字答案（比较大小填 &lt; &gt; 或 =）':'💡 输入数字答案')+'</div>'+
+        '<input type="text" id="mA" placeholder="输入答案" '+(item.free?'':'inputmode="numeric"')+' autocomplete="off">'+
+        '<button class="btn block" id="mSub" style="margin-top:12px">✅ 提交答案</button>'+
+        '<div class="feedback" id="'+fbId+'"></div>';
+    }
+    box.innerHTML='<div class="quiz-top"><span>📘 教材习题 '+(mathQ.idx+1)+'/'+mathQ.list.length+'</span><span style="font-size:12px">'+(item.tip||'')+'</span></div>'+body;
+    /* 教材习题属思考型，不计入口算 15 题冻结，可多练 */
+    const after=function(ok, correct){
+      const fb=document.getElementById(fbId);
       if(ok){
         S.mathCorrect++; S.total.m++; S.today.m++; maybeMathSun();
         fb.className='feedback ok'; fb.innerHTML='🎉 正确！太棒了！';
       } else {
-        fb.className='feedback no'; fb.innerHTML='❌ 正确答案：<b>'+item.a+'</b>';
-        if(!S.wrong.find(w=>w.q===item.q)) S.wrong.push({q:item.q,a:item.a});
+        fb.className='feedback no'; fb.innerHTML='❌ 正确答案：<b>'+correct+'</b>';
+        if(!S.wrong.find(w=>w.q===item.q)) S.wrong.push({q:item.q,a:correct});
       }
       save(); renderHome();
       mathQ.idx++;
@@ -3583,7 +3635,7 @@ function renderMath(){
           box.innerHTML='<div style="text-align:center;padding:30px 0">'+
             '<div style="font-size:48px">🏆</div>'+
             '<h3 style="margin:8px 0">教材习题全部做完！</h3>'+
-            '<p class="muted" style="margin-bottom:16px">共 '+MATH_BOOK.length+' 道教材课后原题</p>'+
+            '<p class="muted" style="margin-bottom:16px">共 '+mathSet().book.length+' 道教材题（含应用题/填空/选择题）</p>'+
             '<button class="btn mint" id="mRetry" style="margin-right:8px">🔄 再做一遍</button>'+
             '<button class="btn" id="mBack">🔢 回到口算</button></div>';
           document.getElementById('mRetry').onclick=function(){ mathMode='book'; mathQ=null; renderMath(); };
@@ -3596,9 +3648,29 @@ function renderMath(){
         } else { renderMath(); }
       }, ok?500:1200);
     };
-    document.getElementById('mSub').onclick=sub;
-    document.getElementById('mA').addEventListener('keydown',function(e){if(e.key==='Enter')sub();});
-    setTimeout(function(){var el=document.getElementById('mA');if(el)el.focus();},100);
+    if(Array.isArray(item.opts)){
+      box.querySelectorAll('.opt').forEach(function(b){
+        b.onclick=function(){
+          if(b.disabled) return;
+          const pick=+b.dataset.opt;
+          const ok = pick===item.a;
+          box.querySelectorAll('.opt').forEach(function(x){ x.disabled=true; });
+          b.classList.add(ok?'on-ok':'on-no');
+          if(!ok){ var corr=box.querySelectorAll('.opt')[item.a]; if(corr) corr.classList.add('on-ok'); }
+          after(ok, item.opts[item.a]);
+        };
+      });
+    } else {
+      const sub=function(){
+        const v=document.getElementById('mA').value.trim();
+        if(!v){toast('✏️ 写一下答案吧');return;}
+        const ok = item.free ? v===String(item.a) : Number(v)===item.a;
+        after(ok, String(item.a));
+      };
+      document.getElementById('mSub').onclick=sub;
+      document.getElementById('mA').addEventListener('keydown',function(e){if(e.key==='Enter')sub();});
+      setTimeout(function(){var el=document.getElementById('mA');if(el)el.focus();},100);
+    }
     return;
   }
   /* ── 口算练习模式（默认） ── */
@@ -3630,6 +3702,8 @@ function maybeMathSun(){
   return false;
 }
 function recordMathQuestion(){
+  /* 仅“口算”类（口算练习 + 星级口算）计入 15 题冻结；教材习题/单元重点题属思考型，不冻结，可多练 */
+  if(mathMode!=='mental' && mathMode!=='star') return;
   S.mathMentalCount++;
   if(S.mathMentalCount >= MATH_CAP){ S.mathFreezeUntil = Date.now() + MATH_FREEZE_MS; }
 }
