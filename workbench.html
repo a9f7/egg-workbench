@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-title" content="蛋蛋打卡">
 <meta name="theme-color" content="#ff8fb8">
 <link rel="manifest" href="data:application/manifest+json,%7B%22name%22:%22%E8%9B%8B%E8%9B%8B%E7%9A%84%E5%81%87%E6%9C%9F%E9%A2%84%E4%B9%A0%E6%89%93%E5%8D%A1%22,%22short_name%22:%22%E8%9B%8B%E8%9B%8B%E6%89%93%E5%8D%A1%22,%22start_url%22:%22.%22,%22display%22:%22standalone%22,%22background_color%22:%22%23fff7fb%22,%22theme_color%22:%22%23ff8fb8%22%7D">
-<meta name="description" content="蛋蛋的假期预习打卡工作台：三年级下册·四年级上册 语文背诵、数学口算、英语拼写（含复习预习）、运动打卡、阳光值与小猫养成，假期预习好帮手。">
+<meta name="description" content="蛋蛋的假期预习打卡工作台：三年级下册·四年级上册 语文背诵、数学口算、英语拼写（教科版，含复习预习）、运动打卡、阳光值与小猫养成，假期预习好帮手。">
 <title>蛋蛋的假期预习打卡工作台</title>
 <style>
   :root{
@@ -552,9 +552,9 @@ function save(){
 
 /* ============ content ============ */
 /* 以下数学/英语/语文内容均依据 IMA「文武宝贝的知识库 · 蛋蛋教学」文件夹中
-   人教版(PEP)四年级上册教材编写：
+   人教版(PEP)四年级上册（数学/语文）及教科版（英语）教材编写：
    - 数学：四年级上册 8 个单元（大数的认识 → 数学广角）
-   - 英语：PEP 四年级上册 6 个单元（My classroom → Meet my family）
+   - 英语：教科版 三年级下册 8 单元 + 四年级上册 12 单元（I like red → What's your father's job）
    - 语文：四年级上册必背（古诗 / 文言 / 日积月累 / 课文）
    与文件夹内对应 PDF 完全一致。 */
 const CN = [
@@ -932,67 +932,1559 @@ const CN3_READ = [
 
 const EN_UNITS = [
   {
-    "unit": "Unit 1 My classroom",
+    "unit": "Unit 1 What's in your room?",
     "words": [
       [
-        "classroom",
-        "教室"
+        "bedroom",
+        "卧室"
+      ],
+      [
+        "draw",
+        "画画"
+      ],
+      [
+        "next",
+        "下一个；紧接着"
+      ],
+      [
+        "next to",
+        "紧邻；在……近旁"
       ],
       [
         "window",
         "窗户"
       ],
       [
-        "blackboard",
-        "黑板"
-      ],
-      [
-        "light",
-        "电灯"
-      ],
-      [
-        "picture",
-        "图画"
-      ],
-      [
         "door",
         "门"
-      ],
-      [
-        "teacher's desk",
-        "讲台"
       ],
       [
         "computer",
         "计算机"
       ],
       [
-        "fan",
-        "风扇"
+        "pink",
+        "粉色(的)"
+      ],
+      [
+        "flower",
+        "花"
+      ],
+      [
+        "map",
+        "地图"
+      ],
+      [
+        "between",
+        "在……(两者)之间"
       ],
       [
         "wall",
         "墙壁"
+      ]
+    ],
+    "sentences": [
+      [
+        "What's in your room?",
+        "你的房间里有什么？"
+      ],
+      [
+        "In my room, there is a big bed next to the window.",
+        "我的房间里，窗户旁边有一张大床。"
+      ],
+      [
+        "What colour is your computer?",
+        "你的电脑是什么颜色的？"
+      ],
+      [
+        "It's pink.",
+        "它是粉色的。"
+      ]
+    ]
+  },
+  {
+    "unit": "Unit 2 They're near the window",
+    "words": [
+      [
+        "for",
+        "长达(……时间)"
+      ],
+      [
+        "minute",
+        "分钟"
+      ],
+      [
+        "close",
+        "合上；闭上"
+      ],
+      [
+        "right",
+        "对的"
+      ],
+      [
+        "wrong",
+        "错的"
+      ],
+      [
+        "now",
+        "现在"
+      ],
+      [
+        "open",
+        "打开；睁开"
+      ],
+      [
+        "clock",
+        "钟"
       ],
       [
         "floor",
         "地板"
       ],
       [
-        "really",
-        "真的"
+        "sofa",
+        "沙发"
+      ]
+    ],
+    "sentences": [
+      [
+        "They're near the window.",
+        "它们在窗户旁边。"
       ],
       [
-        "near",
-        "距离近"
+        "The book is on the floor.",
+        "书在地板上。"
       ],
       [
-        "TV",
-        "电视"
+        "Open the door, please.",
+        "请打开门。"
+      ],
+      [
+        "The clock is on the wall.",
+        "钟在墙上。"
+      ]
+    ]
+  },
+  {
+    "unit": "Unit 3 Welcome to my house",
+    "words": [
+      [
+        "welcome (to)",
+        "欢迎(到……来)"
+      ],
+      [
+        "house",
+        "房子"
+      ],
+      [
+        "come",
+        "来"
+      ],
+      [
+        "come in",
+        "进来"
+      ],
+      [
+        "living room",
+        "客厅"
+      ],
+      [
+        "love",
+        "爱；喜欢"
+      ],
+      [
+        "Here it is!",
+        "就在这里"
+      ],
+      [
+        "wow",
+        "哇"
+      ],
+      [
+        "study",
+        "书房；学习"
+      ],
+      [
+        "large",
+        "大的"
+      ],
+      [
+        "kitchen",
+        "厨房"
       ],
       [
         "clean",
-        "打扫"
+        "干净的"
+      ],
+      [
+        "beautiful",
+        "美丽的"
+      ],
+      [
+        "toilet",
+        "厕所"
+      ],
+      [
+        "garden",
+        "花园"
+      ]
+    ],
+    "sentences": [
+      [
+        "Welcome to my house.",
+        "欢迎来到我家。"
+      ],
+      [
+        "Here it is!",
+        "就在这里！"
+      ],
+      [
+        "This is my living room.",
+        "这是我的客厅。"
+      ],
+      [
+        "The garden is beautiful.",
+        "花园很漂亮。"
+      ]
+    ]
+  },
+  {
+    "unit": "Unit 4 I live in a big house",
+    "words": [
+      [
+        "flat",
+        "公寓"
+      ],
+      [
+        "building",
+        "大楼"
+      ],
+      [
+        "after",
+        "在……之后"
+      ],
+      [
+        "after school",
+        "放学后"
+      ],
+      [
+        "live",
+        "居住；生活"
+      ],
+      [
+        "bathroom",
+        "浴室"
+      ],
+      [
+        "shower",
+        "淋浴"
+      ],
+      [
+        "take a shower",
+        "沐浴"
+      ],
+      [
+        "meal",
+        "餐；饭"
+      ],
+      [
+        "have meals",
+        "用餐"
+      ],
+      [
+        "watch",
+        "看"
+      ],
+      [
+        "read",
+        "读；阅读"
+      ],
+      [
+        "do",
+        "做"
+      ],
+      [
+        "homework",
+        "家庭作业"
+      ],
+      [
+        "do one's homework",
+        "做家庭作业"
+      ],
+      [
+        "grow",
+        "种"
+      ],
+      [
+        "one",
+        "某一(人)"
+      ]
+    ],
+    "sentences": [
+      [
+        "I live in a big house.",
+        "我住在一所大房子里。"
+      ],
+      [
+        "I do my homework after school.",
+        "我放学后做家庭作业。"
+      ],
+      [
+        "Let's take a shower.",
+        "我们洗个淋浴吧。"
+      ],
+      [
+        "We have meals in the kitchen.",
+        "我们在厨房用餐。"
+      ]
+    ]
+  },
+  {
+    "unit": "Unit 5 Let me show you our new school",
+    "words": [
+      [
+        "our",
+        "我们的"
+      ],
+      [
+        "classroom",
+        "课室"
+      ],
+      [
+        "library",
+        "图书馆"
+      ],
+      [
+        "pool",
+        "池"
+      ],
+      [
+        "swimming pool",
+        "游泳池"
+      ],
+      [
+        "opposite",
+        "在……对面"
+      ],
+      [
+        "playground",
+        "运动场"
+      ],
+      [
+        "sometimes",
+        "有时"
+      ],
+      [
+        "PE",
+        "体育"
+      ],
+      [
+        "music",
+        "音乐"
+      ],
+      [
+        "lesson",
+        "课"
+      ],
+      [
+        "have lessons",
+        "上课"
+      ],
+      [
+        "teacher's room",
+        "教师办公室"
+      ],
+      [
+        "work",
+        "工作"
+      ],
+      [
+        "art",
+        "艺术；美术"
+      ],
+      [
+        "hall",
+        "厅"
+      ],
+      [
+        "dining room",
+        "饭堂"
+      ],
+      [
+        "gym",
+        "体育馆"
+      ],
+      [
+        "eat",
+        "吃"
+      ]
+    ],
+    "sentences": [
+      [
+        "Let me show you our new school.",
+        "让我带你看我们的新学校。"
+      ],
+      [
+        "There is a library opposite the playground.",
+        "操场对面有一个图书馆。"
+      ],
+      [
+        "We have lessons in the classroom.",
+        "我们在课室里上课。"
+      ],
+      [
+        "We eat in the dining room.",
+        "我们在饭堂吃饭。"
+      ]
+    ]
+  },
+  {
+    "unit": "Unit 6 How many classrooms are there in your school?",
+    "words": [
+      [
+        "or",
+        "或；或者"
+      ],
+      [
+        "tree",
+        "树"
+      ],
+      [
+        "eleven",
+        "十一"
+      ],
+      [
+        "twelve",
+        "十二"
+      ],
+      [
+        "thirteen",
+        "十三"
+      ],
+      [
+        "fourteen",
+        "十四"
+      ],
+      [
+        "fifteen",
+        "十五"
+      ],
+      [
+        "sixteen",
+        "十六"
+      ],
+      [
+        "seventeen",
+        "十七"
+      ],
+      [
+        "eighteen",
+        "十八"
+      ],
+      [
+        "nineteen",
+        "十九"
+      ],
+      [
+        "twenty",
+        "二十"
+      ],
+      [
+        "thirty",
+        "三十"
+      ],
+      [
+        "forty",
+        "四十"
+      ],
+      [
+        "fifty",
+        "五十"
+      ],
+      [
+        "sixty",
+        "六十"
+      ],
+      [
+        "seventy",
+        "七十"
+      ],
+      [
+        "eighty",
+        "八十"
+      ]
+    ],
+    "sentences": [
+      [
+        "How many classrooms are there in your school?",
+        "你们学校有多少个课室？"
+      ],
+      [
+        "There are twenty classrooms.",
+        "有二十个课室。"
+      ],
+      [
+        "—Are they big or small? —They are big.",
+        "——它们大还是小？——它们很大。"
+      ],
+      [
+        "There are thirty pupils in my class.",
+        "我班有三十名学生。"
+      ]
+    ]
+  },
+  {
+    "unit": "Unit 7 How many stars does each group have?",
+    "words": [
+      [
+        "class",
+        "班级"
+      ],
+      [
+        "star",
+        "星星"
+      ],
+      [
+        "does",
+        "(do的第三人称单数)"
+      ],
+      [
+        "each",
+        "每个"
+      ],
+      [
+        "group",
+        "组"
+      ],
+      [
+        "blackboard",
+        "黑板"
+      ],
+      [
+        "see",
+        "看见；明白"
+      ],
+      [
+        "winner",
+        "获胜者"
+      ],
+      [
+        "Chinese",
+        "语文"
+      ],
+      [
+        "maths",
+        "数学"
+      ]
+    ],
+    "sentences": [
+      [
+        "How many stars does each group have?",
+        "每个组有多少颗星？"
+      ],
+      [
+        "Our group has fifteen stars.",
+        "我们组有十五颗星。"
+      ],
+      [
+        "—Are they big or small? —They are small.",
+        "——它们大还是小？——它们很小。"
+      ],
+      [
+        "We are the winners!",
+        "我们是获胜者！"
+      ]
+    ]
+  },
+  {
+    "unit": "Unit 8 I like English best",
+    "words": [
+      [
+        "best",
+        "最好地"
+      ],
+      [
+        "subject",
+        "学科"
+      ],
+      [
+        "favourite",
+        "最喜欢的"
+      ],
+      [
+        "write",
+        "写"
+      ],
+      [
+        "story",
+        "故事"
+      ],
+      [
+        "about",
+        "关于"
+      ],
+      [
+        "everything",
+        "每件事"
+      ],
+      [
+        "learn",
+        "学习"
+      ],
+      [
+        "sing",
+        "唱歌"
+      ],
+      [
+        "song",
+        "歌曲"
+      ],
+      [
+        "sport",
+        "运动"
+      ],
+      [
+        "world",
+        "世界"
+      ],
+      [
+        "understand",
+        "了解；懂得"
+      ],
+      [
+        "English",
+        "英语"
+      ],
+      [
+        "Chinese",
+        "语文"
+      ],
+      [
+        "maths",
+        "数学"
+      ],
+      [
+        "music",
+        "音乐"
+      ],
+      [
+        "art",
+        "美术"
+      ],
+      [
+        "PE",
+        "体育"
+      ],
+      [
+        "science",
+        "科学"
+      ]
+    ],
+    "sentences": [
+      [
+        "I like English best.",
+        "我最喜欢英语。"
+      ],
+      [
+        "What's your favourite subject?",
+        "你最喜欢的学科是什么？"
+      ],
+      [
+        "I like music best.",
+        "我最喜欢音乐。"
+      ],
+      [
+        "We learn stories about the world.",
+        "我们学习关于世界的故事。"
+      ]
+    ]
+  },
+  {
+    "unit": "Unit 9 Look at this T-shirt",
+    "words": [
+      [
+        "clothes",
+        "衣服"
+      ],
+      [
+        "T-shirt",
+        "T恤"
+      ],
+      [
+        "blouse",
+        "女衬衫"
+      ],
+      [
+        "cap",
+        "鸭舌帽"
+      ],
+      [
+        "coat",
+        "大衣"
+      ],
+      [
+        "dress",
+        "连衣裙"
+      ],
+      [
+        "expensive",
+        "昂贵的"
+      ],
+      [
+        "grey",
+        "灰色(的)"
+      ],
+      [
+        "how much",
+        "多少钱"
+      ],
+      [
+        "hundred",
+        "百"
+      ],
+      [
+        "jacket",
+        "夹克"
+      ],
+      [
+        "shirt",
+        "衬衫"
+      ],
+      [
+        "skirt",
+        "短裙"
+      ],
+      [
+        "sweater",
+        "毛衣"
+      ],
+      [
+        "take",
+        "拿；要了"
+      ],
+      [
+        "too",
+        "太；也"
+      ],
+      [
+        "very much",
+        "非常"
+      ],
+      [
+        "will",
+        "将要"
+      ],
+      [
+        "won't",
+        "将不"
+      ],
+      [
+        "yuan",
+        "元"
+      ]
+    ],
+    "sentences": [
+      [
+        "Look at this T-shirt.",
+        "看这件T恤衫。"
+      ],
+      [
+        "How much is it?",
+        "它多少钱？"
+      ],
+      [
+        "It's two hundred and fifty yuan.",
+        "它两百五十元。"
+      ],
+      [
+        "That's too expensive. I won't take it.",
+        "太贵了。我不买了。"
+      ]
+    ]
+  },
+  {
+    "unit": "Unit 10 Can I help you?",
+    "words": [
+      [
+        "a pair of",
+        "一双；一对"
+      ],
+      [
+        "all",
+        "全部"
+      ],
+      [
+        "anything",
+        "任何东西"
+      ],
+      [
+        "else",
+        "其他的"
+      ],
+      [
+        "help",
+        "帮助"
+      ],
+      [
+        "jeans",
+        "牛仔裤"
+      ],
+      [
+        "pair",
+        "一对"
+      ],
+      [
+        "shoe",
+        "鞋"
+      ],
+      [
+        "shorts",
+        "短裤"
+      ],
+      [
+        "sock",
+        "袜子"
+      ],
+      [
+        "them",
+        "它们"
+      ],
+      [
+        "trousers",
+        "裤子"
+      ],
+      [
+        "wear",
+        "穿"
+      ],
+      [
+        "I'll",
+        "我将"
+      ]
+    ],
+    "sentences": [
+      [
+        "Can I help you?",
+        "我能为您效劳吗？"
+      ],
+      [
+        "Yes, please.",
+        "是的，麻烦了。"
+      ],
+      [
+        "How much are they?",
+        "它们多少钱？"
+      ],
+      [
+        "They are ... yuan. I'll take them.",
+        "它们……元。我买了。"
+      ]
+    ]
+  },
+  {
+    "unit": "Unit 11 I want to be a painter",
+    "words": [
+      [
+        "be good at",
+        "擅长"
+      ],
+      [
+        "build",
+        "建筑"
+      ],
+      [
+        "builder",
+        "建筑工人"
+      ],
+      [
+        "cook",
+        "厨师"
+      ],
+      [
+        "doctor",
+        "医生"
+      ],
+      [
+        "food",
+        "食物"
+      ],
+      [
+        "grow up",
+        "长大"
+      ],
+      [
+        "news",
+        "新闻"
+      ],
+      [
+        "nurse",
+        "护士"
+      ],
+      [
+        "occupation",
+        "职业"
+      ],
+      [
+        "painter",
+        "画家"
+      ],
+      [
+        "policeman",
+        "警察"
+      ],
+      [
+        "reporter",
+        "记者"
+      ],
+      [
+        "sick",
+        "生病的"
+      ],
+      [
+        "when",
+        "什么时候"
+      ],
+      [
+        "want",
+        "想要"
+      ],
+      [
+        "be",
+        "成为"
+      ]
+    ],
+    "sentences": [
+      [
+        "What do you want to be when you grow up?",
+        "你长大后想做什么？"
+      ],
+      [
+        "I want to be a painter.",
+        "我想当画家。"
+      ],
+      [
+        "I'm good at drawing.",
+        "我擅长画画。"
+      ],
+      [
+        "He is a doctor. He helps sick people.",
+        "他是医生。他帮助病人。"
+      ]
+    ]
+  },
+  {
+    "unit": "Unit 12 What's your father's job?",
+    "words": [
+      [
+        "drive",
+        "驾驶"
+      ],
+      [
+        "driver",
+        "司机"
+      ],
+      [
+        "factory",
+        "工厂"
+      ],
+      [
+        "farmer",
+        "农民"
+      ],
+      [
+        "her",
+        "她的"
+      ],
+      [
+        "his",
+        "他的"
+      ],
+      [
+        "job",
+        "职业"
+      ],
+      [
+        "like",
+        "喜欢"
+      ],
+      [
+        "machine",
+        "机器"
+      ],
+      [
+        "make",
+        "制造"
+      ],
+      [
+        "men",
+        "男人(复数)"
+      ],
+      [
+        "pupil",
+        "小学生"
+      ],
+      [
+        "tell",
+        "告诉"
+      ],
+      [
+        "father",
+        "父亲"
+      ],
+      [
+        "mother",
+        "母亲"
+      ],
+      [
+        "worker",
+        "工人"
+      ]
+    ],
+    "sentences": [
+      [
+        "What's your father's job?",
+        "你爸爸是做什么工作的？"
+      ],
+      [
+        "He's a driver.",
+        "他是司机。"
+      ],
+      [
+        "What's your mother's job?",
+        "你妈妈是做什么工作的？"
+      ],
+      [
+        "She's a teacher.",
+        "她是老师。"
+      ]
+    ]
+  }
+];
+/* ═══════════ 三年级下册 · 英语（教科版三下 8个单元） ═══════════ */
+const EN3_UNITS = [
+  {
+    "unit": "Unit 1 I like red",
+    "words": [
+      [
+        "colour",
+        "颜色"
+      ],
+      [
+        "red",
+        "红色(的)"
+      ],
+      [
+        "yellow",
+        "黄色(的)"
+      ],
+      [
+        "blue",
+        "蓝色(的)"
+      ],
+      [
+        "white",
+        "白色(的)"
+      ],
+      [
+        "like",
+        "喜欢"
+      ],
+      [
+        "great",
+        "太好了"
+      ],
+      [
+        "idea",
+        "主意"
+      ],
+      [
+        "go",
+        "去"
+      ],
+      [
+        "to",
+        "到"
+      ]
+    ],
+    "sentences": [
+      [
+        "What colour is it?",
+        "它是什么颜色的？"
+      ],
+      [
+        "It's red.",
+        "它是红色的。"
+      ],
+      [
+        "I like red.",
+        "我喜欢红色。"
+      ],
+      [
+        "Do you like red? —Yes, I do. / No, I don't.",
+        "你喜欢红色吗？——是的，我喜欢。/不，我不喜欢。"
+      ]
+    ]
+  },
+  {
+    "unit": "Unit 2 Let's colour it",
+    "words": [
+      [
+        "look",
+        "看"
+      ],
+      [
+        "at",
+        "在"
+      ],
+      [
+        "funny",
+        "有趣的"
+      ],
+      [
+        "crayon",
+        "蜡笔"
+      ],
+      [
+        "hat",
+        "帽子"
+      ],
+      [
+        "orange",
+        "橙色(的)"
+      ],
+      [
+        "purple",
+        "紫色(的)"
+      ],
+      [
+        "brown",
+        "褐色(的)"
+      ],
+      [
+        "black",
+        "黑色(的)"
+      ],
+      [
+        "green",
+        "绿色(的)"
+      ]
+    ],
+    "sentences": [
+      [
+        "Let's colour it orange.",
+        "我们把它涂成橙色吧。"
+      ],
+      [
+        "Look at the funny hat.",
+        "看这顶有趣的帽子。"
+      ],
+      [
+        "The crayon is black.",
+        "蜡笔是黑色的。"
+      ],
+      [
+        "Good idea!",
+        "好主意！"
+      ]
+    ]
+  },
+  {
+    "unit": "Unit 3 Where's my car?",
+    "words": [
+      [
+        "where",
+        "在哪里"
+      ],
+      [
+        "robot",
+        "机器人"
+      ],
+      [
+        "doll",
+        "玩具娃娃"
+      ],
+      [
+        "pencil-box",
+        "铅笔盒"
+      ],
+      [
+        "near",
+        "在……附近"
+      ],
+      [
+        "on",
+        "在……上面"
+      ],
+      [
+        "in",
+        "在……里面"
+      ],
+      [
+        "under",
+        "在……下面"
+      ]
+    ],
+    "sentences": [
+      [
+        "Where's my car?",
+        "我的小汽车在哪里？"
+      ],
+      [
+        "It's near the window.",
+        "它在窗户附近。"
+      ],
+      [
+        "Is my pencil-box on the desk?",
+        "我的铅笔盒在书桌上吗？"
+      ],
+      [
+        "Yes, it is. / No, it isn't.",
+        "是的，在。/不，不在。"
+      ]
+    ]
+  },
+  {
+    "unit": "Unit 4 Is it in your schoolbag?",
+    "words": [
+      [
+        "English",
+        "英语"
+      ],
+      [
+        "front",
+        "前面"
+      ],
+      [
+        "in front of",
+        "在……前面"
+      ],
+      [
+        "TV",
+        "电视机"
+      ],
+      [
+        "behind",
+        "在……后面"
+      ],
+      [
+        "schoolbag",
+        "书包"
+      ],
+      [
+        "beside",
+        "在……旁边"
+      ]
+    ],
+    "sentences": [
+      [
+        "Is it in your schoolbag?",
+        "它在你的书包里吗？"
+      ],
+      [
+        "Yes, it is. / No, it isn't.",
+        "是的，在。/不，不在。"
+      ],
+      [
+        "Where is my English book?",
+        "我的英语书在哪里？"
+      ],
+      [
+        "It's behind the robot.",
+        "它在机器人后面。"
+      ]
+    ]
+  },
+  {
+    "unit": "Unit 5 Happy birthday",
+    "words": [
+      [
+        "happy",
+        "快乐的"
+      ],
+      [
+        "birthday",
+        "生日"
+      ],
+      [
+        "how old",
+        "几岁"
+      ],
+      [
+        "guess",
+        "猜"
+      ],
+      [
+        "little",
+        "小的"
+      ],
+      [
+        "for",
+        "为"
+      ],
+      [
+        "zero",
+        "零"
+      ],
+      [
+        "one",
+        "一"
+      ],
+      [
+        "two",
+        "二"
+      ],
+      [
+        "three",
+        "三"
+      ],
+      [
+        "four",
+        "四"
+      ],
+      [
+        "five",
+        "五"
+      ],
+      [
+        "six",
+        "六"
+      ],
+      [
+        "seven",
+        "七"
+      ],
+      [
+        "eight",
+        "八"
+      ],
+      [
+        "nine",
+        "九"
+      ],
+      [
+        "ten",
+        "十"
+      ]
+    ],
+    "sentences": [
+      [
+        "Happy birthday!",
+        "生日快乐！"
+      ],
+      [
+        "How old are you?",
+        "你几岁了？"
+      ],
+      [
+        "I'm ... (age).",
+        "我……岁。"
+      ],
+      [
+        "This is for you. —Thank you.",
+        "这是给你的。——谢谢。"
+      ]
+    ]
+  },
+  {
+    "unit": "Unit 6 Telephone number",
+    "words": [
+      [
+        "may",
+        "可以"
+      ],
+      [
+        "telephone",
+        "电话"
+      ],
+      [
+        "number",
+        "号码"
+      ],
+      [
+        "zero",
+        "零"
+      ],
+      [
+        "one",
+        "一"
+      ],
+      [
+        "two",
+        "二"
+      ],
+      [
+        "three",
+        "三"
+      ],
+      [
+        "four",
+        "四"
+      ],
+      [
+        "five",
+        "五"
+      ],
+      [
+        "six",
+        "六"
+      ],
+      [
+        "seven",
+        "七"
+      ],
+      [
+        "eight",
+        "八"
+      ],
+      [
+        "nine",
+        "九"
+      ],
+      [
+        "ten",
+        "十"
+      ]
+    ],
+    "sentences": [
+      [
+        "May I have your telephone number?",
+        "我能要你的电话号码吗？"
+      ],
+      [
+        "What's your telephone number?",
+        "你的电话号码是多少？"
+      ],
+      [
+        "It's ...",
+        "它是……"
+      ],
+      [
+        "My telephone number is ...",
+        "我的电话号码是……"
+      ]
+    ]
+  },
+  {
+    "unit": "Unit 7 May I have some grapes?",
+    "words": [
+      [
+        "fruit",
+        "水果"
+      ],
+      [
+        "eat",
+        "吃"
+      ],
+      [
+        "some",
+        "一些"
+      ],
+      [
+        "grape",
+        "葡萄"
+      ],
+      [
+        "want",
+        "想要"
+      ],
+      [
+        "banana",
+        "香蕉"
+      ],
+      [
+        "but",
+        "但是"
+      ],
+      [
+        "apple",
+        "苹果"
+      ],
+      [
+        "pear",
+        "梨"
+      ],
+      [
+        "may",
+        "可以"
+      ],
+      [
+        "can",
+        "能够"
+      ],
+      [
+        "of course",
+        "当然"
+      ],
+      [
+        "we",
+        "我们"
+      ],
+      [
+        "get",
+        "得到"
+      ]
+    ],
+    "sentences": [
+      [
+        "May I have some grapes?",
+        "我能要些葡萄吗？"
+      ],
+      [
+        "Yes, here you are.",
+        "可以，给你。"
+      ],
+      [
+        "Can I have an apple?",
+        "我能要一个苹果吗？"
+      ],
+      [
+        "I want some bananas.",
+        "我想要些香蕉。"
+      ]
+    ]
+  },
+  {
+    "unit": "Unit 8 Apples are good for us",
+    "words": [
+      [
+        "apple",
+        "苹果"
+      ],
+      [
+        "good for",
+        "对……有益"
+      ],
+      [
+        "can",
+        "能"
+      ],
+      [
+        "certainly",
+        "当然"
+      ],
+      [
+        "get",
+        "得到"
+      ],
+      [
+        "we",
+        "我们"
+      ],
+      [
+        "an",
+        "一个"
+      ],
+      [
+        "they",
+        "他们"
+      ],
+      [
+        "their",
+        "他们的"
+      ],
+      [
+        "wash",
+        "洗"
       ],
       [
         "help",
@@ -1001,539 +2493,21 @@ const EN_UNITS = [
     ],
     "sentences": [
       [
-        "We have a new classroom.",
-        "我们有间新教室。"
+        "Apples are good for us.",
+        "苹果对我们有好处。"
       ],
       [
-        "Let's go and see!",
-        "我们去看看吧！"
+        "Can I have some fruit?",
+        "我能要些水果吗？"
       ],
       [
-        "Where is it?",
-        "它在哪儿？"
+        "Certainly.",
+        "当然可以。"
       ],
       [
-        "It's near the window.",
-        "就在窗户旁边。"
-      ],
-      [
-        "Let's clean the classroom!",
-        "我们打扫教室吧！"
-      ],
-      [
-        "Let me clean the windows.",
-        "我来擦窗户。"
+        "An apple a day.",
+        "一天一个苹果（身体好）。"
       ]
-    ]
-  },
-  {
-    "unit": "Unit 2 My schoolbag",
-    "words": [
-      [
-        "schoolbag",
-        "书包"
-      ],
-      [
-        "maths book",
-        "数学书"
-      ],
-      [
-        "English book",
-        "英语书"
-      ],
-      [
-        "Chinese book",
-        "语文书"
-      ],
-      [
-        "storybook",
-        "故事书"
-      ],
-      [
-        "candy",
-        "糖果"
-      ],
-      [
-        "notebook",
-        "笔记本"
-      ],
-      [
-        "toy",
-        "玩具"
-      ],
-      [
-        "key",
-        "钥匙"
-      ],
-      [
-        "wow",
-        "哇；呀"
-      ],
-      [
-        "lost",
-        "丢失"
-      ],
-      [
-        "so much",
-        "非常地"
-      ],
-      [
-        "cute",
-        "可爱的"
-      ]
-    ],
-    "sentences": [
-      [
-        "What's in your schoolbag?",
-        "你书包里有什么？"
-      ],
-      [
-        "An English book, a maths book, three storybooks and ...",
-        "一本英语书，一本数学书，三本故事书和……"
-      ],
-      [
-        "What colour is it?",
-        "什么颜色的？"
-      ],
-      [
-        "It's blue and white.",
-        "是蓝白色的。"
-      ]
-    ]
-  },
-  {
-    "unit": "Unit 3 My friends",
-    "words": [
-      [
-        "strong",
-        "强壮的"
-      ],
-      [
-        "friendly",
-        "友好的"
-      ],
-      [
-        "quiet",
-        "安静的"
-      ],
-      [
-        "hair",
-        "头发"
-      ],
-      [
-        "shoe",
-        "鞋"
-      ],
-      [
-        "glasses",
-        "眼镜"
-      ],
-      [
-        "his",
-        "他的"
-      ],
-      [
-        "or",
-        "或者"
-      ],
-      [
-        "right",
-        "正确的；对的"
-      ],
-      [
-        "hat",
-        "（常指带檐的）帽子"
-      ],
-      [
-        "her",
-        "她的"
-      ]
-    ],
-    "sentences": [
-      [
-        "What's his name?",
-        "他叫什么名字？"
-      ],
-      [
-        "His name is Zhang Peng.",
-        "他叫张鹏。"
-      ],
-      [
-        "He's tall and strong.",
-        "他又高又壮。"
-      ],
-      [
-        "Who's he?",
-        "他是谁？"
-      ],
-      [
-        "He has glasses and his shoes are blue.",
-        "他戴眼镜，穿蓝色鞋子。"
-      ]
-    ]
-  },
-  {
-    "unit": "Unit 4 My home",
-    "words": [
-      [
-        "bedroom",
-        "卧室"
-      ],
-      [
-        "living room",
-        "客厅；起居室"
-      ],
-      [
-        "study",
-        "书房"
-      ],
-      [
-        "kitchen",
-        "厨房"
-      ],
-      [
-        "bathroom",
-        "浴室；洗手间"
-      ],
-      [
-        "bed",
-        "床"
-      ],
-      [
-        "phone",
-        "电话"
-      ],
-      [
-        "table",
-        "桌子"
-      ],
-      [
-        "sofa",
-        "长沙发"
-      ],
-      [
-        "fridge",
-        "冰箱"
-      ],
-      [
-        "find",
-        "找到"
-      ],
-      [
-        "them",
-        "他（她、它）们"
-      ]
-    ],
-    "sentences": [
-      [
-        "Is she in the living room?",
-        "她在客厅里吗？"
-      ],
-      [
-        "No, she isn't.",
-        "不，她不在。"
-      ],
-      [
-        "Where are the keys?",
-        "钥匙在哪儿？"
-      ],
-      [
-        "Are they on the table?",
-        "它们在桌子上吗？"
-      ],
-      [
-        "No, they aren't. They're in the door.",
-        "不，不在。它们在门上。"
-      ]
-    ]
-  },
-  {
-    "unit": "Unit 5 Dinner's ready",
-    "words": [
-      [
-        "beef",
-        "牛肉"
-      ],
-      [
-        "chicken",
-        "鸡肉"
-      ],
-      [
-        "noodles",
-        "面条"
-      ],
-      [
-        "soup",
-        "汤"
-      ],
-      [
-        "vegetable",
-        "蔬菜"
-      ],
-      [
-        "chopsticks",
-        "筷子"
-      ],
-      [
-        "bowl",
-        "碗"
-      ],
-      [
-        "fork",
-        "餐叉"
-      ],
-      [
-        "knife",
-        "刀"
-      ],
-      [
-        "spoon",
-        "勺"
-      ],
-      [
-        "dinner",
-        "（中午或晚上吃的）正餐"
-      ],
-      [
-        "ready",
-        "准备好"
-      ],
-      [
-        "help yourself",
-        "为（自己）取用"
-      ],
-      [
-        "pass",
-        "给；递"
-      ],
-      [
-        "try",
-        "试；尝试"
-      ]
-    ],
-    "sentences": [
-      [
-        "What's for dinner?",
-        "晚餐吃什么？"
-      ],
-      [
-        "What would you like?",
-        "你想吃什么？"
-      ],
-      [
-        "I'd like some soup and bread, please.",
-        "我想要汤和面包。"
-      ],
-      [
-        "Help yourself.",
-        "随便吃吧。"
-      ],
-      [
-        "Would you like a knife and fork?",
-        "你想要刀叉吗？"
-      ],
-      [
-        "No, thanks.",
-        "不了，谢谢。"
-      ],
-      [
-        "I can use chopsticks.",
-        "我会用筷子。"
-      ]
-    ]
-  },
-  {
-    "unit": "Unit 6 Meet my family!",
-    "words": [
-      [
-        "parents",
-        "父母"
-      ],
-      [
-        "cousin",
-        "同辈表亲（或堂亲）"
-      ],
-      [
-        "uncle",
-        "舅父；叔父；伯父；姑父；姨夫"
-      ],
-      [
-        "aunt",
-        "姑母；姨母"
-      ],
-      [
-        "baby brother",
-        "婴儿小弟弟"
-      ],
-      [
-        "doctor",
-        "医生"
-      ],
-      [
-        "cook",
-        "厨师"
-      ],
-      [
-        "driver",
-        "司机"
-      ],
-      [
-        "farmer",
-        "农民"
-      ],
-      [
-        "nurse",
-        "护士"
-      ],
-      [
-        "people",
-        "人们"
-      ],
-      [
-        "but",
-        "但是"
-      ],
-      [
-        "little",
-        "小的"
-      ],
-      [
-        "puppy",
-        "小狗"
-      ],
-      [
-        "football player",
-        "足球运动员"
-      ],
-      [
-        "job",
-        "工作"
-      ],
-      [
-        "basketball",
-        "篮球"
-      ]
-    ],
-    "sentences": [
-      [
-        "How many people are there in your family, Chen Jie?",
-        "你家有几口人，陈杰？"
-      ],
-      [
-        "Three.",
-        "三口人。"
-      ],
-      [
-        "My family has six people.",
-        "我家有六口人。"
-      ],
-      [
-        "Is this your uncle?",
-        "这是你叔叔吗？"
-      ],
-      [
-        "Yes, it is. He's a football player.",
-        "是的，他是位足球运动员。"
-      ],
-      [
-        "What's your aunt's job?",
-        "你婶婶做什么工作？"
-      ],
-      [
-        "She's a nurse.",
-        "她是位护士。"
-      ]
-    ]
-  }
-];
-/* ═══════════ 三年级下册 · 英语（人教版PEP三下 6个单元） ═══════════ */
-const EN3_UNITS = [
-  {
-    "unit": "Unit 1 Welcome back to school",
-    "words": [
-      ["UK","英国"],["Canada","加拿大"],["USA","美国"],["China","中国"],
-      ["she","她"],["he","他"],["student","学生"],["pupil","小学生"],["teacher","教师"],
-      ["friend","朋友"],["new","新的"],["today","今天"],["boy","男孩"],["and","和"],["girl","女孩"]
-    ],
-    "sentences": [
-      ["We have two new friends today.","今天我们有两位新朋友。"],
-      ["Where are you from?","你来自哪里？"],
-      ["I'm from the UK.","我来自英国。"],
-      ["This is Amy. She's a student.","这是埃米。她是一名学生。"]
-    ]
-  },
-  {
-    "unit": "Unit 2 My family",
-    "words": [
-      ["father","父亲"],["dad","爸爸"],["mother","母亲"],["mum","妈妈"],
-      ["man","男人"],["woman","女人"],["grandmother","祖母"],["grandma","奶奶"],
-      ["grandfather","祖父"],["grandpa","爷爷"],      ["sister","姐妹"],["brother","兄弟"],
-      ["family","家庭"]
-    ],
-    "sentences": [
-      ["Who's that man?","那个男人是谁？"],
-      ["He's my father.","他是我的父亲。"],
-      ["Who's that woman?","那个女人是谁？"],
-      ["She's my mother.","她是我的母亲。"],
-      ["Is she your mother? Yes, she is.","她是你的妈妈吗？是的，她是。"]
-    ]
-  },
-  {
-    "unit": "Unit 3 At the zoo",
-    "words": [
-      ["thin","瘦的"],["fat","胖的"],["tall","高的"],["short","矮的"],
-      ["long","长的"],["small","小的"],["big","大的"],["giraffe","长颈鹿"],
-      ["deer","鹿"],["so","这么"],["children","孩子们"],["tail","尾巴"]
-    ],
-    "sentences": [
-      ["Look at that monkey. It's fat!","看那只猴子。它真胖！"],
-      ["It has a long nose.","它有一个长鼻子。"],
-      ["It is so tall.","它好高啊。"],
-      ["Make your eyes small.","把你的眼睛变小。"]
-    ]
-  },
-  {
-    "unit": "Unit 4 Where is my car?",
-    "words": [
-      ["on","在……上"],["in","在……里"],["under","在……下面"],["chair","椅子"],
-      ["desk","书桌"],["cap","帽子"],["ball","球"],["car","小汽车"],
-      ["boat","小船"],["map","地图"],["toy","玩具"],["box","盒；箱"]
-    ],
-    "sentences": [
-      ["Where is my car?","我的小汽车在哪儿？"],
-      ["Is it in your bag?","它在你的包里吗？"],
-      ["Yes, it is.","是的，它在。"],
-      ["No, it isn't.","不，它不在。"],
-      ["Put your arm in your desk.","把你的胳膊放进书桌里。"]
-    ]
-  },
-  {
-    "unit": "Unit 5 Do you like pears?",
-    "words": [
-      ["pear","梨"],["apple","苹果"],["orange","橙子"],["banana","香蕉"],
-      ["watermelon","西瓜"],["strawberry","草莓"],["grape","葡萄"],["buy","买"],
-      ["fruit","水果"]
-    ],
-    "sentences": [
-      ["Do you like oranges?","你喜欢橙子吗？"],
-      ["Yes, I do.","是的，我喜欢。"],
-      ["No, I don't.","不，我不喜欢。"],
-      ["What about you?","你呢？"],
-      ["I don't like watermelons.","我不喜欢西瓜。"]
-    ]
-  },
-  {
-    "unit": "Unit 6 How many?",
-    "words": [
-      ["eleven","11"],["twelve","12"],["thirteen","13"],["fourteen","14"],
-      ["fifteen","15"],["sixteen","16"],["seventeen","17"],["eighteen","18"],
-      ["nineteen","19"],["twenty","20"],["kite","风筝"],["beautiful","美丽的"]
-    ],
-    "sentences": [
-      ["How many kites do you see?","你看见多少只风筝？"],
-      ["I see twelve.","我看见十二只。"],
-      ["How many crayons do you have?","你有多少支蜡笔？"],
-      ["I have sixteen.","我有十六支。"]
     ]
   }
 ];
