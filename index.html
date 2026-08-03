@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="zh-CN" data-app-version="20260804.0047">
+<html lang="zh-CN" data-app-version="20260802.1500">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
@@ -4055,6 +4055,27 @@ const CLOTHES_POOL=[
   {id:'c8', name:'宇航员套装', icon:'🧑‍🚀', css:'suit-space', rarity:'传说'},
   {id:'c9', name:'小龙虾斗篷', icon:'🦞', css:'cape-lobster', rarity:'传说'},
   {id:'c10',name:'彩虹彩虹衣', icon:'🌈', css:'rainbow-coat',  rarity:'传说'},
+  // —— 新增 20 套（各 3 张独立动态真帧，见 assets/cat-dressed-s{LV}{a/b/c}-c{NN}.png） ——
+  {id:'c11',name:'消防员',     icon:'🚒', css:'firefighter', rarity:'史诗'},
+  {id:'c12',name:'小厨师',     icon:'👨‍🍳', css:'chef',        rarity:'稀有'},
+  {id:'c13',name:'警察',       icon:'👮', css:'police',      rarity:'史诗'},
+  {id:'c14',name:'飞行员',     icon:'✈️', css:'pilot',       rarity:'传说'},
+  {id:'c15',name:'小画家',     icon:'🎨', css:'painter',     rarity:'稀有'},
+  {id:'c16',name:'狮子装',     icon:'🦁', css:'lion',        rarity:'史诗'},
+  {id:'c17',name:'兔子装',     icon:'🐰', css:'rabbit',      rarity:'稀有'},
+  {id:'c18',name:'小熊装',     icon:'🐻', css:'bear',        rarity:'稀有'},
+  {id:'c19',name:'企鹅装',     icon:'🐧', css:'penguin',     rarity:'传说'},
+  {id:'c20',name:'青蛙装',     icon:'🐸', css:'frog',        rarity:'史诗'},
+  {id:'c21',name:'巫师',       icon:'🧙', css:'wizard',      rarity:'传说'},
+  {id:'c22',name:'小仙女',     icon:'🧚', css:'fairy',       rarity:'传说'},
+  {id:'c23',name:'海盗',       icon:'🏴‍☠️', css:'pirate',  rarity:'史诗'},
+  {id:'c24',name:'机器人',     icon:'🤖', css:'robot',       rarity:'传说'},
+  {id:'c25',name:'小恶魔',     icon:'😈', css:'demon',       rarity:'传说'},
+  {id:'c26',name:'春节娃娃',   icon:'🧧', css:'spring',      rarity:'传说'},
+  {id:'c27',name:'元宵灯娃',   icon:'🏮', css:'lantern',     rarity:'传说'},
+  {id:'c28',name:'端午粽娃',   icon:'🍃', css:'zongzi',      rarity:'史诗'},
+  {id:'c29',name:'中秋月兔',   icon:'🌕', css:'moon',        rarity:'传说'},
+  {id:'c30',name:'圣诞猫',     icon:'🎅', css:'santa',       rarity:'传说'},
 ];
 const RARITY_COLOR={'普通':'#95a5a6','稀有':'#9b59b6','史诗':'#e67e22','传说':'#e74c3c'};
 const SHOP=[
@@ -4067,7 +4088,7 @@ const SHOP=[
   {key:'medicine',icon:'💊',name:'药品',price:15,grow:11,desc:'治病+喂养 +11成长',medicine:true},
 ];
 const FOOD_ITEMS=SHOP.filter(s=>s.food);     // 多种食物（像衣服一样可在超市挑选）
-const APP_VERSION='2026-08-04 00:47';         // 版本时间戳：用于比对本地/GitHub 是否一致
+const APP_VERSION='2026-08-02 15:00';         // 版本时间戳：用于比对本地/GitHub 是否一致
 function dogLevel(g){ if(g>=300)return 3; if(g>=160)return 2; if(g>=60)return 1; return 0; }
 const DOG_NAMES=['幼崽小猫','可爱小猫','帅气大猫','超级神猫'];
 let catState='sit';                       // 当前随机状态（sit/play/sleep/sick/eat 互动态）
@@ -4137,7 +4158,9 @@ function catPlay(state, lv){
 // 根据当前状态/级别/换装，决定小猫显示什么（帧动画 or 静态换装图）
 // 穿衣服时使用的「已穿好、且跟随坐姿三姿势」的真帧文件名（由 AI 生成，衣服和身体一起动）
 // 每件衣服按固定设计级别生成（与用户当前级别无关），避免拼出不存在的文件名
-const DRESSED_LVL={'c1':0,'c2':1,'c3':0,'c4':2,'c5':0,'c6':0,'c7':2,'c8':0,'c9':2,'c10':0};
+const DRESSED_LVL={'c1':0,'c2':1,'c3':0,'c4':2,'c5':0,'c6':0,'c7':2,'c8':0,'c9':2,'c10':0,
+  'c11':1,'c12':0,'c13':1,'c14':2,'c15':0,'c16':1,'c17':0,'c18':0,'c19':2,'c20':1,
+  'c21':2,'c22':3,'c23':1,'c24':2,'c25':3,'c26':3,'c27':0,'c28':1,'c29':2,'c30':3};
 function dressedFrameFiles(id){
   const lv=DRESSED_LVL[id]||0;
   return ['assets/cat-dressed-s'+lv+'a-'+id+'.png',
@@ -4226,7 +4249,7 @@ function renderDog(){
       const isEq=S.dog.equipped===w.id;
       const rc=RARITY_COLOR[w.rarity]||'#95a5a6';
       const d=document.createElement('div'); d.className='wc'+(isEq?' equipped':'');
-      d.innerHTML=`<div class="wi"><img src="assets/outfit-${w.id}.png" alt="${w.name}"></div>
+      d.innerHTML=`<div class="wi"><img src="${dressedFrameFiles(w.id)[0]}" alt="${w.name}"></div>
         <div class="wn">${w.name}</div>
         <div class="wr" style="background:${rc}">${w.rarity}</div>
         ${isEq?'<div class="weq">✓</div>':''}`;
@@ -4428,7 +4451,7 @@ $('#btnReset').onclick=()=>{
 };
 window.addEventListener('beforeinstallprompt',e=>e.preventDefault());
 </script>
-<div id="verTag" title="页面版本时间戳，用于比对本地/GitHub 是否一致">v20260803.2353</div>
+<div id="verTag" title="页面版本时间戳，用于比对本地/GitHub 是否一致">v20260802.1500</div>
 <style>#verTag{position:fixed;right:6px;bottom:4px;font-size:11px;color:#c7b8c0;opacity:.7;z-index:50;pointer-events:none;font-family:ui-monospace,Menlo,Consolas,monospace}</style>
 </body>
 </html>
