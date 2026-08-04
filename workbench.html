@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="zh-CN" data-app-version="20260804.2235">
+<html lang="zh-CN" data-app-version="20260804.2306">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
@@ -668,6 +668,26 @@ async function forceUpload(){
     console.warn('forceUpload fail', e);
   }
 }
+async function forceDownload(){
+  // 用云端数据覆盖本机：丢弃本地未同步改动，以云端为准（用于本地旧缓存盖掉云端设定的情况）
+  if(!SYNC.enabled || !SYNC.proxyUrl){ toast('未开启云端同步'); return; }
+  try{
+    setSyncState('syncing');
+    const remote = await cloudLoad();
+    if(!remote){ setSyncState('offline'); toast('⚠️ 云端暂无数据或拉取失败'); return; }
+    S = load(remote);
+    _lastErr = '';
+    setSyncState('synced');
+    if(SYNC.keepLocalCache) _cacheLocal();
+    if(window._eggBC) window._eggBC.postMessage({s:S});
+    if(typeof renderHome==='function') renderHome();
+    toast('☁️ 已用云端数据覆盖本机');
+  }catch(e){
+    setSyncState('offline');
+    toast('⚠️ 强制下载失败（'+( _lastErr || '网络') +'）');
+    console.warn('forceDownload fail', e);
+  }
+}
 function setSyncState(s){
   _syncState = s;
   const el = document.getElementById('syncBadge');
@@ -716,6 +736,8 @@ async function bootstrap(){
   try{
     const ub = document.getElementById('syncUploadBtn');
     if(ub) ub.onclick = ()=>forceUpload();
+    const db = document.getElementById('syncDownloadBtn');
+    if(db) db.onclick = ()=>forceDownload();
   }catch(_){}
   S.savedAt = S.savedAt || 0;
   addBoardBars();
@@ -4175,7 +4197,7 @@ const SHOP=[
   {key:'medicine',icon:'💊',name:'药品',price:15,grow:11,desc:'治病+喂养 +11成长',medicine:true},
 ];
 const FOOD_ITEMS=SHOP.filter(s=>s.food);     // 多种食物（像衣服一样可在超市挑选）
-const APP_VERSION='2026-08-04 22:35';         // 版本时间戳：用于比对本地/GitHub 是否一致
+const APP_VERSION='2026-08-04 23:06';         // 版本时间戳：用于比对本地/GitHub 是否一致
 function dogLevel(g){ if(g>=300)return 3; if(g>=160)return 2; if(g>=60)return 1; return 0; }
 const DOG_NAMES=['幼崽小猫','可爱小猫','帅气大猫','超级神猫'];
 let catState='sit';                       // 当前随机状态（sit/play/sleep/sick/eat 互动态）
@@ -4537,9 +4559,10 @@ $('#btnReset').onclick=()=>{
 };
 window.addEventListener('beforeinstallprompt',e=>e.preventDefault());
 </script>
-<div id="verTag" title="页面版本时间戳，用于比对本地/GitHub 是否一致">v20260804.2235</div>
+<div id="verTag" title="页面版本时间戳，用于比对本地/GitHub 是否一致">v20260804.2306</div>
 <div id="syncBadge" class="sync-badge init" title="数据同步状态：云端为主存，多端一致">☁️</div>
 <div id="syncUploadBtn" title="把本机当前进度强制覆盖上传到云端（替换云端数据，多端将以本机为准）">↑ 强制上传</div>
+<div id="syncDownloadBtn" title="用云端数据覆盖本机（丢弃本机本地改动，以云端为准）——当本地旧缓存盖掉云端设定时使用">↓ 强制下载</div>
 <style>#verTag{position:fixed;right:6px;bottom:4px;font-size:11px;color:#c7b8c0;opacity:.7;z-index:50;pointer-events:none;font-family:ui-monospace,Menlo,Consolas,monospace}
 #syncBadge{position:fixed;right:6px;bottom:22px;font-size:11px;color:#9a8;opacity:.85;z-index:50;pointer-events:none;font-family:ui-monospace,Menlo,Consolas,monospace;background:rgba(255,255,255,.6);padding:1px 5px;border-radius:8px}
 #syncBadge.syncing{color:#c80}
@@ -4547,6 +4570,9 @@ window.addEventListener('beforeinstallprompt',e=>e.preventDefault());
 #syncBadge.local{color:#888}
 #syncUploadBtn{position:fixed;right:6px;bottom:42px;font-size:11px;color:#277cff;opacity:.9;z-index:50;cursor:pointer;font-family:ui-monospace,Menlo,Consolas,monospace;background:rgba(39,124,255,.10);padding:1px 6px;border-radius:8px;border:1px solid rgba(39,124,255,.35)}
 #syncUploadBtn:hover{background:rgba(39,124,255,.22)}
-#syncUploadBtn:active{transform:scale(.96)}</style>
+#syncUploadBtn:active{transform:scale(.96)}
+#syncDownloadBtn{position:fixed;right:6px;bottom:62px;font-size:11px;color:#ff8a3d;opacity:.9;z-index:50;cursor:pointer;font-family:ui-monospace,Menlo,Consolas,monospace;background:rgba(255,138,61,.10);padding:1px 6px;border-radius:8px;border:1px solid rgba(255,138,61,.35)}
+#syncDownloadBtn:hover{background:rgba(255,138,61,.22)}
+#syncDownloadBtn:active{transform:scale(.96)}</style>
 </body>
 </html>
