@@ -2937,12 +2937,15 @@ function _markSeen(scope,q){ const m=_ensureTodaySeen(scope); m[q]=1; }
 function buildListWithWrong(arr, scope, cat){
   cat = cat||'m';
   const seen = _ensureTodaySeen(scope);
+  /* 错题本始终前插（不管今日是否已出），实现"高频复现"需求 */
   const wrongItems = S.wrong
-    .filter(w => (w.cat||'m')===cat && arr.some(a => a.q===w.q) && !seen[w.q])
+    .filter(w => (w.cat||'m')===cat && arr.some(a => a.q===w.q))
     .map(w => arr.find(a => a.q===w.q));
+  /* 基础题排除今日已出，且不再包含错题本前插的项 */
   const newItems = arr.filter(a => !seen[a.q] && !wrongItems.includes(a));
   const list = wrongItems.concat(shuffle(newItems));
-  list.forEach(it => { if(it && it.q) seen[it.q]=1; });
+  /* 仅给"新题"打 seen 标记（错题反复出，不耗 seen 配额） */
+  newItems.forEach(it => { if(it && it.q) seen[it.q]=1; });
   return list;
 }
 /* 语文选项打乱：56 道选择题此前 a:0 全是 A，现启动时一次性打乱每题 opts 并更新 a，让正确答案分布到 A/B/C/D */
@@ -3516,8 +3519,23 @@ function renderMath(){
         const scope = 'mu-'+mathGrade;
         mathQ={_unit:true, idx:0, list:buildListWithWrong(mathSet().unit.slice(), scope, 'm')};
       }
+      if(mathQ.list.length===0){
+        const total=mathSet().unit.length, wrongCount=S.wrong.filter(w=>(w.cat||'m')==='m').length;
+        box.innerHTML='<div style="text-align:center;padding:30px 0">'+
+          '<div style="font-size:48px">🌟</div>'+
+          '<h3 style="margin:8px 0">今日单元重点题已练完！</h3>'+
+          '<p class="muted" style="margin-bottom:6px">已答 '+total+' 道教材原题，剩余 '+wrongCount+' 道错题待巩固</p>'+
+          (wrongCount>0?'<p class="muted" style="margin-bottom:14px">错题本里的题目会在每天练习中优先复现，多练几次就能全部掌握</p>':'<p class="muted" style="margin-bottom:14px">明天再来挑战吧～</p>')+
+          '<button class="btn mint" id="mRetry" style="margin-right:8px">🔄 重新练习（清空今日）</button>'+
+          '<button class="btn" id="mWrong">📒 看看错题本</button></div>';
+        document.getElementById('mRetry').onclick=function(){
+          const scope='mu-'+mathGrade; S.today.seen[scope]={}; save(); mathQ=null; renderMath();
+        };
+        document.getElementById('mWrong').onclick=function(){ mathMode='wrong'; mathQ=null; renderMath(); };
+        return;
+      }
       const item=mathQ.list[mathQ.idx];
-      if(!item){ box.innerHTML='<p class="muted">⚠️ 题目加载失败</p>'; return; }
+      if(!item){ box.innerHTML='<p class="muted">⚠️ 本题已答完，请点"下一题"继续</p>'; return; }
       box.innerHTML='<div class="quiz-top"><span>📚 单元重点题 '+(mathQ.idx+1)+'/'+mathQ.list.length+'</span><span style="font-size:12px">'+(item.tip||'')+'</span></div>'+
         '<div class="qprompt" style="font-size:17px;font-weight:600">'+item.q+'</div>'+
         '<div class="qhint">'+(item.free?'💡 输入文字或数字答案':'💡 输入数字答案')+'</div>'+
@@ -3574,8 +3592,23 @@ function renderMath(){
       const scope = 'mb-'+mathGrade;
       mathQ={_book:true, idx:0, list:buildListWithWrong(mathSet().book.slice(), scope, 'm')};
     }
+    if(mathQ.list.length===0){
+      const total=mathSet().book.length, wrongCount=S.wrong.filter(w=>(w.cat||'m')==='m').length;
+      box.innerHTML='<div style="text-align:center;padding:30px 0">'+
+        '<div style="font-size:48px">🌟</div>'+
+        '<h3 style="margin:8px 0">今日教材习题已练完！</h3>'+
+        '<p class="muted" style="margin-bottom:6px">已答 '+total+' 道课后练习，剩余 '+wrongCount+' 道错题待巩固</p>'+
+        (wrongCount>0?'<p class="muted" style="margin-bottom:14px">错题本里的题目会在每天练习中优先复现，多练几次就能全部掌握</p>':'<p class="muted" style="margin-bottom:14px">明天再来挑战吧～</p>')+
+        '<button class="btn mint" id="mRetry" style="margin-right:8px">🔄 重新练习（清空今日）</button>'+
+        '<button class="btn" id="mWrong">📒 看看错题本</button></div>';
+      document.getElementById('mRetry').onclick=function(){
+        const scope='mb-'+mathGrade; S.today.seen[scope]={}; save(); mathQ=null; renderMath();
+      };
+      document.getElementById('mWrong').onclick=function(){ mathMode='wrong'; mathQ=null; renderMath(); };
+      return;
+    }
     const item=mathQ.list[mathQ.idx];
-    if(!item){ box.innerHTML='<p class="muted">⚠️ 题目加载失败</p>'; return; }
+    if(!item){ box.innerHTML='<p class="muted">⚠️ 本题已答完，请点"下一题"继续</p>'; return; }
     const fbId='mFb';
     let body;
     if(Array.isArray(item.opts)){
