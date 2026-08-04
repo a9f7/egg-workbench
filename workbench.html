@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="zh-CN" data-app-version="20260804.2338">
+<html lang="zh-CN" data-app-version="20260805.0152">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
@@ -335,6 +335,41 @@
   .pcard button,.pwd-box .seg button{border:none;background:var(--pink);color:#fff;font-family:inherit;font-weight:800;padding:9px 14px;border-radius:12px;cursor:pointer;box-shadow:0 3px 0 var(--pink-d)}
   .pcard button:active,.pwd-box .seg button:active{transform:translateY(1px)}
   .pcard .pwarn{background:#e98aa6;box-shadow:0 3px 0 #c96a86}
+  /* ===== 视频专区 ===== */
+  .videogrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:12px;margin-top:12px}
+  .vcard{background:#fff;border-radius:14px;padding:14px;box-shadow:0 4px 0 #ffd9e8;border:1px solid #ffe3ef;display:flex;flex-direction:column;gap:7px}
+  .vcard .vt{font-weight:800;font-size:15px;display:flex;align-items:center;gap:6px;line-height:1.3}
+  .vcard .vd{font-size:12.5px;color:#777;line-height:1.55;flex:1}
+  .vcard .vtag{display:inline-block;font-size:11px;padding:2px 9px;border-radius:9px;background:#eaf6ff;color:#2b9;font-weight:700;align-self:flex-start}
+  .vcard .vtag.official{background:#e8fff0;color:#1aa}
+  .vcard .vtag.bili{background:#fdeaff;color:#fb7299}
+  .vcard .vgo{margin-top:2px;align-self:flex-start;text-decoration:none;background:var(--pink);color:#fff;font-weight:800;font-size:13px;padding:6px 13px;border-radius:10px;box-shadow:0 3px 0 var(--pink-d)}
+  .vcard .vgo:active{transform:translateY(1px)}
+  .vcard .vgo{border:none;cursor:pointer;font-family:inherit}
+  .vmodal{position:fixed;inset:0;background:rgba(0,0,0,.74);display:none;align-items:center;justify-content:center;z-index:9999;padding:16px}
+  .vmodal.show{display:flex}
+  .vp-wrap{width:min(960px,96vw);background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 24px 70px rgba(0,0,0,.45)}
+  .vp-bar{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 14px;background:#fff}
+  .vp-title{font-weight:800;font-size:15px;color:#333;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .vp-close{border:none;background:#ffe3ef;color:#e0407f;font-weight:800;font-size:20px;line-height:1;width:34px;height:34px;border-radius:50%;cursor:pointer;flex:none}
+  .vp-frame{width:100%;aspect-ratio:16/9;border:0;display:block;background:#000}
+  /* ===== 视频专区·开根号密码锁 ===== */
+  .vlock{background:#fff;border-radius:18px;padding:26px 22px 30px;box-shadow:0 6px 0 #ffe3ef;border:2px dashed #ffc2dd;max-width:460px;margin:14px auto;text-align:center}
+  .vl-emoji{font-size:46px;line-height:1;margin-bottom:6px}
+  .vl-title{font-weight:900;font-size:22px;color:#000;margin-bottom:6px;letter-spacing:1px}
+  .vl-sub{font-size:13.5px;color:#333;line-height:1.7;margin-bottom:14px;font-weight:600}
+  /* 题目区：白底+黑色3px实边，黑字大号，确保任何设备都能看清 */
+  .vl-prob{font-size:48px;font-weight:900;color:#000;background:#fff;border-radius:14px;padding:20px 16px;margin-bottom:18px;letter-spacing:2px;border:3px solid #000;line-height:1.6;font-family:'Cambria Math','STIX Two Math','Latin Modern Math','Arial Unicode MS','Times New Roman',serif}
+  .vl-prob .rt{font-size:60px;font-weight:900;color:#000;line-height:1;padding:0 4px;display:inline-block;border-top:4px solid #000;margin-right:2px}
+  .vl-prob .nm{font-size:54px;font-weight:900;color:#000;line-height:1;padding:0 4px;display:inline-block}
+  .vl-prob .eq{font-size:40px;color:#000;margin-left:10px;font-weight:900}
+  .vl-input{width:200px;font-size:22px;text-align:center;font-weight:800;padding:10px 12px;border:2px solid #ffd0e6;border-radius:12px;outline:none;font-family:inherit;color:#333}
+  .vl-input:focus{border-color:#fb7299;box-shadow:0 0 0 3px #ffe3ef}
+  .vl-btn{margin-top:14px;display:block;width:100%;border:none;cursor:pointer;font-family:inherit;background:var(--pink);color:#fff;font-weight:800;font-size:16px;padding:12px;border-radius:12px;box-shadow:0 4px 0 var(--pink-d)}
+  .vl-btn:active{transform:translateY(1px)}
+  .vl-tip{margin-top:12px;font-size:13px;font-weight:700;min-height:18px}
+  .vl-tip.ok{color:#1aa}
+  .vl-tip.no{color:#e0407f}
 </style>
 </head>
 <body>
@@ -352,6 +387,7 @@
     <button class="dt" data-v="chinese"><span class="ni">📖</span>语文</button>
     <button class="dt" data-v="math"><span class="ni">➗</span>数学</button>
     <button class="dt" data-v="english"><span class="ni">🔤</span>英语</button>
+    <button class="dt" data-v="video"><span class="ni">🎬</span>视频</button>
     <button class="dt" data-v="exercise"><span class="ni">🏃</span>运动</button>
     <button class="dt" data-v="dog"><span class="ni">🐱</span>小猫</button>
     <button class="dt" data-v="parent"><span class="ni">🔐</span>家长</button>
@@ -370,7 +406,8 @@
     </div>
 
     <div class="card">
-      <h3>📚 今日语数英进度</h3>
+      <h3>📚 今日语数英进度 <span style="font-size:11px;color:#888;font-weight:400">v0146</span></h3>
+      <p class="muted">顶部「🟢 验证条」+「📦 导出」+ 几条调试信息，方便确认你看到的版本是不是最新的。</p>
       <div class="progress3">
         <div class="prow"><div class="pn">语文</div><div class="pbar"><div class="pfill ic-c" id="pbC" style="width:0"></div></div><div class="pv" id="pvC">0</div></div>
         <div class="prow"><div class="pn">数学</div><div class="pbar"><div class="pfill ic-m" id="pbM" style="width:0"></div></div><div class="pv" id="pvM">0</div></div>
@@ -450,11 +487,37 @@
     </div>
   </section>
 
+  <!-- VIDEO -->
+  <section class="view" id="v-video">
+    <div class="card">
+      <h3>🎬 视频学习专区</h3>
+      <p class="muted">精选免费正版教学视频：语文 / 英语 / 数学。点子栏目切换；点卡片「▶ 播放」即可在本页内置窗口直接观看（B站官方播放器，无广告、无相关推荐、不跳站），不投屏也能看，投屏电视效果更佳。</p>
+      <div id="videoLock" class="vlock">
+        <div class="vl-emoji">🔐</div>
+        <div class="vl-title">视频专区已上锁</div>
+        <div class="vl-sub">先解一道「开根号」数学题才能进入～</div>
+        <div class="vl-prob" id="vlProb"></div>
+        <input id="vlInput" class="vl-input" type="number" inputmode="numeric" placeholder="把根号开出来" autocomplete="off">
+        <button id="vlBtn" class="vl-btn">解锁 ▶</button>
+        <div class="vl-tip" id="vlTip"></div>
+      </div>
+      <div id="videoContent" class="vcontent" style="display:none">
+      <div class="seg" id="videoSeg">
+        <button class="on" data-vk="chinese">📖 语文</button>
+        <button data-vk="english">🔤 英语</button>
+        <button data-vk="math">🔢 数学</button>
+      </div>
+      <div id="videoBox" class="videogrid"></div>
+      </div>
+    </div>
+  </section>
+
   <!-- EXERCISE -->
   <section class="view" id="v-exercise">
     <div class="card">
-      <h3>🏃 运动 & 🧹 家务打卡</h3>
+      <h3>🏃 运动 & 🧹 家务打卡 <span style="font-size:11px;color:#888;font-weight:400">v0146</span></h3>
       <p class="muted">运动打卡 ☀️+2（每日上限5）、家务打卡 ☀️+1（每日上限3）；完成后还能再自选表扬加阳光哦！</p>
+      <div class="parent-sun" style="background:#fff8e1;border-color:#f6dd9e">🟢 进入运动/家务页面后，如果看到「🏃 运动打卡」「🧹 家务打卡」两组卡片 = 版本正确；找不到这一行说明浏览器没刷到新版。</div>
       <div id="exList"></div>
     </div>
   </section>
@@ -531,6 +594,7 @@
     <button data-v="chinese"><span class="ni">📖</span>语文</button>
     <button data-v="math"><span class="ni">➗</span>数学</button>
     <button data-v="english"><span class="ni">🔤</span>英语</button>
+    <button data-v="video"><span class="ni">🎬</span>视频</button>
     <button data-v="exercise"><span class="ni">🏃</span>运动</button>
     <button data-v="dog"><span class="ni">🐱</span>小猫</button>
     <button data-v="parent"><span class="ni">🔐</span>家长</button>
@@ -2934,11 +2998,12 @@ const EX_CHORES = [
 ];
 
 /* ============ nav ============ */
-const VIEWS=['home','chinese','math','english','exercise','dog','parent'];
+const VIEWS=['home','chinese','math','english','video','exercise','dog','parent'];
 let parentUnlocked=false;          // 家长专区解锁状态（仅内存，刷新后需重新验证密码）
 function switchView(v){
   if(!VIEWS.includes(v)) v='home';
   if(v==='parent' && !parentUnlocked){ openParentModal(); return; } // 家长专区需密码
+  if(v!=='video') videoUnlocked=false;   // 离开视频专区即重置「开根号」密码锁，下次进入需重解
   $$('.view').forEach(s=>s.classList.remove('on'));
   $('#v-'+v).classList.add('on');
   $$('#nav button').forEach(b=>b.classList.toggle('on', b.dataset.v===v));
@@ -2949,12 +3014,130 @@ function switchView(v){
   if(v==='exercise') renderEx();
   if(v!=='dog') stopCat();                 // 离开小猫页时停掉帧循环，避免空转
   if(v==='dog'){ pickCatState(); renderDog(); }
+  if(v==='video'){ if(videoUnlocked) renderVideo(videoCur); else openVideoGate(); } // 视频专区需先解开根号题
   window.scrollTo(0,0);
   if(('#'+v)!==location.hash) history.replaceState(null,'','#'+v);
 }
 $$('#nav button').forEach(b=>b.onclick=()=>switchView(b.dataset.v));
 document.addEventListener('click', e=>{ const g=e.target.closest('[data-go]'); if(g){ e.preventDefault(); switchView(g.dataset.go); } });
 $$('.desktabs .dt').forEach(b=>b.onclick=()=>switchView(b.dataset.v));
+/* ============ 视频专区（语文 / 英语 教学视频） ============ */
+let videoUnlocked=false;     // 视频专区是否已解开「开根号」密码
+let videoCur='chinese';      // 当前子栏目
+const VIDEOS={
+  chinese:[
+    {icon:'🏫',t:'国家中小学智慧教育平台',d:'教育部官方·同步教材微课+学习任务单+课后练习，全年级全版本，免费无广告，可离线缓存。',url:'https://basic.smartedu.cn',tag:'官方免费',cls:'official'},
+    {icon:'📚',t:'梓墨说语文',d:'79万粉。基础知识/阅读理解/作文体系化讲解，适合打基础、系统提分。',url:'https://search.bilibili.com/all?keyword='+encodeURIComponent('梓墨说语文'),tag:'B站',cls:'bili'},
+    {icon:'📖',t:'我就是皮皮儿',d:'名著导读（西游记/水浒/儒林外史/朝花夕拾），故事化讲解勾起阅读兴趣。',url:'https://search.bilibili.com/all?keyword='+encodeURIComponent('我就是皮皮儿'),tag:'B站',cls:'bili'},
+    {icon:'✍️',t:'牛哥小学作文秀',d:'无痛练作文，用生活趣事+游戏讲写作技巧，附佳作拆解。',url:'https://search.bilibili.com/all?keyword='+encodeURIComponent('牛哥小学作文秀'),tag:'B站',cls:'bili'},
+    {icon:'🌟',t:'白马阅读写作',d:'三升四适用，教把流水账改出层次感、做阅读批注。',url:'https://search.bilibili.com/all?keyword='+encodeURIComponent('白马阅读写作'),tag:'B站',cls:'bili'},
+    {icon:'🍃',t:'高盛元老师',d:'北大中文系硕士，古诗讲诗人的人生，记得牢不只是字面。',url:'https://search.bilibili.com/all?keyword='+encodeURIComponent('高盛元老师'),tag:'B站',cls:'bili'},
+    {icon:'🏆',t:'张祖庆',d:'特级教师专攻作文，"汉堡包写作法"治流水账。',url:'https://search.bilibili.com/all?keyword='+encodeURIComponent('张祖庆'),tag:'B站',cls:'bili'}
+  ],
+  english:[
+    {icon:'🎵',t:'Super Simple Songs',d:'全球最火启蒙儿歌，歌词简单重复，磨耳朵神器。官网还有闪卡/涂色页。',url:'https://supersimple.com',tag:'官方免费',cls:'official'},
+    {icon:'🐤',t:'CoComelon',d:'3-6岁启蒙儿歌，画风美语速慢，低幼磨耳朵。',url:'https://search.bilibili.com/all?keyword='+encodeURIComponent('CoComelon'),tag:'B站',cls:'bili'},
+    {icon:'🎶',t:'English Singsing',d:'2-8岁体系最完整（字母/单词/对话/拼读/童话近1000集）。',url:'https://search.bilibili.com/all?keyword='+encodeURIComponent('English Singsing'),tag:'B站',cls:'bili'},
+    {icon:'🔤',t:'Alphablocks 字母积木',d:'BBC自然拼读天花板！字母变积木人拼成单词，零基础也能看进去（完整117集全）。',bvid:'BV1TEDpBTEiN',tag:'B站·内置',cls:'bili'},
+    {icon:'🔡',t:'Word World 词汇世界',d:'PBS出品，单词组成实物，3-6岁，和 Alphablocks 互补。',url:'https://search.bilibili.com/all?keyword='+encodeURIComponent('Word World 词汇世界'),tag:'B站',cls:'bili'},
+    {icon:'👩‍🏫',t:'雪莉英语老师',d:'中文辅助的拼读系统课：字母音→CVC→长元音→高级规则。',url:'https://search.bilibili.com/all?keyword='+encodeURIComponent('雪莉英语老师 自然拼读'),tag:'B站',cls:'bili'},
+    {icon:'🎤',t:'Hello Carrie',d:'儿歌式拼读，每集2分钟，零基础友好。',url:'https://search.bilibili.com/all?keyword='+encodeURIComponent('Hello Carrie 自然拼读'),tag:'B站',cls:'bili'},
+    {icon:'📘',t:'牛津拼读世界',d:'官方教材一一对应配套视频，最系统。',url:'https://search.bilibili.com/all?keyword='+encodeURIComponent('牛津拼读世界'),tag:'B站',cls:'bili'},
+    {icon:'🔠',t:'Jolly Phonics',d:'英国小学官方拼读体系，42音素多感官教学。',url:'https://search.bilibili.com/all?keyword='+encodeURIComponent('Jolly Phonics'),tag:'网络',cls:'bili'},
+    {icon:'🗣️',t:'Susan教英语',d:'全英文讲绘本，零基础跟得上（三升四适用）。',url:'https://search.bilibili.com/all?keyword='+encodeURIComponent('Susan教英语'),tag:'B站',cls:'bili'},
+    {icon:'🐰',t:'英语兔',d:'千万粉，语法讲得清楚。',url:'https://search.bilibili.com/all?keyword='+encodeURIComponent('英语兔'),tag:'B站',cls:'bili'}
+  ],
+  math:[
+    {icon:'📊',t:'DK图解数学·全科动画（661集大合集）',d:'DK图解数学 + 超级课堂 + 高斯数学合集，覆盖小学到初中核心概念，动画图解最易懂（来源：ima「蛋蛋教学」·DK图解数学）。',bvid:'BV1mMuFzJELD',tag:'B站·内置',cls:'bili'},
+    {icon:'🧮',t:'清华附小 四年级数学动画（56集）',d:'名校名师讲四年级上册重难点：大数认识、三位数乘除、角的度量、平行四边形与梯形等，最适合三升四预习（ima·清华附小数学动画）。',bvid:'BV1Qt4y1j745',tag:'B站·内置',cls:'bili'},
+    {icon:'📐',t:'四年级上册数学 同步课',d:'紧贴人教版四上教材，逐课讲解例题与易错点，课前预习课后巩固都好用（ima 推荐）。',bvid:'BV1GH4y1D78c',tag:'B站·内置',cls:'bili'},
+    {icon:'🏅',t:'高斯数学 三年级（65集）',d:'思维拓展经典体系，巩固三年级基础，为四年级做准备（ima·高斯数学）。',bvid:'BV1Es4y177LY',tag:'B站·内置',cls:'bili'},
+    {icon:'🧠',t:'超级课堂 奥数启蒙（38集）',d:'把奥数讲成故事和动画，培养解题思维，适合有兴趣的孩子拔高（ima·超级课堂）。',bvid:'BV15H4y1p76B',tag:'B站·内置',cls:'bili'},
+    {icon:'🏝️',t:'数学荒岛历险记（40集）',d:'央视动画，用冒险故事讲数学，轻松有趣，培养数学兴趣不枯燥（ima·数学荒岛历险记）。',bvid:'BV1uW411a7nb',tag:'B站·内置',cls:'bili'}
+  ]
+};
+function openPlayer(bvid,title){
+  const m=$('#vModal'); if(!m||!bvid) return;
+  m.querySelector('#vModalTitle').textContent=title||'视频';
+  m.querySelector('#vModalFrame').src='https://player.bilibili.com/player.html?bvid='+bvid+'&page=1&high_quality=1&danmaku=0&autoplay=0';
+  m.classList.add('show');
+}
+function closePlayer(){
+  const m=$('#vModal'); if(!m) return;
+  m.classList.remove('show');
+  m.querySelector('#vModalFrame').src='';
+}
+function renderVideo(k){
+  k=k||'chinese';
+  const box=$('#videoBox'); if(!box) return;
+  box.innerHTML='';
+  (VIDEOS[k]||[]).forEach(v=>{
+    const c=el('div','vcard');
+    let action;
+    if(v.bvid){
+      action='<button class="vgo" type="button" data-bvid="'+v.bvid+'">▶ 播放（内置窗口）</button>';
+    } else {
+      action='<a class="vgo" href="'+v.url+'" target="_blank" rel="noopener">▶ 去观看</a>';
+    }
+    c.innerHTML='<div class="vt">'+v.icon+' '+v.t+'</div>'
+      +'<div class="vd">'+v.d+'</div>'
+      +'<span class="vtag '+v.cls+'">'+v.tag+'</span>'
+      +action;
+    box.appendChild(c);
+  });
+  $$('#videoBox .vgo[data-bvid]').forEach(b=>{
+    b.onclick=()=>openPlayer(b.dataset.bvid,(b.closest('.vcard').querySelector('.vt').textContent||'').replace(/^\s+|\s+$/g,''));
+  });
+}
+$$('#videoSeg button').forEach(b=>b.onclick=()=>{
+  $$('#videoSeg button').forEach(x=>x.classList.remove('on'));
+  b.classList.add('on');
+  videoCur=b.dataset.vk;
+  renderVideo(videoCur);
+});
+renderVideo('chinese');
+/* ===== 视频专区·开根号密码锁 ===== */
+let videoAnswer=null;                              // 模块作用域的当前答案（不再依赖 DOM dataset，最稳）
+function genVideoQuiz(){
+  const inp=$('#vlInput'), prob=$('#vlProb'), tip=$('#vlTip');
+  if(!inp||!prob) return;
+  const n=1+Math.floor(Math.random()*100);        // 答案 n 为 1~100 的整数
+  videoAnswer=n;
+  // 改用纯文字根号 + CSS border-top 画上划线，彻底摆脱字体/渲染兼容问题，必现
+  prob.innerHTML = '<span class="rt">√</span><span class="nm">'+ (n*n) +'</span><span class="eq">= ?</span>';
+  inp.value='';
+  if(tip){ tip.textContent=''; tip.className='vl-tip'; }
+  try{ inp.focus(); }catch(e){}
+}
+function openVideoGate(){
+  const lock=$('#videoLock'), content=$('#videoContent');
+  if(lock) lock.style.display='block';
+  if(content) content.style.display='none';
+  genVideoQuiz();
+}
+function checkVideoAnswer(){
+  const inp=$('#vlInput'), tip=$('#vlTip');
+  if(!inp||!tip) return;
+  if(videoAnswer==null) genVideoQuiz();           // 兜底：万一 quiz 没生成，重生一道
+  const val=parseInt((inp.value||'').trim(),10);
+  if(isNaN(val)){ tip.textContent='先填一个数字哦～'; tip.className='vl-tip no'; return; }
+  if(val===videoAnswer){
+    videoUnlocked=true;
+    tip.textContent='✅ 解开啦！正在进入视频专区…'; tip.className='vl-tip ok';
+    const lock=$('#videoLock'), content=$('#videoContent');
+    if(lock) lock.style.display='none';
+    if(content) content.style.display='block';
+    renderVideo(videoCur);
+  } else {
+    tip.textContent='❌ 不对哦，再算算～'; tip.className='vl-tip no';
+  }
+}
+const vlBtn=$('#vlBtn'); if(vlBtn) vlBtn.onclick=checkVideoAnswer;
+const vlInput=$('#vlInput'); if(vlInput) vlInput.addEventListener('keydown',e=>{ if(e.key==='Enter') checkVideoAnswer(); });
+/* 内置视频窗口关闭：按钮 / 点遮罩 / Esc */
+$('#vModalClose').onclick=closePlayer;
+$('#vModal').addEventListener('click',e=>{ if(e.target.id==='vModal') closePlayer(); });
+document.addEventListener('keydown',e=>{ if(e.key==='Escape') closePlayer(); });
 /* hash 路由：刷新 / 分享链接直接定位到对应板块，像独立页面一样打开 */
 window.addEventListener('hashchange',()=>{
   const v=(location.hash||'#home').slice(1);
@@ -4193,7 +4376,7 @@ const SHOP=[
   {key:'medicine',icon:'💊',name:'药品',price:15,grow:11,desc:'治病+喂养 +11成长',medicine:true},
 ];
 const FOOD_ITEMS=SHOP.filter(s=>s.food);     // 多种食物（像衣服一样可在超市挑选）
-const APP_VERSION='2026-08-04 23:38';         // 版本时间戳：用于比对本地/GitHub 是否一致
+const APP_VERSION='2026-08-05 01:52';         // 版本时间戳：用于比对本地/GitHub 是否一致
 function dogLevel(g){ if(g>=300)return 3; if(g>=160)return 2; if(g>=60)return 1; return 0; }
 const DOG_NAMES=['幼崽小猫','可爱小猫','帅气大猫','超级神猫'];
 let catState='sit';                       // 当前随机状态（sit/play/sleep/sick/eat 互动态）
@@ -4555,7 +4738,7 @@ $('#btnReset').onclick=()=>{
 };
 window.addEventListener('beforeinstallprompt',e=>e.preventDefault());
 </script>
-<div id="verTag" title="页面版本时间戳，用于比对本地/GitHub 是否一致">v20260804.2338</div>
+<div id="verTag" title="页面版本时间戳，用于比对本地/GitHub 是否一致">v20260805.0152</div>
 <div id="syncBadge" class="sync-badge init" title="数据同步状态：云端为主存，多端一致">☁️</div>
 <div id="syncUploadBtn" title="把本机当前进度强制覆盖上传到云端（替换云端数据，多端将以本机为准）">↑ 强制上传</div>
 <div id="syncDownloadBtn" title="用云端数据覆盖本机（丢弃本机本地改动，以云端为准）——当本地旧缓存盖掉云端设定时使用">↓ 强制下载</div>
@@ -4570,5 +4753,15 @@ window.addEventListener('beforeinstallprompt',e=>e.preventDefault());
 #syncDownloadBtn{position:fixed;right:6px;bottom:62px;font-size:11px;color:#ff8a3d;opacity:.9;z-index:50;cursor:pointer;font-family:ui-monospace,Menlo,Consolas,monospace;background:rgba(255,138,61,.10);padding:1px 6px;border-radius:8px;border:1px solid rgba(255,138,61,.35)}
 #syncDownloadBtn:hover{background:rgba(255,138,61,.22)}
 #syncDownloadBtn:active{transform:scale(.96)}</style>
+<!-- 内置视频播放窗口：B站官方播放器，无广告 / 无相关推荐 / 不跳站 -->
+<div class="vmodal" id="vModal">
+  <div class="vp-wrap">
+    <div class="vp-bar">
+      <div class="vp-title" id="vModalTitle">视频</div>
+      <button class="vp-close" id="vModalClose" aria-label="关闭">×</button>
+    </div>
+    <iframe class="vp-frame" id="vModalFrame" allowfullscreen="true" sandbox="allow-scripts allow-same-origin allow-presentation"></iframe>
+  </div>
+</div>
 </body>
 </html>
