@@ -624,12 +624,13 @@ async function cloudSave(obj){
   }catch(e){ console.warn('cloudSave fail', e); return false; }
 }
 async function syncPull(){
-  if(_dirty) return;                            // 有未保存改动先不覆盖
+  if(_dirty) return;                            // 有未保存改动先不覆盖（避免冲掉用户当前进度）
   const remote = await cloudLoad();
-  if(remote && typeof remote.savedAt==='number' && remote.savedAt > (S.savedAt||0)){
-    S = load(remote);
-    setSyncState('synced');
-  }
+  if(!remote) return;
+  S = mergeState(S, remote);                    // 双向合并：保留两端各自进展，不再单方面覆盖
+  setSyncState('synced');
+  if(SYNC.keepLocalCache) _cacheLocal();
+  if(typeof renderHome==='function') renderHome();
 }
 function setSyncState(s){
   _syncState = s;
@@ -644,18 +645,31 @@ async function bootstrap(){
     setSyncState('syncing');
     const remote = await cloudLoad();
     const localRaw = (function(){ try{ return JSON.parse(localStorage.getItem(SKEY)); }catch(e){ return null; } })();
-    const localTs = (localRaw && typeof localRaw.savedAt==='number') ? localRaw.savedAt : 0;
-    const remoteTs = (remote && typeof remote.savedAt==='number') ? remote.savedAt : 0;
-    if(remote && remoteTs >= localTs){
-      S = load(remote); setSyncState('synced');        // 云端更新或更一致：以云端为准
+    if(remote && localRaw){
+      S = mergeState(localRaw, remote); setSyncState('synced');     // 双向合并：两端各自进展都保留
+      _dirty = true; flushSave();                                   // 把合并结果写回云端（让两端下一轮 syncPull 一致）
+    } else if(remote){
+      S = load(remote); setSyncState('synced');
     } else if(localRaw){
-      S = load(localRaw); setSyncState('offline');     // 本地更新 / 云端空：以本地为准并写回云端
+      S = load(localRaw); setSyncState('offline');
       _dirty = true; flushSave();
     } else {
-      S = load(null); setSyncState('synced');          // 本地云端皆空：全新开始
+      S = load(null); setSyncState('synced');
       _dirty = true; flushSave();
     }
-    setInterval(syncPull, 60000);
+    setInterval(syncPull, 10000);                                  // 10s 拉一次（多端更快感知对端改动）
+    try{
+      const bc = new BroadcastChannel('egg-sync');                 // 同浏览器多标签实时同步
+      bc.onmessage = e=>{
+        if(e.data && e.data.s){
+          S = mergeState(S, e.data.s);
+          if(SYNC.keepLocalCache) _cacheLocal();
+          renderHome();
+          toast('🔄 另一标签已同步');
+        }
+      };
+      window._eggBC = bc;
+    }catch(_){}
   } else {
     S = load();
     setSyncState('local');
@@ -710,6 +724,56 @@ function load(raw){
   }
   return s;
 }
+/* 多端合并：保留两端所有进展（不丢任何一端玩出来的进度）
+   - 只增字段：取 max（阳光值、正确数、连续打卡、小猫成长等只会涨不会跌）
+   - 集合字段：unique 并集（已背课文 id、错题、记住的词等）
+   - 其他：以远端/新的为准（云端为权威 + 防丢失） */
+function mergeState(local, remote){
+  const out = JSON.parse(JSON.stringify(remote||local||{}));
+  if(!local || !remote) return out;
+  ['sun','mathCorrect','engCorrect','cnQuiz','streak','mathMentalCount'].forEach(k=>{
+    out[k] = Math.max(Number(out[k])||0, Number(local[k])||0);
+  });
+  ['cnDone','cnW','cnS','cnM','cnR','enPrev','enRev','enWrong','enForget'].forEach(k=>{
+    const a = Array.isArray(out[k])?out[k]:[]; const b = Array.isArray(local[k])?local[k]:[];
+    out[k] = Array.from(new Set([...a,...b]));
+  });
+  // wrong 按 cat|q 去重并集
+  const wa = Array.isArray(out.wrong)?out.wrong:[]; const wb = Array.isArray(local.wrong)?local.wrong:[];
+  const wm = new Map();
+  [...wa,...wb].forEach(it=>{ if(it && it.q!=null) wm.set((it.cat||'m')+'|'+it.q, it); });
+  out.wrong = Array.from(wm.values());
+  // total 各分量取 max
+  out.total = out.total||{};
+  ['c','m','e'].forEach(k=>{ out.total[k] = Math.max(Number(out.total[k])||0, Number(local.total?.[k])||0); });
+  // dog：成长值取 max，最后喂食日取最新
+  out.dog = out.dog||{};
+  out.dog.growth = Math.max(Number(out.dog.growth)||0, Number(local.dog?.growth)||0);
+  if((local.dog?.lastFeed||'') > (out.dog.lastFeed||'')) out.dog.lastFeed = local.dog.lastFeed;
+  // today：同日合并 seen + 各分量 max + 运动项并集
+  if(out.today && local.today && out.today.date===local.today.date){
+    out.today.seen = out.today.seen||{};
+    Object.entries(local.today.seen||{}).forEach(([sc,qs])=>{
+      out.today.seen[sc] = Object.assign({}, out.today.seen[sc]||{}, qs);
+    });
+    ['c','m','e'].forEach(k=>{ out.today[k] = Math.max(Number(out.today[k])||0, Number(local.today[k])||0); });
+    out.today.ex = Array.from(new Set([...(out.today.ex||[]), ...(local.today.ex||[])]));
+  }
+  // exDone：按日期+运动名深合并（base/add 取 max，done/praised 取或）
+  out.exDone = out.exDone||{};
+  Object.entries(local.exDone||{}).forEach(([d,exs])=>{
+    out.exDone[d] = out.exDone[d]||{};
+    Object.entries(exs||{}).forEach(([name,v])=>{
+      const cur = out.exDone[d][name] = Object.assign({}, out.exDone[d][name]||{}, v||{});
+      cur.base = Math.max(Number(cur.base)||0, Number(v?.base)||0);
+      cur.add = Math.max(Number(cur.add)||0, Number(v?.add)||0);
+      if(v?.done) cur.done = true;
+      if(v?.praised) cur.praised = true;
+    });
+  });
+  out.savedAt = Math.max(Number(out.savedAt)||0, Number(local.savedAt)||0);
+  return out;
+}
 function save(){
   _dirty = true;
   if(_saveTimer) clearTimeout(_saveTimer);
@@ -722,11 +786,12 @@ async function flushSave(){
   if(SYNC.enabled && SYNC.proxyUrl){
     setSyncState('syncing');
     const ok = await cloudSave(S);
-    if(ok){ setSyncState('synced'); if(SYNC.keepLocalCache) _cacheLocal(); }
+    if(ok){ setSyncState('synced'); if(SYNC.keepLocalCache) _cacheLocal(); if(window._eggBC) window._eggBC.postMessage({s:S}); }
     else { setSyncState('offline'); if(SYNC.keepLocalCache) _cacheLocal(); toast('⚠️ 云端同步失败，已用本地缓存'); }
   } else {
     _cacheLocal();
     setSyncState('local');
+    if(window._eggBC) window._eggBC.postMessage({s:S});
   }
 }
 function _cacheLocal(){ try{ localStorage.setItem(SKEY, JSON.stringify(S)); }catch(e){} }
