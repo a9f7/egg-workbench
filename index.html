@@ -584,7 +584,7 @@ const SYNC = {
   path: 'data/state.json',
   branch: 'main',
   proxyUrl: 'https://egg-workbench-proxy.cometet.workers.dev',  // 服务端代理地址（不含末尾 /）；为空则退回本地模式
-  keepLocalCache: false           // 用户要求：不落本地浏览器，云端为唯一主存
+  keepLocalCache: true            // 云端为主存、多端一致；本地仅作防丢安全网（云端不通时保命，连通后仍以云端为准）
 };
 let _cloudSha = null;              // 当前云端文件 sha（用于 PUT 冲突处理）
 let _saveTimer = null;
@@ -643,12 +643,17 @@ async function bootstrap(){
   if(SYNC.enabled && SYNC.proxyUrl){
     setSyncState('syncing');
     const remote = await cloudLoad();
-    if(remote){ S = load(remote); setSyncState('synced'); }
-    else {
-      const cache = (function(){ try{ return JSON.parse(localStorage.getItem(SKEY)); }catch(e){ return null; } })();
-      S = load(cache || null);
-      setSyncState(cache ? 'offline' : 'synced');
-      _dirty = true; flushSave();               // 首次把本地/新建数据写回云端
+    const localRaw = (function(){ try{ return JSON.parse(localStorage.getItem(SKEY)); }catch(e){ return null; } })();
+    const localTs = (localRaw && typeof localRaw.savedAt==='number') ? localRaw.savedAt : 0;
+    const remoteTs = (remote && typeof remote.savedAt==='number') ? remote.savedAt : 0;
+    if(remote && remoteTs >= localTs){
+      S = load(remote); setSyncState('synced');        // 云端更新或更一致：以云端为准
+    } else if(localRaw){
+      S = load(localRaw); setSyncState('offline');     // 本地更新 / 云端空：以本地为准并写回云端
+      _dirty = true; flushSave();
+    } else {
+      S = load(null); setSyncState('synced');          // 本地云端皆空：全新开始
+      _dirty = true; flushSave();
     }
     setInterval(syncPull, 60000);
   } else {
