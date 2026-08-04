@@ -2941,12 +2941,12 @@ function buildListWithWrong(arr, scope, cat){
   const wrongItems = S.wrong
     .filter(w => (w.cat||'m')===cat && arr.some(a => a.q===w.q))
     .map(w => arr.find(a => a.q===w.q));
-  /* 基础题排除今日已出，且不再包含错题本前插的项 */
+  /* 基础题排除今日已出（已通过答题 mark seen 的），且不包含错题本前插的项 */
   const newItems = arr.filter(a => !seen[a.q] && !wrongItems.includes(a));
-  const list = wrongItems.concat(shuffle(newItems));
-  /* 仅给"新题"打 seen 标记（错题反复出，不耗 seen 配额） */
-  newItems.forEach(it => { if(it && it.q) seen[it.q]=1; });
-  return list;
+  /* 关键：仅返回列表，不再预先 mark seen。
+     seen 由调用方在用户实际答完一题后通过 _markSeen(scope, item.q) 标记，
+     否则会出现"一进模式 99 题全占满，刷新后变今日已练完"的 bug。 */
+  return wrongItems.concat(shuffle(newItems));
 }
 /* 语文选项打乱：56 道选择题此前 a:0 全是 A，现启动时一次性打乱每题 opts 并更新 a，让正确答案分布到 A/B/C/D */
 function shuffleCNOpts(){
@@ -3108,17 +3108,19 @@ function renderCNMean(box){
   }
   if(!cnQ||cnQ.mode!=='mean' || cnQ._grade!==cnGrade){
     const scope = 'cmm-'+cnGrade;
-    const wrongItems = S.wrong.filter(w => (w.cat||'m')==='c' && arr.some(a => a.q===w.q) && !_isSeen(scope, w.q))
+    /* 错题本始终前插（不管今日是否已出） */
+    const wrongItems = S.wrong.filter(w => (w.cat||'m')==='c' && arr.some(a => a.q===w.q))
       .map(w => arr.find(a => a.q===w.q));
+    /* 基础题排除今日已答过（通过 _markSeen 标记）的 */
     const newItems = arr.filter(a => !_isSeen(scope, a.q) && !wrongItems.includes(a));
+    /* 错题（"答错过"）始终高频复现，不占 seen 配额；新题保留在 seen 名额内，由用户答完一题后再 mark */
     const list = wrongItems.concat(shuffle(newItems));
     if(!list.length){
       box.innerHTML='<div style="text-align:center;padding:30px 0"><div style="font-size:48px">🎉</div><h3 style="margin:8px 0">今日词意解释已练完</h3><p class="muted">已答对 '+S.cnM.length+' / '+cnDS.mean.length+'，明天再来新题</p><button class="btn mint" id="mMore">🔄 全部重新练习</button></div>';
       $('#mMore').onclick=()=>{ S.cnM=[]; save(); cnQ=null; renderCN(); };
       return;
     }
-    list.forEach(it => _markSeen(scope, it.q));
-    cnQ={mode:'mean', _grade:cnGrade, idx:0, list:list};
+    cnQ={mode:'mean', _grade:cnGrade, idx:0, list:list, scope:scope};
   }
   const it=cnQ.list[cnQ.idx];
   const gi=cnDS.mean.indexOf(it);
@@ -3136,10 +3138,13 @@ function renderCNMean(box){
     if(oi!==it.a){ var corr=box.querySelectorAll('.opt')[it.a]; if(corr) corr.classList.add('on-ok'); }
     if(oi===it.a){
       const k=ck(cnGrade,gi); S.cnM.push(k); S.cnQuiz++; S.today.c++; const got=maybeCnSun(); save(); renderHome();
+      _markSeen(cnQ.scope, it.q); // 用户答完一题才占 seen 名额
       fb.className='feedback ok'; fb.innerHTML='✅ 答对啦！'+(got?' 🌟☀️+1':'');
       cnQ.idx++;
       setTimeout(()=>{ cnQ=null; renderCNMean(box); }, got?700:1200);
     } else {
+      _markSeen(cnQ.scope, it.q); // 答错也算已出（今天不再出，但继续入错题本）
+      pushWrong('c', it.q, it.opts[it.a]);
       fb.className='feedback no'; fb.innerHTML='❌ 再想想，正确答案是 '+it.opts[it.a];
       setTimeout(()=>{ cnQ.idx++; cnQ=null; renderCNMean(box); },1400);
     }
@@ -3184,8 +3189,7 @@ function renderCNRead(box){
     }
     return renderCNRead(box);
   }
-  /* 题目呈现即标记今日已出（无论后续答对/答错，今日不再出） */
-  _markSeen(scope, curQ.q.q);
+  /* 用户答完一题后再 mark seen（避免"进入就占满"的 bug） */
   const q=curQ.q;
   const totalQs=sec.qs.length, doneQs=sec.qs.filter(x=>x.done).length;
   const optsHtml=q.opts.map((o,oi)=>`<button class="opt" data-o="${oi}">${String.fromCharCode(65+oi)}. ${o}</button>`).join('');
@@ -3205,10 +3209,13 @@ function renderCNRead(box){
     if(oi!==q.a){ var corr=box.querySelectorAll('.opt')[q.a]; if(corr) corr.classList.add('on-ok'); }
     if(oi===q.a){
       S.cnR.push(curQ.id); S.cnQuiz++; S.today.c++; const got=maybeCnSun(); save(); renderHome();
+      _markSeen(scope, curQ.q.q); // 用户答完一题才占 seen 名额
       fb.className='feedback ok'; fb.innerHTML='✅ 答对啦！'+(got?' 🌟☀️+1':'');
       cnQ.qIdx++;
       setTimeout(()=>{ cnQ=null; renderCNRead(box); }, got?700:1200);
     } else {
+      _markSeen(scope, curQ.q.q); // 答错也算已出
+      pushWrong('c', curQ.q.q, q.opts[q.a]);
       fb.className='feedback no'; fb.innerHTML='❌ 再想想，正确答案是 '+q.opts[q.a];
       setTimeout(()=>{ cnQ.qIdx++; cnQ=null; renderCNRead(box); },1400);
     }
@@ -3547,6 +3554,7 @@ function renderMath(){
         if(!v){toast('✏️ 写一下答案吧');return;}
         const ok = item.free ? v===String(item.a) : Number(v)===item.a;
         const fb=document.getElementById('mFb');
+        _markSeen(scope, item.q); // 用户实际答完才占 seen 名额
         if(ok){
           S.mathCorrect++; S.total.m++; S.today.m++; maybeMathSun();
           fb.className='feedback ok'; fb.innerHTML='🎉 正确！太棒了！';
@@ -3629,6 +3637,7 @@ function renderMath(){
     /* 教材习题属思考型，可多练且不与口算挂钩 */
     const after=function(ok, correct){
       const fb=document.getElementById(fbId);
+      _markSeen(scope, item.q); // 用户实际答完一题才占 seen 名额
       if(ok){
         S.mathCorrect++; S.total.m++; S.today.m++; maybeMathSun();
         fb.className='feedback ok'; fb.innerHTML='🎉 正确！太棒了！';
