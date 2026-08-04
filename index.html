@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-title" content="蛋蛋打卡">
 <meta name="theme-color" content="#ff8fb8">
 <link rel="manifest" href="data:application/manifest+json,%7B%22name%22:%22%E8%9B%8B%E8%9B%8B%E7%9A%84%E5%81%87%E6%9C%9F%E9%A2%84%E4%B9%A0%E6%89%93%E5%8D%A1%22,%22short_name%22:%22%E8%9B%8B%E8%9B%8B%E6%89%93%E5%8D%A1%22,%22start_url%22:%22.%22,%22display%22:%22standalone%22,%22background_color%22:%22%23fff7fb%22,%22theme_color%22:%22%23ff8fb8%22%7D">
-<meta name="description" content="蛋蛋的假期预习打卡工作台：三年级下册·四年级上册 语文背诵、数学口算、英语拼写（教科版，含复习预习）、运动打卡、阳光值与小猫养成，假期预习好帮手。">
+<meta name="description" content="蛋蛋的假期预习打卡工作台：三年级下册·四年级上册 语文背诵、数学练习、英语拼写（教科版，含复习预习）、运动打卡、阳光值与小猫养成，假期预习好帮手。">
 <title>蛋蛋的假期预习打卡工作台</title>
 <style>
   :root{
@@ -378,7 +378,7 @@
 
     <div class="mini-stat">
       <div class="m" data-go="chinese"><b id="mC">0</b><span>语文背诵</span></div>
-      <div class="m" data-go="math"><b id="mM">0</b><span>数学口算</span></div>
+      <div class="m" data-go="math"><b id="mM">0</b><span>数学练习</span></div>
       <div class="m" data-go="english"><b id="mE">0</b><span>英语习题</span></div>
     </div>
     <div class="mini-stat" style="margin-top:10px">
@@ -425,14 +425,12 @@
   <!-- MATH -->
   <section class="view" id="v-math">
     <div class="card">
-      <h3>➗ 数学专区 · 口算练习</h3>
+      <h3>➗ 数学专区 · 习题练习</h3>
       <div class="seg" id="mathGradeSeg" style="margin-bottom:8px"></div>
       <div class="seg" id="mathSeg">
-        <button class="on" data-mode="mental">口算刷题</button>
-        <button data-mode="unit">单元重点题</button>
-      <button data-mode="star">★ 星级口算</button>
-      <button data-mode="book">📘 教材习题</button>
-      <button data-mode="wrong">错题本</button>
+        <button class="on" data-mode="unit">单元重点题</button>
+        <button data-mode="book">📘 教材习题</button>
+        <button data-mode="wrong">错题本</button>
       </div>
       <div id="mathBox"></div>
     </div>
@@ -571,8 +569,6 @@ function speak(t){ try{ speechSynthesis.cancel(); const u=new SpeechSynthesisUtt
 /* ============ state ============ */
 const SKEY='egg_checkin_v1';
 const SVER=1;                       // 数据 schema 版本，便于日后迁移
-const MATH_CAP=15;                   // 口算每日上限：做完 15 题后冻结
-const MATH_FREEZE_MS=12*60*60*1000; // 口算冻结时长：12 小时
 let S = load();
 function normalize(s){
   if(!s || typeof s!=='object') s={};
@@ -589,13 +585,11 @@ function normalize(s){
   s.cnR = Array.isArray(s.cnR)?s.cnR:[];                      // 阅读理解已完成题id
   s.enPrev = Array.isArray(s.enPrev)?s.enPrev:[];            // 英语预习·已记住单词key
   s.enRev = Array.isArray(s.enRev)?s.enRev:[];              // 英语复习·句型自测已完成key
-  s.mathCorrect = s.mathCorrect||0; // 累计口算正确
-  s.mathMentalCount = s.mathMentalCount||0; // 本轮口算已做题目数（用于 15 题冻结）
-  s.mathFreezeUntil = s.mathFreezeUntil||0; // 口算冻结截止时间戳(ms)，0=未冻结
+  s.mathCorrect = s.mathCorrect||0; // 累计答对（数学）
   s.engCorrect = s.engCorrect||0;   // 累计英语正确
   s.total = s.total||{c:0,m:0,e:0}; // 累计各科完成
-  s.today = s.today||{date:'',c:0,m:0,e:0,ex:[]};
-  s.wrong = Array.isArray(s.wrong)?s.wrong:[];              // 数学错题
+  s.today = s.today||{date:'',c:0,m:0,e:0,ex:[],seen:{}}; // seen: {scope: {q:1}} 每日已出题（按模式+科目+年级+题文去重）
+  s.wrong = Array.isArray(s.wrong)?s.wrong:[];              // 错题本：[{cat:'m'|'c', q, a}]（旧数据无 cat 默认 'm'）
   s.exDone = s.exDone||{};          // 运动完成(按日期)
   s.dog = s.dog||{growth:0, inv:{}, wardrobe:[], equipped:null};
   // 确保各物品计数存在；旧版单「猫粮」(inv.food) 兼容迁移到 小鱼干(fish)
@@ -609,7 +603,7 @@ function load(raw){
   if(raw===undefined){ try{ raw=JSON.parse(localStorage.getItem(SKEY)); }catch(e){ raw=null; } }
   const s=normalize(raw);
   if(s.today.date!==todayStr()){
-    s.today={date:todayStr(),c:0,m:0,e:0,ex:[]};
+    s.today={date:todayStr(),c:0,m:0,e:0,ex:[],seen:{}};
     s.exDone[s.today.date]=s.exDone[s.today.date]||{};
   }
   return s;
@@ -2923,9 +2917,53 @@ function cnSet(){ return cnGrade==='3x'
   : {recite:CN, words:CN_WORDS, syn:CN_SYN, mean:CN_MEAN, read:CN_READ}; }
 function enSet(){ return enGrade==='3x' ? EN3_UNITS : EN_UNITS; }
 function mathSet(){ return mathGrade==='3x'
-  ? {book:MATH3_BOOK, unit:UNIT3_MATH, star:STAR3_MATH}
-  : {book:MATH_BOOK, unit:UNIT_MATH, star:STAR_MATH}; }
+  ? {book:MATH3_BOOK, unit:UNIT3_MATH}
+  : {book:MATH_BOOK, unit:UNIT_MATH}; }
 function ck(g,k){ return (g==='4s')? String(k) : g+':'+String(k); }
+/* ─── 错题本/每日去重/选项打乱 工具 ─── */
+function _ensureTodaySeen(scope){
+  if(!S.today||!S.today.seen) S.today={date:todayStr(),c:0,m:0,e:0,ex:[],seen:{}};
+  if(!S.today.seen[scope]) S.today.seen[scope]={};
+  return S.today.seen[scope];
+}
+function _isSeen(scope,q){ const m=_ensureTodaySeen(scope); return !!m[q]; }
+function _markSeen(scope,q){ const m=_ensureTodaySeen(scope); m[q]=1; }
+/* 按 (grade, scope) 维度生成练习列表：
+   - 错题本里能匹配到原题的项前插（更高频次出现）
+   - 错题本中今日已出过的、且未答对的会持续前插
+   - 答对后会自动从错题本移除，下次出题时不再前插
+   - 基础题库中今日未出过的题打乱后拼接
+   - 全部生成项均标记为今日已见，避免同日内重复 */
+function buildListWithWrong(arr, scope, cat){
+  cat = cat||'m';
+  const seen = _ensureTodaySeen(scope);
+  const wrongItems = S.wrong
+    .filter(w => (w.cat||'m')===cat && arr.some(a => a.q===w.q) && !seen[w.q])
+    .map(w => arr.find(a => a.q===w.q));
+  const newItems = arr.filter(a => !seen[a.q] && !wrongItems.includes(a));
+  const list = wrongItems.concat(shuffle(newItems));
+  list.forEach(it => { if(it && it.q) seen[it.q]=1; });
+  return list;
+}
+/* 语文选项打乱：56 道选择题此前 a:0 全是 A，现启动时一次性打乱每题 opts 并更新 a，让正确答案分布到 A/B/C/D */
+function shuffleCNOpts(){
+  const groups = [CN_MEAN, CN3_MEAN, CN_READ, CN3_READ];
+  groups.forEach(g => {
+    if(!Array.isArray(g)) return;
+    g.forEach(q => {
+      if(Array.isArray(q.opts) && q.opts.length>1){
+        const arr = q.opts.slice();
+        const correct = arr[q.a];
+        for(let i=arr.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [arr[i],arr[j]]=[arr[j],arr[i]]; }
+        q.opts = arr;
+        q.a = arr.indexOf(correct);
+      }
+    });
+  });
+}
+/* 答对：从错题本移除；答错：加入错题本（允许重复进入，后续再次答对才移除） */
+function removeWrong(cat, q){ cat = cat||'m'; S.wrong = S.wrong.filter(w => !((w.cat||'m')===cat && w.q===q)); }
+function pushWrong(cat, q, a){ cat = cat||'m'; S.wrong.push({cat:cat, q:q, a:a}); }
 function maybeCnSun(){
   if(S.cnQuiz>0 && S.cnQuiz%5===0){ S.sun+=1; toast('🎉 语文答题5题，☀️阳光+1！'); return true; }
   return false;
@@ -2952,7 +2990,7 @@ function renderCN(){
     gseg.appendChild(b);
   });
   const seg=$('#cnSeg');
-  const modes=[{k:'recite',n:'📜 背诵'},{k:'words',n:'🔤 生字生词'},{k:'syn',n:'🔁 近义反义'},{k:'mean',n:'📖 词意解释'},{k:'read',n:'📝 阅读理解'}];
+  const modes=[{k:'recite',n:'📜 背诵'},{k:'words',n:'🔤 生字生词'},{k:'syn',n:'🔁 近义反义'},{k:'mean',n:'📖 词意解释'},{k:'read',n:'📝 阅读理解'},{k:'wrong',n:'📒 错题本'}];
   seg.innerHTML='';
   modes.forEach(m=>{
     const b=document.createElement('button'); b.textContent=m.n; b.dataset.k=m.k;
@@ -2960,8 +2998,19 @@ function renderCN(){
     b.onclick=()=>{ cnMode=m.k; cnPage=0; cnQ=null; renderCN(); };
     seg.appendChild(b);
   });
-  const box=$('#cnList'); box.innerHTML='';
-  ({recite:renderCNRecite, words:renderCNWords, syn:renderCNSyn, mean:renderCNMean, read:renderCNRead}[cnMode])(box);
+  const box=$('#cnList');   box.innerHTML='';
+  ({recite:renderCNRecite, words:renderCNWords, syn:renderCNSyn, mean:renderCNMean, read:renderCNRead, wrong:renderCNWrong}[cnMode])(box);
+}
+function renderCNWrong(box){
+  const list = S.wrong.filter(w => (w.cat||'m')==='c');
+  if(!list.length){ box.innerHTML='<div style="text-align:center;padding:30px 0"><div style="font-size:48px">🎉</div><h3 style="margin:8px 0">还没有语文错题，继续保持！</h3></div>'; return; }
+  box.innerHTML='<div class="quiz-top"><span>📒 语文错题本</span><span>共 '+list.length+' 题</span></div>'+
+    list.map((w,i)=>`<div class="item"><div class="it"><div class="t">${w.q}</div><div class="s">正确答案：${w.a}</div></div><button class="chk" data-cdel="${i}">移除</button></div>`).join('');
+  $$('#cnList [data-cdel]').forEach(b=>b.onclick=()=>{
+    const target = list[+b.dataset.cdel];
+    S.wrong = S.wrong.filter(w => w!==target);
+    save(); renderCNWrong(box);
+  });
 }
 function renderCNRecite(box){
   const arr=cnDS.recite;
@@ -3054,7 +3103,20 @@ function renderCNMean(box){
     $('#mRetry').onclick=()=>{ S.cnM=[]; save(); cnQ=null; renderCN(); };
     return;
   }
-  if(!cnQ||cnQ.mode!=='mean'){ cnQ={mode:'mean', idx:0, list:shuffle(arr.slice())}; }
+  if(!cnQ||cnQ.mode!=='mean' || cnQ._grade!==cnGrade){
+    const scope = 'cmm-'+cnGrade;
+    const wrongItems = S.wrong.filter(w => (w.cat||'m')==='c' && arr.some(a => a.q===w.q) && !_isSeen(scope, w.q))
+      .map(w => arr.find(a => a.q===w.q));
+    const newItems = arr.filter(a => !_isSeen(scope, a.q) && !wrongItems.includes(a));
+    const list = wrongItems.concat(shuffle(newItems));
+    if(!list.length){
+      box.innerHTML='<div style="text-align:center;padding:30px 0"><div style="font-size:48px">🎉</div><h3 style="margin:8px 0">今日词意解释已练完</h3><p class="muted">已答对 '+S.cnM.length+' / '+cnDS.mean.length+'，明天再来新题</p><button class="btn mint" id="mMore">🔄 全部重新练习</button></div>';
+      $('#mMore').onclick=()=>{ S.cnM=[]; save(); cnQ=null; renderCN(); };
+      return;
+    }
+    list.forEach(it => _markSeen(scope, it.q));
+    cnQ={mode:'mean', _grade:cnGrade, idx:0, list:list};
+  }
   const it=cnQ.list[cnQ.idx];
   const gi=cnDS.mean.indexOf(it);
   const optsHtml=it.opts.map((o,oi)=>`<button class="opt" data-o="${oi}">${String.fromCharCode(65+oi)}. ${o}</button>`).join('');
@@ -3083,39 +3145,44 @@ function renderCNMean(box){
 }
 
 function renderCNRead(box){
-  /* 筛选出还有未答题的段落 */
+  const scope = 'cmr-'+cnGrade;
+  /* 筛选出还有未答题的段落（每题还要排除今日已出题） */
   const arr=cnDS.read.map((p,pi)=>({
     pi, p,
-    qs:p.qs.map((q,qi)=>({qi, q, id:ck(cnGrade,pi+'-'+qi), done:S.cnR.includes(ck(cnGrade,pi+'-'+qi))}))
-  })).filter(x=>x.qs.some(q=>!q.done));
+    qs:p.qs.map((q,qi)=>({qi, q, id:ck(cnGrade,pi+'-'+qi), done:S.cnR.includes(ck(cnGrade,pi+'-'+qi)), seen:_isSeen(scope, q.q)}))
+  })).filter(x=>x.qs.some(q=>!q.done && !q.seen));
   /* 全部做完 */
   if(!arr.length){
-    box.innerHTML='<div style="text-align:center;padding:30px 0"><div style="font-size:48px">🏆</div><h3 style="margin:8px 0">阅读理解全部完成！</h3><p class="muted">已读完 '+cnDS.read.length+' 篇阅读材料</p><button class="btn mint" id="rRetry">🔄 再练一遍</button></div>';
+    box.innerHTML='<div style="text-align:center;padding:30px 0"><div style="font-size:48px">🏆</div><h3 style="margin:8px 0">今日阅读理解已练完！</h3><p class="muted">已答对 '+S.cnR.length+' / '+cnDS.read.reduce((n,p)=>n+p.qs.length,0)+' 题</p><button class="btn mint" id="rRetry">🔄 全部重新练习</button></div>';
     $('#rRetry').onclick=()=>{ S.cnR=[]; save(); cnQ=null; renderCN(); };
     return;
   }
   /* 初始化或恢复状态 */
-  if(!cnQ||cnQ.mode!=='read'){
-    cnQ={mode:'read', rIdx:0, qIdx:0, list:arr};
+  if(!cnQ||cnQ.mode!=='read' || cnQ._grade!==cnGrade){
+    cnQ={mode:'read', _grade:cnGrade, rIdx:0, qIdx:0, list:arr};
   }
   const sec=cnQ.list[cnQ.rIdx];
   const p=sec.p, qiIdx=cnQ.qIdx;
-  /* 找到当前段落的下一道未做题 */
+  /* 找到当前段落的下一道未做题（排除已答对 + 今日已出） */
   let curQ=null, qAt=-1;
   for(let i=0;i<sec.qs.length;i++){
-    if(!sec.qs[i].done){ curQ=sec.qs[i]; qAt=i; break; }
+    if(sec.qs[i].done) continue;
+    if(sec.qs[i].seen) continue;
+    curQ=sec.qs[i]; qAt=i; break;
   }
-  /* 当前段落全部做完了，跳下一段 */
+  /* 当前段落没有可做题（要么全答对要么全今日已出），跳下一段 */
   if(!curQ){
     cnQ.rIdx++; cnQ.qIdx=0;
     if(cnQ.rIdx>=cnQ.list.length){
       /* 全部做完 */
-      box.innerHTML='<div style="text-align:center;padding:30px 0"><div style="font-size:48px">🏆</div><h3 style="margin:8px 0">阅读理解全部完成！</h3><p class="muted">已读完 '+cnDS.read.length+' 篇阅读材料</p><button class="btn mint" id="rRetry2">🔄 再练一遍</button></div>';
+      box.innerHTML='<div style="text-align:center;padding:30px 0"><div style="font-size:48px">🏆</div><h3 style="margin:8px 0">今日阅读理解已练完！</h3><p class="muted">已答对 '+S.cnR.length+' / '+cnDS.read.reduce((n,p)=>n+p.qs.length,0)+' 题</p><button class="btn mint" id="rRetry2">🔄 全部重新练习</button></div>';
       $('#rRetry2').onclick=()=>{ S.cnR=[]; save(); cnQ=null; renderCN(); };
       return;
     }
     return renderCNRead(box);
   }
+  /* 题目呈现即标记今日已出（无论后续答对/答错，今日不再出） */
+  _markSeen(scope, curQ.q.q);
   const q=curQ.q;
   const totalQs=sec.qs.length, doneQs=sec.qs.filter(x=>x.done).length;
   const optsHtml=q.opts.map((o,oi)=>`<button class="opt" data-o="${oi}">${String.fromCharCode(65+oi)}. ${o}</button>`).join('');
@@ -3149,9 +3216,11 @@ function renderCNRead(box){
 
 
 /* ============ math ============ */
-let mathMode='mental', mathQ=null;
+let mathMode='unit', mathQ=null;
 /* 模式切换：直接在 onclick 中处理，避免事件委托问题 */
 document.addEventListener('DOMContentLoaded',()=>{
+  /* 启动时一次性打乱语文选择题答案分布（修复原 a:0 全是 A 的 bug） */
+  try{ shuffleCNOpts(); }catch(e){ console.warn('shuffleCNOpts 失败:',e); }
   const seg=document.getElementById('mathSeg');
   if(!seg)return;
   seg.querySelectorAll('button').forEach(btn=>{
@@ -3172,22 +3241,6 @@ $('#mathSeg')?.addEventListener('click',e=>{
   $$('#mathSeg button').forEach(x=>x.classList.remove('on')); b.classList.add('on');
   mathMode=b.dataset.mode; mathQ=null; renderMath();
 });
-function genMath(){
-  const r=Math.random();
-  if(r<0.4){ // 加法
-    const a=Math.floor(Math.random()*900)+100, b=Math.floor(Math.random()*900)+100;
-    return {q:`${a} + ${b} = ?`, a:a+b};
-  } else if(r<0.7){ // 减法
-    let a=Math.floor(Math.random()*900)+200, b=Math.floor(Math.random()*a);
-    return {q:`${a} - ${b} = ?`, a:a-b};
-  } else if(r<0.9){ // 乘法
-    const a=Math.floor(Math.random()*9)+2, b=Math.floor(Math.random()*9)+2;
-    return {q:`${a} × ${b} = ?`, a:a*b};
-  } else { // 除法
-    const b=Math.floor(Math.random()*9)+2, a=b*(Math.floor(Math.random()*9)+2);
-    return {q:`${a} ÷ ${b} = ?`, a:a/b};
-  }
-}
 /* ═══════════ 三年级下册 · 数学（人教版三下 8个单元） ═══════════ */
 const MATH3_BOOK=[
   /* 第一单元：位置与方向（一） */
@@ -3196,26 +3249,6 @@ const MATH3_BOOK=[
   {q:'晚上，北极星所在的方向是（    ）方。', a:'北', free:true, tip:'位置与方向'},
   {q:'旗杆的影子在东边，说明太阳在（    ）边。', a:'西', free:true, tip:'位置与方向'},
   {q:'小明面向北，他的后面是（    ）方。', a:'南', free:true, tip:'位置与方向'},
-  /* 第二单元：除数是一位数的除法 */
-  {q:'125 ÷ 5 = （    ）。', a:'25', free:true, tip:'除数是一位数的除法'},
-  {q:'306 ÷ 3 = （    ）。', a:'102', free:true, tip:'除数是一位数的除法'},
-  {q:'480 ÷ 6 = （    ）。', a:'80', free:true, tip:'除数是一位数的除法'},
-  {q:'315 ÷ 7 = （    ）。', a:'45', free:true, tip:'除数是一位数的除法'},
-  {q:'208 ÷ 4 = （    ）。', a:'52', free:true, tip:'除数是一位数的除法'},
-  {q:'736 ÷ 8 = （    ）。', a:'92', free:true, tip:'除数是一位数的除法'},
-  {q:'900 ÷ 3 = （    ）。', a:'300', free:true, tip:'除数是一位数的除法'},
-  {q:'420 ÷ 7 = （    ）。', a:'60', free:true, tip:'除数是一位数的除法'},
-  {q:'639 ÷ 3 = （    ）。', a:'213', free:true, tip:'除数是一位数的除法'},
-  /* 第四单元：两位数乘两位数 */
-  {q:'23 × 12 = （    ）。', a:'276', free:true, tip:'两位数乘两位数'},
-  {q:'34 × 21 = （    ）。', a:'714', free:true, tip:'两位数乘两位数'},
-  {q:'12 × 13 = （    ）。', a:'156', free:true, tip:'两位数乘两位数'},
-  {q:'24 × 25 = （    ）。', a:'600', free:true, tip:'两位数乘两位数'},
-  {q:'16 × 18 = （    ）。', a:'288', free:true, tip:'两位数乘两位数'},
-  {q:'33 × 22 = （    ）。', a:'726', free:true, tip:'两位数乘两位数'},
-  {q:'45 × 11 = （    ）。', a:'495', free:true, tip:'两位数乘两位数'},
-  {q:'14 × 12 = （    ）。', a:'168', free:true, tip:'两位数乘两位数'},
-  /* 第五单元：面积 */
   {q:'一个长方形长12厘米、宽8厘米，面积是（    ）平方厘米。', a:'96', free:true, tip:'长方形面积'},
   {q:'一个正方形边长9厘米，面积是（    ）平方厘米。', a:'81', free:true, tip:'正方形面积'},
   {q:'1平方米 = （    ）平方分米。', a:'100', free:true, tip:'面积单位换算'},
@@ -3228,10 +3261,6 @@ const MATH3_BOOK=[
   {q:'闰年的2月有（    ）天。', a:'29', free:true, tip:'年、月、日'},
   {q:'2024年是（    ）年。（填“平”或“闰”）', a:'闰', free:true, tip:'平年与闰年'},
   {q:'儿童节是（    ）月（    ）日。', a:'6月1日', free:true, tip:'年、月、日'},
-  /* 第七单元：小数的初步认识 */
-  {q:'0.5 + 0.3 = （    ）。', a:'0.8', free:true, tip:'小数加减'},
-  {q:'1.2 - 0.7 = （    ）。', a:'0.5', free:true, tip:'小数加减'},
-  {q:'3.4元 + 2.5元 = （    ）元。', a:'5.9', free:true, tip:'小数加减'},
   {q:'比较大小：0.8 ○ 1.2（填“>”或“<”）', a:'<', free:true, tip:'小数比较'},
   {q:'读出小数：0.6 读作（        ）。', a:'零点六', free:true, tip:'小数读法'},
   /* 第八单元：数学广角——搭配（二） */
@@ -3275,27 +3304,6 @@ const UNIT3_MATH=[
   {q:'从4、5、6三个数字中选两个组成两位数，能组成（    ）个不同的两位数。', a:'6', free:true, tip:'排列问题'},
   {q:'25 × 40 的积的末尾有（    ）个0。', a:'3', free:true, tip:'末尾0的个数'},
   {q:'一个数的5倍是450，这个数是（    ）。', a:'90', free:true, tip:'除法应用'}
-];
-const STAR3_MATH=[
-  /* 三下 星级口算 */
-  {q:'15 × 3 =', a:'45', free:true, tip:'口算乘法'},
-  {q:'24 × 2 =', a:'48', free:true, tip:'口算乘法'},
-  {q:'13 × 4 =', a:'52', free:true, tip:'口算乘法'},
-  {q:'11 × 6 =', a:'66', free:true, tip:'口算乘法'},
-  {q:'12 × 12 =', a:'144', free:true, tip:'两位数乘两位数'},
-  {q:'23 × 11 =', a:'253', free:true, tip:'两位数乘两位数'},
-  {q:'60 ÷ 3 =', a:'20', free:true, tip:'口算除法'},
-  {q:'84 ÷ 4 =', a:'21', free:true, tip:'口算除法'},
-  {q:'96 ÷ 3 =', a:'32', free:true, tip:'口算除法'},
-  {q:'720 ÷ 9 =', a:'80', free:true, tip:'口算除法'},
-  {q:'480 ÷ 6 =', a:'80', free:true, tip:'口算除法'},
-  {q:'540 ÷ 6 =', a:'90', free:true, tip:'口算除法'},
-  {q:'350 + 70 =', a:'420', free:true, tip:'口算加法'},
-  {q:'600 - 240 =', a:'360', free:true, tip:'口算减法'},
-  {q:'0.3 + 0.4 =', a:'0.7', free:true, tip:'小数口算'},
-  {q:'1.5 - 0.8 =', a:'0.7', free:true, tip:'小数口算'},
-  {q:'7 × 90 =', a:'630', free:true, tip:'口算乘法'},
-  {q:'25 × 4 =', a:'100', free:true, tip:'口算乘法'}
 ];
 
 const UNIT_MATH=[
@@ -3380,8 +3388,6 @@ const UNIT_MATH=[
   {q:'在两条平行线之间画若干条垂线段，这些垂线段的长度都（    ）。', a:'相等', free:true, tip:'平行线间距离'},
 
   /* ═══════════ 第六单元：除数是两位数的除法（教材·做一做/练习十二~十八） ═══════════ */
-  {q:'60 ÷ 30 = （    ）。', a:'2', free:true, tip:'除法口算'},
-  {q:'90 ÷ 30 = （    ）。', a:'3', free:true, tip:'除法口算'},
   {q:'（    ）里最大能填几：20 ×（    ）< 81。', a:'4', free:true, tip:'最大填几'},
   {q:'（    ）里最大能填几：50 ×（    ）< 180。', a:'3', free:true, tip:'最大填几'},
   {q:'92本连环画，每班分30本，可以分给（    ）个班。', a:'3', free:true, tip:'有余数除法'},
@@ -3417,52 +3423,6 @@ const UNIT_MATH=[
     {q:'排队打水时，合理安排可以（    ）总等待氮时间。（填“减少”或“增加”）', a:'减少', free:true, tip:'优化思想'},
 ];
 
-/* ═══════════ ★ 星级口算天天练（人教版四上·教材原题） ═══════════ */
-/* 题目全部取自 IMA 知识库「蛋蛋教学」文件夹中的《26秋 4上数学 星级口算天天练》（荣德基主编·安徽教育出版社）PDF 原文 */
-const STAR_MATH=[
-  /* —— 第一单元 大数的认识 —— */
-  {q:'23 × 3 =', a:'69', free:true, tip:'口算乘法'},
-  {q:'120 ÷ 6 =', a:'20', free:true, tip:'口算除法'},
-  {q:'96 ÷ 3 =', a:'32', free:true, tip:'口算除法'},
-  {q:'31 × 2 =', a:'62', free:true, tip:'口算乘法'},
-  {q:'550 - 380 =', a:'170', free:true, tip:'口算减法'},
-  {q:'400 × 5 =', a:'2000', free:true, tip:'口算乘法'},
-  {q:'40 ÷ 4 =', a:'10', free:true, tip:'口算除法'},
-  {q:'800 × 4 =', a:'3200', free:true, tip:'口算乘法'},
-  {q:'2000 × 4 =', a:'8000', free:true, tip:'口算乘法'},
-  {q:'46 ÷ 2 =', a:'23', free:true, tip:'口算除法'},
-  {q:'240 ÷ 4 =', a:'60', free:true, tip:'口算除法'},
-  {q:'32 × 3 =', a:'96', free:true, tip:'口算乘法'},
-  {q:'360 ÷ 9 =', a:'40', free:true, tip:'口算除法'},
-  {q:'42 × 2 =', a:'84', free:true, tip:'口算乘法'},
-  {q:'105 ÷ 5 =', a:'21', free:true, tip:'口算除法'},
-  {q:'2400 ÷ 6 =', a:'400', free:true, tip:'口算除法'},
-  {q:'30 × 5 =', a:'150', free:true, tip:'口算乘法'},
-  {q:'540 ÷ 9 =', a:'60', free:true, tip:'口算除法'},
-  /* —— 第二单元 公顷和平方千米 —— */
-  {q:'7公顷 = （    ）平方米。', a:'70000', free:true, tip:'面积换算'},
-  /* —— 第三单元 角的度量 —— */
-  {q:'850 + 80 =', a:'930', free:true, tip:'口算加法'},
-  {q:'130 - 90 =', a:'40', free:true, tip:'口算减法'},
-  {q:'96 ÷ 3 =', a:'32', free:true, tip:'口算除法'},
-  {q:'200 × 5 =', a:'1000', free:true, tip:'口算乘法'},
-  {q:'350 - 70 =', a:'280', free:true, tip:'口算减法'},
-  {q:'224 + 66 =', a:'290', free:true, tip:'口算加法'},
-  {q:'248 ÷ 8 =', a:'31', free:true, tip:'口算除法'},
-  {q:'270 ÷ 9 =', a:'30', free:true, tip:'口算除法'},
-  {q:'166 ÷ 2 =', a:'83', free:true, tip:'口算除法'},
-  {q:'600 ÷ 5 =', a:'120', free:true, tip:'口算除法'},
-  {q:'2700 ÷ 3 =', a:'900', free:true, tip:'口算除法'},
-  {q:'410 ÷ 5 =', a:'82', free:true, tip:'口算除法'},
-  {q:'9 × 700 =', a:'6300', free:true, tip:'口算乘法'},
-  {q:'211 × 4 =', a:'844', free:true, tip:'口算乘法'},
-  /* —— 角的关系 —— */
-  {q:'1周角 = （    ）直角。', a:'4', free:true, tip:'角度关系'},
-  {q:'1平角 = （    ）直角。', a:'2', free:true, tip:'角度关系'},
-  {q:'1周角 = （    ）平角。', a:'2', free:true, tip:'角度关系'},
-  {q:'2直角 = （    ）平角。', a:'2', free:true, tip:'角度关系'},
-  {q:'1平角 + （    ）直角 = 1周角。', a:'2', free:true, tip:'角度计算'},
-];
 /* 《数学四年级上册》教材课后「练习」原题：计算 / 比较大小 / 单位与数的运算 */
 const MATH_BOOK = [
   {q:'92504○103600', a:'<', free:true, tip:'大数的认识·比较大小'},
@@ -3504,11 +3464,6 @@ const MATH_BOOK = [
   {q:'55846+7646', a:'63492', free:true, tip:'大数的认识'},
   {q:'13027-8934', a:'4093', free:true, tip:'大数的认识'},
   {q:'395412+10589', a:'406001', free:true, tip:'大数的认识'},
-  {q:'128+284', a:'412', free:true, tip:'条形统计图'},
-  {q:'532-178', a:'354', free:true, tip:'条形统计图'},
-  {q:'497+498+499+500+501+502+503', a:'3500', free:true, tip:'条形统计图'},
-  {q:'72-48', a:'24', free:true, tip:'条形统计图'},
-  {q:'360+90', a:'450', free:true, tip:'条形统计图'},
 
   {q:'一辆汽车从甲地开往乙地，每小时行 65 千米，行驶 4 小时后离乙地还有 120 千米，甲乙两地相距多少千米？', a:'380', free:true, tip:'应用题'},
 {q:'一个长方形花坛长 25 米、宽 16 米，四周各留出 1 米宽的小路，种花的实际面积是多少平方米？', a:'322', free:true, tip:'应用题'},
@@ -3543,31 +3498,24 @@ function renderMath(){
   buildMathGradeSeg();
   /* ── 错题本模式 ── */
   if(mathMode==='wrong'){
-    if(!S.wrong.length){ box.innerHTML='<p class="muted">🎉 还没有错题，真厉害！</p>'; return; }
-    box.innerHTML=S.wrong.map((w,i)=>`<div class="item"><div class="it"><div class="t">${w.q}</div><div class="s">正确答案：${w.a}</div></div><button class="chk" data-del="${i}">移除</button></div>`).join('');
-    $$('#mathBox [data-del]').forEach(b=>b.onclick=()=>{ S.wrong.splice(+b.dataset.del,1); save(); renderMath(); });
-    return;
-  }
-  /* ── 口算冻结（做完 MATH_CAP 题后冷却 MATH_FREEZE_MS） ── */
-  if(S.mathFreezeUntil && Date.now() >= S.mathFreezeUntil){
-    S.mathFreezeUntil=0; S.mathMentalCount=0; save();   // 冻结已过期，重置本轮计数
-  }
-  if(Date.now() < S.mathFreezeUntil){
-    const left = S.mathFreezeUntil - Date.now();
-    const h = Math.floor(left/3600000);
-    const m = Math.floor((left%3600000)/60000);
-    box.innerHTML='<div style="text-align:center;padding:36px 0">'+
-      '<div style="font-size:52px">⏸️</div>'+
-      '<h3 style="margin:10px 0">口算先休息一下</h3>'+
-      '<p class="muted">本轮口算已做 '+MATH_CAP+' 题，保护眼睛和脑袋～<br>约 '+h+' 小时 '+m+' 分后可继续</p>'+
-      '<button class="btn" id="mWrong">📒 看看错题本</button></div>';
-    document.getElementById('mWrong').onclick=function(){ mathMode='wrong'; renderMath(); };
+    const list = S.wrong.filter(w => (w.cat||'m')==='m');
+    if(!list.length){ box.innerHTML='<p class="muted">🎉 还没有数学错题，真厉害！</p>'; return; }
+    box.innerHTML=list.map((w,i)=>`<div class="item"><div class="it"><div class="t">${w.q}</div><div class="s">正确答案：${w.a}</div></div><button class="chk" data-del="${i}">移除</button></div>`).join('');
+    $$('#mathBox [data-del]').forEach(b=>b.onclick=()=>{
+      // 找到 S.wrong 中第 i 个 cat=='m' 的项并移除
+      const target = list[+b.dataset.del];
+      S.wrong = S.wrong.filter(w => w!==target);
+      save(); renderMath();
+    });
     return;
   }
   /* ── 单元重点题模式（教材原题） ── */
   if(mathMode==='unit'){
     try {
-      if(!mathQ||mathQ._unit!==true){ mathQ={_unit:true, idx:0, list:shuffle(mathSet().unit.slice())}; }
+      if(!mathQ||mathQ._unit!==true){
+        const scope = 'mu-'+mathGrade;
+        mathQ={_unit:true, idx:0, list:buildListWithWrong(mathSet().unit.slice(), scope, 'm')};
+      }
       const item=mathQ.list[mathQ.idx];
       if(!item){ box.innerHTML='<p class="muted">⚠️ 题目加载失败</p>'; return; }
       box.innerHTML='<div class="quiz-top"><span>📚 单元重点题 '+(mathQ.idx+1)+'/'+mathQ.list.length+'</span><span style="font-size:12px">'+(item.tip||'')+'</span></div>'+
@@ -3579,15 +3527,15 @@ function renderMath(){
       const sub=function(){
         const v=document.getElementById('mA').value.trim();
         if(!v){toast('✏️ 写一下答案吧');return;}
-      recordMathQuestion();
         const ok = item.free ? v===String(item.a) : Number(v)===item.a;
         const fb=document.getElementById('mFb');
         if(ok){
           S.mathCorrect++; S.total.m++; S.today.m++; maybeMathSun();
           fb.className='feedback ok'; fb.innerHTML='🎉 正确！太棒了！';
+          removeWrong('m', item.q); // 答对：从数学错题本移除
         } else {
           fb.className='feedback no'; fb.innerHTML='❌ 正确答案：<b>'+item.a+'</b>';
-          if(!S.wrong.find(w=>w.q===item.q)) S.wrong.push({q:item.q,a:item.a});
+          pushWrong('m', item.q, item.a); // 答错：加入数学错题本（不查重，答对才移除）
         }
         save(); renderHome();
         mathQ.idx++;
@@ -3599,10 +3547,10 @@ function renderMath(){
               '<h3 style="margin:8px 0">单元重点题全部做完！</h3>'+
               '<p class="muted" style="margin-bottom:16px">共 '+mathSet().unit.length+' 道教材原题</p>'+
               '<button class="btn mint" id="mRetry" style="margin-right:8px">🔄 再做一遍</button>'+
-              '<button class="btn" id="mBack">🔢 回到口算</button></div>';
+              '<button class="btn" id="mBack">📚 单元重点题</button></div>';
             document.getElementById('mRetry').onclick=function(){ mathMode='unit'; mathQ=null; renderMath(); };
             document.getElementById('mBack').onclick=function(){
-              mathMode='mental'; mathQ=null;
+              mathMode='unit'; mathQ=null;
               var btns=document.querySelectorAll('#mathSeg button');
               btns.forEach(function(x){x.classList.remove('on');});
               btns[0].classList.add('on'); renderMath();
@@ -3620,59 +3568,12 @@ function renderMath(){
       return;
     }
   }
-  /* ── ★ 星级口算模式（教材原题） ── */
-  if(mathMode==='star'){
-    if(!mathQ||mathQ._star!==true){ mathQ={_star:true, idx:0, list:shuffle(mathSet().star.slice())}; }
-    const item=mathQ.list[mathQ.idx];
-    if(!item){ box.innerHTML='<p class="muted">⚠️ 题目加载失败</p>'; return; }
-    box.innerHTML='<div class="quiz-top"><span>★ 星级口算 '+(mathQ.idx+1)+'/'+mathQ.list.length+'</span><span style="font-size:12px">'+(item.tip||'')+'</span></div>'+
-      '<div class="qprompt" style="font-size:17px;font-weight:600">'+item.q+'</div>'+
-      '<div class="qhint">'+(item.free?'💡 输入文字或数字答案':'💡 输入数字答案')+'</div>'+
-      '<input type="text" id="mA" placeholder="输入答案" '+(item.free?'':'inputmode="numeric"')+' autocomplete="off">'+
-      '<button class="btn block" id="mSub" style="margin-top:12px">✅ 提交答案</button>'+
-      '<div class="feedback" id="mFb"></div>';
-    const sub=function(){
-      const v=document.getElementById('mA').value.trim();
-      if(!v){toast('✏️ 写一下答案吧');return;}
-      recordMathQuestion();
-      const ok = item.free ? v===String(item.a) : Number(v)===item.a;
-      const fb=document.getElementById('mFb');
-      if(ok){
-        S.mathCorrect++; S.total.m++; S.today.m++; maybeMathSun();
-        fb.className='feedback ok'; fb.innerHTML='🎉 正确！太棒了！';
-      } else {
-        fb.className='feedback no'; fb.innerHTML='❌ 正确答案：<b>'+item.a+'</b>';
-        if(!S.wrong.find(w=>w.q===item.q)) S.wrong.push({q:item.q,a:item.a});
-      }
-      save(); renderHome();
-      mathQ.idx++;
-      setTimeout(function(){
-        if(!mathQ||mathQ.idx>=mathQ.list.length){
-          mathQ=null;
-          box.innerHTML='<div style="text-align:center;padding:30px 0">'+
-            '<div style="font-size:48px">🏆</div>'+
-            '<h3 style="margin:8px 0">星级口算全部做完！</h3>'+
-            '<p class="muted" style="margin-bottom:16px">共 '+STAR_MATH.length+' 道教材原题</p>'+
-            '<button class="btn mint" id="mRetry" style="margin-right:8px">🔄 再做一遍</button>'+
-            '<button class="btn" id="mBack">🔢 回到口算</button></div>';
-          document.getElementById('mRetry').onclick=function(){ mathMode='star'; mathQ=null; renderMath(); };
-          document.getElementById('mBack').onclick=function(){
-            mathMode='mental'; mathQ=null;
-            var btns=document.querySelectorAll('#mathSeg button');
-            btns.forEach(function(x){x.classList.remove('on');});
-            btns[0].classList.add('on'); renderMath();
-          };
-        } else { renderMath(); }
-      }, ok?500:1200);
-    };
-    document.getElementById('mSub').onclick=sub;
-    document.getElementById('mA').addEventListener('keydown',function(e){if(e.key==='Enter')sub();});
-    setTimeout(function(){var el=document.getElementById('mA');if(el)el.focus();},100);
-    return;
-  }
   /* ── 📘 教材习题模式（教材课后练习原题） ── */
   if(mathMode==='book'){
-    if(!mathQ||mathQ._book!==true){ mathQ={_book:true, idx:0, list:shuffle(mathSet().book.slice())}; }
+    if(!mathQ||mathQ._book!==true){
+      const scope = 'mb-'+mathGrade;
+      mathQ={_book:true, idx:0, list:buildListWithWrong(mathSet().book.slice(), scope, 'm')};
+    }
     const item=mathQ.list[mathQ.idx];
     if(!item){ box.innerHTML='<p class="muted">⚠️ 题目加载失败</p>'; return; }
     const fbId='mFb';
@@ -3692,15 +3593,16 @@ function renderMath(){
         '<div class="feedback" id="'+fbId+'"></div>';
     }
     box.innerHTML='<div class="quiz-top"><span>📘 教材习题 '+(mathQ.idx+1)+'/'+mathQ.list.length+'</span><span style="font-size:12px">'+(item.tip||'')+'</span></div>'+body;
-    /* 教材习题属思考型，不计入口算 15 题冻结，可多练 */
+    /* 教材习题属思考型，可多练且不与口算挂钩 */
     const after=function(ok, correct){
       const fb=document.getElementById(fbId);
       if(ok){
         S.mathCorrect++; S.total.m++; S.today.m++; maybeMathSun();
         fb.className='feedback ok'; fb.innerHTML='🎉 正确！太棒了！';
+        removeWrong('m', item.q);
       } else {
         fb.className='feedback no'; fb.innerHTML='❌ 正确答案：<b>'+correct+'</b>';
-        if(!S.wrong.find(w=>w.q===item.q)) S.wrong.push({q:item.q,a:correct});
+        pushWrong('m', item.q, correct);
       }
       save(); renderHome();
       mathQ.idx++;
@@ -3712,10 +3614,10 @@ function renderMath(){
             '<h3 style="margin:8px 0">教材习题全部做完！</h3>'+
             '<p class="muted" style="margin-bottom:16px">共 '+mathSet().book.length+' 道教材题（含应用题/填空/选择题）</p>'+
             '<button class="btn mint" id="mRetry" style="margin-right:8px">🔄 再做一遍</button>'+
-            '<button class="btn" id="mBack">🔢 回到口算</button></div>';
+            '<button class="btn" id="mBack">📚 单元重点题</button></div>';
           document.getElementById('mRetry').onclick=function(){ mathMode='book'; mathQ=null; renderMath(); };
           document.getElementById('mBack').onclick=function(){
-            mathMode='mental'; mathQ=null;
+            mathMode='unit'; mathQ=null;
             var btns=document.querySelectorAll('#mathSeg button');
             btns.forEach(function(x){x.classList.remove('on');});
             btns[0].classList.add('on'); renderMath();
@@ -3748,39 +3650,8 @@ function renderMath(){
     }
     return;
   }
-  /* ── 口算练习模式（默认） ── */
-  if(!mathQ||mathQ._mental!==true){ mathQ={_mental:true, ...genMath()}; }
-  box.innerHTML='<div class="quiz-top"><span>🔢 口算练习 · 累计正确 '+S.mathCorrect+'</span><span>每5题 ☀️+1</span></div>'+
-    '<div class="qprompt">'+mathQ.q+'</div>'+
-    '<input type="text" id="mA" placeholder="输入答案" inputmode="numeric" autocomplete="off">'+
-    '<button class="btn block" id="mSub" style="margin-top:10px">提交</button>'+
-    '<div class="feedback" id="mFb"></div>';
-  var sub2=function(){
-    var v=document.getElementById('mA').value.trim(); if(!v){toast('写一下答案吧');return;}
-    recordMathQuestion();
-    var ok=Number(v)===mathQ.a;
-    var fb=document.getElementById('mFb');
-    if(ok){ S.mathCorrect++; S.total.m++; S.today.m++; var got=maybeMathSun();
-      fb.className='feedback ok'; fb.innerHTML='✅ 正确！'+(got?' 🌟☀️+1':''); }
-    else { fb.className='feedback no'; fb.innerHTML='❌ 正确答案：<b>'+mathQ.a+'</b>';
-      if(!S.wrong.find(w=>w.q===mathQ.q)) S.wrong.push({q:mathQ.q,a:mathQ.a}); }
-    save(); renderHome();
-    mathQ={_mental:true, ...genMath()};
-    setTimeout(renderMath, ok?500:800);
-  };
-  document.getElementById('mSub').onclick=sub2;
-  document.getElementById('mA').addEventListener('keydown',function(e){if(e.key==='Enter')sub2();});
-  setTimeout(function(){var el=document.getElementById('mA');if(el)el.focus();},50);
-}
-function maybeMathSun(){
   if(S.mathCorrect>0 && S.mathCorrect%5===0){ S.sun+=1; toast('🎉 数学答对5题，☀️阳光+1！'); return true; }
   return false;
-}
-function recordMathQuestion(){
-  /* 仅“口算”类（口算练习 + 星级口算）计入 15 题冻结；教材习题/单元重点题属思考型，不冻结，可多练 */
-  if(mathMode!=='mental' && mathMode!=='star') return;
-  S.mathMentalCount++;
-  if(S.mathMentalCount >= MATH_CAP){ S.mathFreezeUntil = Date.now() + MATH_FREEZE_MS; }
 }
 
 /* ============ english ============ */
