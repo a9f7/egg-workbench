@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="zh-CN" data-app-version="20260805.0152">
+<html lang="zh-CN" data-app-version="20260805.0157">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
@@ -346,13 +346,22 @@
   .vcard .vgo{margin-top:2px;align-self:flex-start;text-decoration:none;background:var(--pink);color:#fff;font-weight:800;font-size:13px;padding:6px 13px;border-radius:10px;box-shadow:0 3px 0 var(--pink-d)}
   .vcard .vgo:active{transform:translateY(1px)}
   .vcard .vgo{border:none;cursor:pointer;font-family:inherit}
-  .vmodal{position:fixed;inset:0;background:rgba(0,0,0,.74);display:none;align-items:center;justify-content:center;z-index:9999;padding:16px}
-  .vmodal.show{display:flex}
-  .vp-wrap{width:min(960px,96vw);background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 24px 70px rgba(0,0,0,.45)}
-  .vp-bar{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 14px;background:#fff}
-  .vp-title{font-weight:800;font-size:15px;color:#333;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-  .vp-close{border:none;background:#ffe3ef;color:#e0407f;font-weight:800;font-size:20px;line-height:1;width:34px;height:34px;border-radius:50%;cursor:pointer;flex:none}
+  /* ===== 内嵌视频播放器（不弹窗） ===== */
+  .vplayer{margin:14px 0 16px;background:#fff;border-radius:16px;box-shadow:0 6px 18px rgba(0,0,0,.08);overflow:hidden;border:2px solid #ffd0e6}
+  .vplayer.hidden{display:none}
+  .vp-head{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:#fff6fb;border-bottom:2px solid #ffd0e6;gap:8px}
+  .vp-title{font-weight:800;color:#333;font-size:15px;flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .vp-close{background:#fb7299;color:#fff;border:none;font-size:18px;font-weight:bold;width:30px;height:30px;border-radius:50%;cursor:pointer;line-height:1;flex-shrink:0}
+  .vp-close:hover{background:#e0407f}
   .vp-frame{width:100%;aspect-ratio:16/9;border:0;display:block;background:#000}
+  .vp-epstrip{padding:10px 12px;max-height:140px;overflow-y:auto;border-top:2px solid #ffd0e6;background:#fffbfd}
+  .vp-epstrip::-webkit-scrollbar{width:6px;height:6px}
+  .vp-epstrip::-webkit-scrollbar-thumb{background:#ffd0e6;border-radius:3px}
+  .vp-epbar{display:flex;flex-wrap:wrap;gap:6px;justify-content:center}
+  .vp-ep{background:#fff;border:1.5px solid #ffd0e6;color:#e0407f;font-weight:800;font-size:13px;padding:5px 0;border-radius:8px;cursor:pointer;font-family:inherit;min-width:42px;text-align:center;transition:all .15s}
+  .vp-ep:hover{background:#fff6fb;border-color:#fb7299}
+  .vp-ep.on{background:#fb7299;color:#fff;border-color:#fb7299}
+  .vp-noep{font-size:12.5px;color:#888;padding:6px;text-align:center}
   /* ===== 视频专区·开根号密码锁 ===== */
   .vlock{background:#fff;border-radius:18px;padding:26px 22px 30px;box-shadow:0 6px 0 #ffe3ef;border:2px dashed #ffc2dd;max-width:460px;margin:14px auto;text-align:center}
   .vl-emoji{font-size:46px;line-height:1;margin-bottom:6px}
@@ -506,6 +515,14 @@
         <button class="on" data-vk="chinese">📖 语文</button>
         <button data-vk="english">🔤 英语</button>
         <button data-vk="math">🔢 数学</button>
+      </div>
+      <div id="vPlayer" class="vplayer hidden">
+        <div class="vp-head">
+          <div class="vp-title" id="vpTitle">未选择视频</div>
+          <button class="vp-close" id="vpClose" type="button" aria-label="收起播放器">×</button>
+        </div>
+        <iframe id="vpFrame" class="vp-frame" allowfullscreen="true" sandbox="allow-scripts allow-same-origin allow-popups allow-popups-to-escape-sandbox allow-presentation" scrolling="no"></iframe>
+        <div class="vp-epstrip"><div class="vp-epbar" id="vpEpBar"></div></div>
       </div>
       <div id="videoBox" class="videogrid"></div>
       </div>
@@ -3038,7 +3055,7 @@ const VIDEOS={
     {icon:'🎵',t:'Super Simple Songs',d:'全球最火启蒙儿歌，歌词简单重复，磨耳朵神器。官网还有闪卡/涂色页。',url:'https://supersimple.com',tag:'官方免费',cls:'official'},
     {icon:'🐤',t:'CoComelon',d:'3-6岁启蒙儿歌，画风美语速慢，低幼磨耳朵。',url:'https://search.bilibili.com/all?keyword='+encodeURIComponent('CoComelon'),tag:'B站',cls:'bili'},
     {icon:'🎶',t:'English Singsing',d:'2-8岁体系最完整（字母/单词/对话/拼读/童话近1000集）。',url:'https://search.bilibili.com/all?keyword='+encodeURIComponent('English Singsing'),tag:'B站',cls:'bili'},
-    {icon:'🔤',t:'Alphablocks 字母积木',d:'BBC自然拼读天花板！字母变积木人拼成单词，零基础也能看进去（完整117集全）。',bvid:'BV1TEDpBTEiN',tag:'B站·内置',cls:'bili'},
+    {icon:'🔤',t:'Alphablocks 字母积木',d:'BBC自然拼读天花板！字母变积木人拼成单词，零基础也能看进去（完整117集全）。',bvid:'BV1TEDpBTEiN',eps:117,tag:'B站·内置',cls:'bili'},
     {icon:'🔡',t:'Word World 词汇世界',d:'PBS出品，单词组成实物，3-6岁，和 Alphablocks 互补。',url:'https://search.bilibili.com/all?keyword='+encodeURIComponent('Word World 词汇世界'),tag:'B站',cls:'bili'},
     {icon:'👩‍🏫',t:'雪莉英语老师',d:'中文辅助的拼读系统课：字母音→CVC→长元音→高级规则。',url:'https://search.bilibili.com/all?keyword='+encodeURIComponent('雪莉英语老师 自然拼读'),tag:'B站',cls:'bili'},
     {icon:'🎤',t:'Hello Carrie',d:'儿歌式拼读，每集2分钟，零基础友好。',url:'https://search.bilibili.com/all?keyword='+encodeURIComponent('Hello Carrie 自然拼读'),tag:'B站',cls:'bili'},
@@ -3048,24 +3065,56 @@ const VIDEOS={
     {icon:'🐰',t:'英语兔',d:'千万粉，语法讲得清楚。',url:'https://search.bilibili.com/all?keyword='+encodeURIComponent('英语兔'),tag:'B站',cls:'bili'}
   ],
   math:[
-    {icon:'📊',t:'DK图解数学·全科动画（661集大合集）',d:'DK图解数学 + 超级课堂 + 高斯数学合集，覆盖小学到初中核心概念，动画图解最易懂（来源：ima「蛋蛋教学」·DK图解数学）。',bvid:'BV1mMuFzJELD',tag:'B站·内置',cls:'bili'},
-    {icon:'🧮',t:'清华附小 四年级数学动画（56集）',d:'名校名师讲四年级上册重难点：大数认识、三位数乘除、角的度量、平行四边形与梯形等，最适合三升四预习（ima·清华附小数学动画）。',bvid:'BV1Qt4y1j745',tag:'B站·内置',cls:'bili'},
-    {icon:'📐',t:'四年级上册数学 同步课',d:'紧贴人教版四上教材，逐课讲解例题与易错点，课前预习课后巩固都好用（ima 推荐）。',bvid:'BV1GH4y1D78c',tag:'B站·内置',cls:'bili'},
-    {icon:'🏅',t:'高斯数学 三年级（65集）',d:'思维拓展经典体系，巩固三年级基础，为四年级做准备（ima·高斯数学）。',bvid:'BV1Es4y177LY',tag:'B站·内置',cls:'bili'},
-    {icon:'🧠',t:'超级课堂 奥数启蒙（38集）',d:'把奥数讲成故事和动画，培养解题思维，适合有兴趣的孩子拔高（ima·超级课堂）。',bvid:'BV15H4y1p76B',tag:'B站·内置',cls:'bili'},
-    {icon:'🏝️',t:'数学荒岛历险记（40集）',d:'央视动画，用冒险故事讲数学，轻松有趣，培养数学兴趣不枯燥（ima·数学荒岛历险记）。',bvid:'BV1uW411a7nb',tag:'B站·内置',cls:'bili'}
+    {icon:'📊',t:'DK图解数学·全科动画（661集大合集）',d:'DK图解数学 + 超级课堂 + 高斯数学合集，覆盖小学到初中核心概念，动画图解最易懂（来源：ima「蛋蛋教学」·DK图解数学）。',bvid:'BV1mMuFzJELD',eps:661,tag:'B站·内置',cls:'bili'},
+    {icon:'🧮',t:'清华附小 四年级数学动画（56集）',d:'名校名师讲四年级上册重难点：大数认识、三位数乘除、角的度量、平行四边形与梯形等，最适合三升四预习（ima·清华附小数学动画）。',bvid:'BV1Qt4y1j745',eps:56,tag:'B站·内置',cls:'bili'},
+    {icon:'📐',t:'四年级上册数学 同步课',d:'紧贴人教版四上教材，逐课讲解例题与易错点，课前预习课后巩固都好用（ima 推荐）。',bvid:'BV1GH4y1D78c',eps:1,tag:'B站·内置',cls:'bili'},
+    {icon:'🏅',t:'高斯数学 三年级（65集）',d:'思维拓展经典体系，巩固三年级基础，为四年级做准备（ima·高斯数学）。',bvid:'BV1Es4y177LY',eps:65,tag:'B站·内置',cls:'bili'},
+    {icon:'🧠',t:'超级课堂 奥数启蒙（38集）',d:'把奥数讲成故事和动画，培养解题思维，适合有兴趣的孩子拔高（ima·超级课堂）。',bvid:'BV15H4y1p76B',eps:38,tag:'B站·内置',cls:'bili'},
+    {icon:'🏝️',t:'数学荒岛历险记（40集）',d:'央视动画，用冒险故事讲数学，轻松有趣，培养数学兴趣不枯燥（ima·数学荒岛历险记）。',bvid:'BV1uW411a7nb',eps:40,tag:'B站·内置',cls:'bili'}
   ]
 };
-function openPlayer(bvid,title){
-  const m=$('#vModal'); if(!m||!bvid) return;
-  m.querySelector('#vModalTitle').textContent=title||'视频';
-  m.querySelector('#vModalFrame').src='https://player.bilibili.com/player.html?bvid='+bvid+'&page=1&high_quality=1&danmaku=0&autoplay=0';
-  m.classList.add('show');
+/* ===== 内嵌视频播放器（不弹窗，每个合集带集数按钮） ===== */
+function bvidUrl(bvid,p){
+  p=p||1;
+  return 'https://player.bilibili.com/player.html?bvid='+bvid+'&page='+p+'&high_quality=1&danmaku=0&autoplay=0';
 }
-function closePlayer(){
-  const m=$('#vModal'); if(!m) return;
-  m.classList.remove('show');
-  m.querySelector('#vModalFrame').src='';
+function openInlinePlayer(bvid,title,eps){
+  const vp=$('#vPlayer'); if(!vp||!bvid) return;
+  eps = parseInt(eps||1,10) || 1;
+  vp._cur = { bvid:bvid, eps:eps, p:1 };
+  $('#vpTitle').textContent = title || '视频';
+  $('#vpFrame').src = bvidUrl(bvid,1);
+  // 渲染集数按钮
+  const bar=$('#vpEpBar'); bar.innerHTML='';
+  if(eps>1){
+    for(let i=1;i<=eps;i++){
+      const c=document.createElement('button');
+      c.type='button'; c.className='vp-ep'+(i===1?' on':''); c.dataset.p=String(i);
+      c.textContent = i;
+      c.onclick = ()=>jumpToEpisode(i);
+      bar.appendChild(c);
+    }
+  } else {
+    bar.innerHTML = '<span class="vp-noep">单集视频，无集数切换</span>';
+  }
+  vp.classList.remove('hidden');
+  // 滚到播放器顶部
+  try{ vp.scrollIntoView({behavior:'smooth', block:'start'}); }catch(e){}
+}
+function jumpToEpisode(p){
+  const vp=$('#vPlayer'); if(!vp||!vp._cur) return;
+  vp._cur.p = p;
+  $('#vpFrame').src = bvidUrl(vp._cur.bvid, p);
+  $$('#vpEpBar .vp-ep').forEach(c=>{
+    c.classList.toggle('on', parseInt(c.dataset.p,10) === p);
+  });
+}
+function closeInlinePlayer(){
+  const vp=$('#vPlayer'); if(!vp) return;
+  vp.classList.add('hidden');
+  vp._cur = null;
+  const f=$('#vpFrame'); if(f) f.src='';
+  const bar=$('#vpEpBar'); if(bar) bar.innerHTML='';
 }
 function renderVideo(k){
   k=k||'chinese';
@@ -3075,7 +3124,9 @@ function renderVideo(k){
     const c=el('div','vcard');
     let action;
     if(v.bvid){
-      action='<button class="vgo" type="button" data-bvid="'+v.bvid+'">▶ 播放（内置窗口）</button>';
+      const epsAttr = v.eps?'" data-eps="'+v.eps:'';
+      const playLabel = v.eps && v.eps>1 ? ('▶ 播放（'+v.eps+'集）') : '▶ 播放';
+      action='<button class="vgo" type="button" data-bvid="'+v.bvid+epsAttr+'>'+playLabel+'</button>';
     } else {
       action='<a class="vgo" href="'+v.url+'" target="_blank" rel="noopener">▶ 去观看</a>';
     }
@@ -3086,7 +3137,11 @@ function renderVideo(k){
     box.appendChild(c);
   });
   $$('#videoBox .vgo[data-bvid]').forEach(b=>{
-    b.onclick=()=>openPlayer(b.dataset.bvid,(b.closest('.vcard').querySelector('.vt').textContent||'').replace(/^\s+|\s+$/g,''));
+    b.onclick=()=>{
+      const title=(b.closest('.vcard').querySelector('.vt').textContent||'').replace(/^\s+|\s+$/g,'');
+      const eps=parseInt(b.dataset.eps||'1',10);
+      openInlinePlayer(b.dataset.bvid, title, eps);
+    }
   });
 }
 $$('#videoSeg button').forEach(b=>b.onclick=()=>{
@@ -3134,10 +3189,8 @@ function checkVideoAnswer(){
 }
 const vlBtn=$('#vlBtn'); if(vlBtn) vlBtn.onclick=checkVideoAnswer;
 const vlInput=$('#vlInput'); if(vlInput) vlInput.addEventListener('keydown',e=>{ if(e.key==='Enter') checkVideoAnswer(); });
-/* 内置视频窗口关闭：按钮 / 点遮罩 / Esc */
-$('#vModalClose').onclick=closePlayer;
-$('#vModal').addEventListener('click',e=>{ if(e.target.id==='vModal') closePlayer(); });
-document.addEventListener('keydown',e=>{ if(e.key==='Escape') closePlayer(); });
+/* 内嵌视频窗口关闭按钮 */
+$('#vpClose').onclick=closeInlinePlayer;
 /* hash 路由：刷新 / 分享链接直接定位到对应板块，像独立页面一样打开 */
 window.addEventListener('hashchange',()=>{
   const v=(location.hash||'#home').slice(1);
@@ -4376,7 +4429,7 @@ const SHOP=[
   {key:'medicine',icon:'💊',name:'药品',price:15,grow:11,desc:'治病+喂养 +11成长',medicine:true},
 ];
 const FOOD_ITEMS=SHOP.filter(s=>s.food);     // 多种食物（像衣服一样可在超市挑选）
-const APP_VERSION='2026-08-05 01:52';         // 版本时间戳：用于比对本地/GitHub 是否一致
+const APP_VERSION='2026-08-05 01:57';         // 版本时间戳：用于比对本地/GitHub 是否一致
 function dogLevel(g){ if(g>=300)return 3; if(g>=160)return 2; if(g>=60)return 1; return 0; }
 const DOG_NAMES=['幼崽小猫','可爱小猫','帅气大猫','超级神猫'];
 let catState='sit';                       // 当前随机状态（sit/play/sleep/sick/eat 互动态）
@@ -4738,7 +4791,7 @@ $('#btnReset').onclick=()=>{
 };
 window.addEventListener('beforeinstallprompt',e=>e.preventDefault());
 </script>
-<div id="verTag" title="页面版本时间戳，用于比对本地/GitHub 是否一致">v20260805.0152</div>
+<div id="verTag" title="页面版本时间戳，用于比对本地/GitHub 是否一致">v20260805.0157</div>
 <div id="syncBadge" class="sync-badge init" title="数据同步状态：云端为主存，多端一致">☁️</div>
 <div id="syncUploadBtn" title="把本机当前进度强制覆盖上传到云端（替换云端数据，多端将以本机为准）">↑ 强制上传</div>
 <div id="syncDownloadBtn" title="用云端数据覆盖本机（丢弃本机本地改动，以云端为准）——当本地旧缓存盖掉云端设定时使用">↓ 强制下载</div>
@@ -4753,15 +4806,5 @@ window.addEventListener('beforeinstallprompt',e=>e.preventDefault());
 #syncDownloadBtn{position:fixed;right:6px;bottom:62px;font-size:11px;color:#ff8a3d;opacity:.9;z-index:50;cursor:pointer;font-family:ui-monospace,Menlo,Consolas,monospace;background:rgba(255,138,61,.10);padding:1px 6px;border-radius:8px;border:1px solid rgba(255,138,61,.35)}
 #syncDownloadBtn:hover{background:rgba(255,138,61,.22)}
 #syncDownloadBtn:active{transform:scale(.96)}</style>
-<!-- 内置视频播放窗口：B站官方播放器，无广告 / 无相关推荐 / 不跳站 -->
-<div class="vmodal" id="vModal">
-  <div class="vp-wrap">
-    <div class="vp-bar">
-      <div class="vp-title" id="vModalTitle">视频</div>
-      <button class="vp-close" id="vModalClose" aria-label="关闭">×</button>
-    </div>
-    <iframe class="vp-frame" id="vModalFrame" allowfullscreen="true" sandbox="allow-scripts allow-same-origin allow-presentation"></iframe>
-  </div>
-</div>
 </body>
 </html>
