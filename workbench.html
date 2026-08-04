@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="zh-CN" data-app-version="20260802.1500">
+<html lang="zh-CN" data-app-version="20260804.2214">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
@@ -454,7 +454,7 @@
   <section class="view" id="v-exercise">
     <div class="card">
       <h3>🏃 运动 & 🧹 家务打卡</h3>
-      <p class="muted">运动打卡 ☀️+2（每日上限5）、家务打卡 ☀️+1（每日上限3）；完成后还能再自选表扬加阳光哦！</p>
+      <p class="muted">运动打卡 ☀️+2（每日上限5）、家务打卡 ☀️+1（每日上限3）；运动完成可再自选表扬加阳光，家务无表扬加分哦！</p>
       <div id="exList"></div>
     </div>
   </section>
@@ -3604,8 +3604,8 @@ function renderMath(){
   /* ── 单元重点题模式（教材原题） ── */
   if(mathMode==='unit'){
     try {
+      const scope = 'mu-'+mathGrade;
       if(!mathQ||mathQ._unit!==true){
-        const scope = 'mu-'+mathGrade;
         mathQ={_unit:true, idx:0, list:buildListWithWrong(mathSet().unit.slice(), scope, 'm')};
       }
       if(mathQ.list.length===0){
@@ -3678,8 +3678,8 @@ function renderMath(){
   }
   /* ── 📘 教材习题模式（教材课后练习原题） ── */
   if(mathMode==='book'){
+    const scope = 'mb-'+mathGrade;
     if(!mathQ||mathQ._book!==true){
-      const scope = 'mb-'+mathGrade;
       mathQ={_book:true, idx:0, list:buildListWithWrong(mathSet().book.slice(), scope, 'm')};
     }
     if(mathQ.list.length===0){
@@ -3900,6 +3900,10 @@ function renderEN(){
   $('#eSub').onclick=submit;
   if(it.type!=='read'){ const e=$('#eA'); e.addEventListener('keydown',ev=>{if(ev.key==='Enter')submit();}); setTimeout(()=>e.focus(),50); }
 }
+function maybeMathSun(){
+  if(S.mathCorrect>0 && S.mathCorrect%5===0){ S.sun+=1; toast('🎉 数学答对5题，☀️阳光+1！'); return true; }
+  return false;
+}
 function maybeEngSun(){
   if(S.engCorrect>0 && S.engCorrect%5===0){ S.sun+=1; toast('🎉 英语答对5题，☀️阳光+1！'); return true; }
   return false;
@@ -4045,7 +4049,7 @@ function renderEx(){
       const d=document.createElement('div'); d.className='ex-card';
       d.innerHTML=`<div class="ei">${it.icon}</div>
         <div class="et"><div class="t">${it.name}</div><div class="s">${it.desc}</div>
-        ${done?(added?`<div class="addpick" style="opacity:.5;pointer-events:none"><span style="color:#e67e22;font-weight:bold">已加 ☀️+${added}</span></div>`:`<div class="addpick"><button data-add="1">+1☀️</button><button data-add="2">+2☀️</button><button data-add="3">+3☀️</button></div>`):''}
+        ${done?(added?`<div class="addpick" style="opacity:.5;pointer-events:none"><span style="color:#e67e22;font-weight:bold">已加 ☀️+${added}</span></div>`:(isSportId(it.id)?`<div class="addpick"><button data-add="1">+1☀️</button><button data-add="2">+2☀️</button><button data-add="3">+3☀️</button></div>`:`<div class="addpick" style="opacity:.5;pointer-events:none"><span style="color:#27ae60;font-weight:bold">已得 ☀️+1</span></div>`)):''}
         </div>
         <button class="chk ${done?'on':''}" data-id="${it.id}">${done?'已完成✓':'打卡'}</button>`;
       grid.appendChild(d);
@@ -4064,7 +4068,7 @@ function renderEx(){
     S.sun += give;
     save(); renderEx(); renderHome();
     if(give < base){ toast(isSport ? `运动打卡成功！🎉 今日运动阳光已达上限${cap}，本次仅+${give}` : `家务打卡成功！🎉 今日家务阳光已达上限${cap}，本次仅+${give}`); }
-    else { toast(isSport ? '运动打卡成功！🎉 ☀️+2 可再表扬加阳光' : '家务打卡成功！🎉 ☀️+1 可再表扬加阳光'); }
+    else { toast(isSport ? '运动打卡成功！🎉 ☀️+2 可再表扬加阳光' : '家务打卡成功！🎉 ☀️+1（无表扬加分）'); }
   });
   $$('#exList [data-add]').forEach(b=>b.onclick=()=>{
     const n=+b.dataset.add;
@@ -4132,7 +4136,7 @@ const SHOP=[
   {key:'medicine',icon:'💊',name:'药品',price:15,grow:11,desc:'治病+喂养 +11成长',medicine:true},
 ];
 const FOOD_ITEMS=SHOP.filter(s=>s.food);     // 多种食物（像衣服一样可在超市挑选）
-const APP_VERSION='2026-08-02 15:00';         // 版本时间戳：用于比对本地/GitHub 是否一致
+const APP_VERSION='2026-08-04 22:14';         // 版本时间戳：用于比对本地/GitHub 是否一致
 function dogLevel(g){ if(g>=300)return 3; if(g>=160)return 2; if(g>=60)return 1; return 0; }
 const DOG_NAMES=['幼崽小猫','可爱小猫','帅气大猫','超级神猫'];
 let catState='sit';                       // 当前随机状态（sit/play/sleep/sick/eat 互动态）
@@ -4494,7 +4498,7 @@ $('#btnReset').onclick=()=>{
 };
 window.addEventListener('beforeinstallprompt',e=>e.preventDefault());
 </script>
-<div id="verTag" title="页面版本时间戳，用于比对本地/GitHub 是否一致">v20260802.1500</div>
+<div id="verTag" title="页面版本时间戳，用于比对本地/GitHub 是否一致">v20260804.2214</div>
 <div id="syncBadge" class="sync-badge init" title="数据同步状态：云端为主存，多端一致">☁️</div>
 <style>#verTag{position:fixed;right:6px;bottom:4px;font-size:11px;color:#c7b8c0;opacity:.7;z-index:50;pointer-events:none;font-family:ui-monospace,Menlo,Consolas,monospace}
 #syncBadge{position:fixed;right:6px;bottom:22px;font-size:11px;color:#9a8;opacity:.85;z-index:50;pointer-events:none;font-family:ui-monospace,Menlo,Consolas,monospace;background:rgba(255,255,255,.6);padding:1px 5px;border-radius:8px}
