@@ -569,10 +569,103 @@ function speak(t){ try{ speechSynthesis.cancel(); const u=new SpeechSynthesisUtt
 /* ============ state ============ */
 const SKEY='egg_checkin_v1';
 const SVER=1;                       // 数据 schema 版本，便于日后迁移
-let S = load();
+
+/* ============ 云端同步（GitHub 仓库作为后端）============
+   数据不再以浏览器 localStorage 为主存，而是存到 GitHub 上的私有数据仓库
+   （默认 egg-workbench-data 的 data/state.json）。打开页面自动拉取，每次
+   变动防抖写回，每 60 秒拉取一次保持多端一致。token 须为「仅限该数据仓库」
+   的细粒度 PAT；公开站点仓库不受影响。 */
+const SYNC = {
+  enabled: true,
+  owner: 'a9f7',
+  repo: 'egg-workbench-data',     // ← 独立的私有数据仓库（见说明）
+  path: 'data/state.json',
+  branch: 'main',
+  token: '',                      // ← 填入细粒度 PAT（github_pat_...）；为空则退回本地模式
+  keepLocalCache: true            // 网络不可用时用 localStorage 作离线安全缓存（非主存）
+};
+let _cloudSha = null;              // 当前云端文件 sha（用于 PUT 冲突处理）
+let _saveTimer = null;
+let _dirty = false;
+let _syncState = 'init';
+
+function _b64Utf8(str){ return btoa(unescape(encodeURIComponent(str))); }
+function _apiUrl(){ return `https://api.github.com/repos/${SYNC.owner}/${SYNC.repo}/contents/${encodeURIComponent(SYNC.path)}?ref=${SYNC.branch}`; }
+function _authH(){ return {Authorization:'Bearer '+SYNC.token, Accept:'application/vnd.github+json'}; }
+
+async function cloudLoad(){
+  if(!SYNC.enabled || !SYNC.token) return null;
+  try{
+    const r = await fetch(_apiUrl(), {headers:_authH()});
+    if(r.status===404) return null;             // 文件尚未创建
+    if(!r.ok) throw new Error('load '+r.status);
+    const j = await r.json();
+    _cloudSha = j.sha;
+    const txt = decodeURIComponent(escape(atob(j.content.replace(/\s/g,''))));
+    return JSON.parse(txt);
+  }catch(e){ console.warn('cloudLoad fail', e); return null; }
+}
+async function cloudSave(obj){
+  if(!SYNC.enabled || !SYNC.token) return false;
+  const content = _b64Utf8(JSON.stringify(obj));
+  const mkBody = ()=>({ message:'sync egg state', content, branch: SYNC.branch, ...(_cloudSha?{sha:_cloudSha}:{}) });
+  try{
+    let r = await fetch(_apiUrl(), {method:'PUT', headers:{..._authH(),'Content-Type':'application/json'}, body:JSON.stringify(mkBody())});
+    if(r.status===409){                         // 并发冲突：重新取 sha 后重试一次（最后写入获胜）
+      await cloudLoad();
+      r = await fetch(_apiUrl(), {method:'PUT', headers:{..._authH(),'Content-Type':'application/json'}, body:JSON.stringify(mkBody())});
+    }
+    if(!r.ok) throw new Error('save '+r.status);
+    const j = await r.json();
+    if(j.content && j.content.sha) _cloudSha = j.content.sha;
+    return true;
+  }catch(e){ console.warn('cloudSave fail', e); return false; }
+}
+async function syncPull(){
+  if(_dirty) return;                            // 有未保存改动先不覆盖
+  const remote = await cloudLoad();
+  if(remote && typeof remote.savedAt==='number' && remote.savedAt > (S.savedAt||0)){
+    S = load(remote);
+    setSyncState('synced');
+  }
+}
+function setSyncState(s){
+  _syncState = s;
+  const el = document.getElementById('syncBadge');
+  if(!el) return;
+  el.textContent = s==='synced' ? '☁️ 已同步' : s==='syncing' ? '☁️ 同步中…'
+                : s==='offline' ? '☁️ 离线·本地缓存' : s==='local' ? '💾 本地模式' : '☁️';
+  el.className = 'sync-badge '+s;
+}
+async function bootstrap(){
+  if(SYNC.enabled && SYNC.token){
+    setSyncState('syncing');
+    const remote = await cloudLoad();
+    if(remote){ S = load(remote); setSyncState('synced'); }
+    else {
+      const cache = (function(){ try{ return JSON.parse(localStorage.getItem(SKEY)); }catch(e){ return null; } })();
+      S = load(cache || null);
+      setSyncState(cache ? 'offline' : 'synced');
+      _dirty = true; flushSave();               // 首次把本地/新建数据写回云端
+    }
+    setInterval(syncPull, 60000);
+  } else {
+    S = load();
+    setSyncState('local');
+  }
+  S.savedAt = S.savedAt || 0;
+  addBoardBars();
+  renderHome();
+  console.log('[egg-workbench] 版本 '+APP_VERSION+' · data-app-version='+document.documentElement.getAttribute('data-app-version'));
+  const _iv=(location.hash||'#home').slice(1);
+  if(VIEWS.includes(_iv)) switchView(_iv); else switchView('home');
+}
+
+let S = normalize(null);
 function normalize(s){
   if(!s || typeof s!=='object') s={};
   s.v = SVER;
+  s.savedAt = (typeof s.savedAt==='number')?s.savedAt:0;   // 云端多端一致用：最后写入时间戳
   s.sun = s.sun||0;                 // 累计阳光（新用户从 0 开始，无新手礼包）
   s.parentPwd = s.parentPwd||'4321'; // 家长专区密码（初始 4321；不随阳光清零，独立保存）
   s.lastSign = s.lastSign||'';      // 上次签到日期
@@ -609,14 +702,25 @@ function load(raw){
   return s;
 }
 function save(){
-  try{
-    localStorage.setItem(SKEY, JSON.stringify(S));
-  }catch(e){
-    // 隐私模式 / 存储已满：提示但不让页面崩溃
-    console.warn('save failed', e);
-    toast('⚠️ 进度保存失败（浏览器存储不可用或已满）');
+  _dirty = true;
+  if(_saveTimer) clearTimeout(_saveTimer);
+  _saveTimer = setTimeout(flushSave, 400);     // 防抖：合并 400ms 内的多次变动
+}
+async function flushSave(){
+  if(!_dirty) return;
+  _dirty = false;
+  S.savedAt = Date.now();
+  if(SYNC.enabled && SYNC.token){
+    setSyncState('syncing');
+    const ok = await cloudSave(S);
+    if(ok){ setSyncState('synced'); if(SYNC.keepLocalCache) _cacheLocal(); }
+    else { setSyncState('offline'); if(SYNC.keepLocalCache) _cacheLocal(); toast('⚠️ 云端同步失败，已用本地缓存'); }
+  } else {
+    _cacheLocal();
+    setSyncState('local');
   }
 }
+function _cacheLocal(){ try{ localStorage.setItem(SKEY, JSON.stringify(S)); }catch(e){} }
 
 /* ============ content ============ */
 /* 以下数学/英语/语文内容均依据 IMA「文武宝贝的知识库 · 蛋蛋教学」文件夹中
@@ -4322,11 +4426,7 @@ function dogBurst(){
 
 /* ============ init ============ */
 function shuffle(a){ a=a.slice(); for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];} return a; }
-addBoardBars();
-renderHome();
-console.log('[egg-workbench] 版本 '+APP_VERSION+' · data-app-version='+document.documentElement.getAttribute('data-app-version'));
-const _iv=(location.hash||'#home').slice(1);
-if(VIEWS.includes(_iv)) switchView(_iv); else switchView('home');
+bootstrap();
 
 /* ============ data backup ============ */
 function exportData(){
@@ -4342,11 +4442,11 @@ function exportData(){
 }
 function importData(file){
   const r=new FileReader();
-  r.onload=()=>{
+  r.onload=async ()=>{
     try{
       const data=JSON.parse(r.result);
       S=load(data);              // 走 normalize + 每日重置，保证字段完整
-      save();
+      await flushSave();         // 立即写回云端（含本地缓存）
       toast('✅ 备份已恢复，马上刷新…');
       setTimeout(()=>location.reload(),600);
     }catch(e){ toast('❌ 备份文件无效'); }
@@ -4358,6 +4458,9 @@ $('#btnImport').onclick=()=>$('#fileImport').click();
 $('#fileImport').onchange=e=>{ const f=e.target.files&&e.target.files[0]; if(f) importData(f); if(e.target) e.target.value=''; };
 $('#btnReset').onclick=()=>{
   if(confirm('确定清空所有打卡进度、阳光和小猫数据吗？\n此操作不可撤销，建议先「导出备份」。')){
+    S = normalize(null);
+    S.savedAt = Date.now();
+    if(SYNC.enabled && SYNC.token){ cloudSave(S); }
     try{ localStorage.removeItem(SKEY); }catch(e){}
     location.reload();
   }
@@ -4365,6 +4468,11 @@ $('#btnReset').onclick=()=>{
 window.addEventListener('beforeinstallprompt',e=>e.preventDefault());
 </script>
 <div id="verTag" title="页面版本时间戳，用于比对本地/GitHub 是否一致">v20260802.1500</div>
-<style>#verTag{position:fixed;right:6px;bottom:4px;font-size:11px;color:#c7b8c0;opacity:.7;z-index:50;pointer-events:none;font-family:ui-monospace,Menlo,Consolas,monospace}</style>
+<div id="syncBadge" class="sync-badge init" title="数据同步状态：云端为主存，多端一致">☁️</div>
+<style>#verTag{position:fixed;right:6px;bottom:4px;font-size:11px;color:#c7b8c0;opacity:.7;z-index:50;pointer-events:none;font-family:ui-monospace,Menlo,Consolas,monospace}
+#syncBadge{position:fixed;right:6px;bottom:22px;font-size:11px;color:#9a8;opacity:.85;z-index:50;pointer-events:none;font-family:ui-monospace,Menlo,Consolas,monospace;background:rgba(255,255,255,.6);padding:1px 5px;border-radius:8px}
+#syncBadge.syncing{color:#c80}
+#syncBadge.offline{color:#c44}
+#syncBadge.local{color:#888}</style>
 </body>
 </html>
