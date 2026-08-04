@@ -583,7 +583,7 @@ const SYNC = {
   repo: 'egg-workbench-data',
   path: 'data/state.json',
   branch: 'main',
-  proxyUrl: '',                   // ← 填入你的代理服务地址（如 https://egg-proxy.xxx.workers.dev，不含末尾 /）；为空则退回本地模式
+  proxyUrl: 'https://egg-workbench-proxy.cometet.workers.dev',  // 服务端代理地址（不含末尾 /）；为空则退回本地模式
   keepLocalCache: false           // 用户要求：不落本地浏览器，云端为唯一主存
 };
 let _cloudSha = null;              // 当前云端文件 sha（用于 PUT 冲突处理）
