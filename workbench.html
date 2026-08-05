@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="zh-CN" data-app-version="20260805.1636">
+<html lang="zh-CN" data-app-version="20260805.2129">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
@@ -367,6 +367,19 @@
   .qk-crumb{color:#fb7299;font-weight:700;cursor:default}
   .qk-sep{color:#bbb}
   .vp-noep{font-size:12.5px;color:#888;padding:6px;text-align:center}
+  /* ===== 夸克播放器错误层（替代「缓冲中黑屏」） ===== */
+  .qk-err{position:relative;background:#fff5f7;border:2px dashed #fb7299;border-radius:14px;padding:18px 16px;margin:10px 12px;color:#b30047;font-size:14px;line-height:1.7}
+  .qk-err.hidden{display:none}
+  .qk-err b{color:#7a0030}
+  .qk-errlink{display:flex;flex-wrap:wrap;align-items:center;gap:8px;padding:0 12px 12px;font-size:13px;color:#444}
+  .qk-errlink.hidden{display:none}
+  .qk-errlink .vp-link{background:#fff;border:1.5px solid #fb7299;color:#e0407f;font-weight:700;padding:5px 12px;border-radius:10px;cursor:pointer;font-family:inherit;font-size:13px}
+  .qk-errlink .vp-link:hover{background:#fff6fb}
+  .qk-errmsg{flex:1;min-width:0;color:#666;font-size:12px}
+  /* 列表卡片标注文件大小 + 超限额红角标 */
+  .vcard .qz-size{font-size:12px;color:#888;margin-top:2px}
+  .vcard .qz-size.over{color:#b30047;font-weight:700}
+  .vcard .qz-warn{display:inline-block;background:#ffe3ef;border:1px solid #fb7299;color:#b30047;font-weight:700;font-size:11px;padding:1px 6px;border-radius:6px;margin-top:2px;margin-right:4px}
   /* ===== 视频专区·开根号密码锁 ===== */
   .vlock{background:#fff;border-radius:18px;padding:26px 22px 30px;box-shadow:0 6px 0 #ffe3ef;border:2px dashed #ffc2dd;max-width:460px;margin:14px auto;text-align:center}
   .vl-emoji{font-size:46px;line-height:1;margin-bottom:6px}
@@ -536,6 +549,12 @@
           <button class="vp-close" id="qkClose" type="button" aria-label="收起播放器">×</button>
         </div>
         <video id="qkVideo" class="vp-frame" controls playsinline preload="metadata"></video>
+        <div id="qkErr" class="qk-err hidden"></div>
+        <div id="qkErrLink" class="qk-errlink hidden">
+          <button type="button" class="vp-link" id="qkOpenNew">↗ 在新窗口打开</button>
+          <button type="button" class="vp-link" id="qkCopyUrl">📋 复制代理链接</button>
+          <span class="qk-errmsg" id="qkErrMsg"></span>
+        </div>
       </div>
       <div id="quarkBox" class="videogrid" style="display:none"></div>
       </div>
@@ -3219,13 +3238,30 @@ function renderQuark(){
       const icon = it.dir?'📁':(it.video?'🎬':'📄');
       const t=document.createElement('div'); t.className='vt'; t.textContent=icon+' '+it.file_name;
       c.appendChild(t);
+      // 文件大小（夸克 API 已返回 size，单位字节），超 80MB 标"⚠️ 大文件可能受限"
+      if(it.size && !it.dir){
+        const mb = it.size/1024/1024;
+        const over = mb > 80;
+        const sz = document.createElement('div');
+        sz.className = 'qz-size' + (over ? ' over' : '');
+        sz.textContent = (mb >= 1 ? mb.toFixed(1)+' MB' : Math.round(mb*1024)+' KB') + (over ? '（夸克普通会员单文件直链限额 ≤80MB，可能无法直连播放）' : '');
+        // 警告放到标题行
+        const wrap = document.createElement('div'); wrap.style.display='flex'; wrap.style.alignItems='center'; wrap.style.flexWrap='wrap';
+        if(over){ const tag = document.createElement('span'); tag.className='qz-warn'; tag.textContent='⚠️ 过大'; wrap.appendChild(tag); }
+        wrap.appendChild(t);
+        c.replaceChild(wrap, t);
+        c.appendChild(sz);
+        if(!over){
+          // 不过大时仅保留标题（删除临时 wrap，因为保留也行——保持原 t 在 wrap 内即可）
+        }
+      }
       if(it.dir){
         const b=document.createElement('button'); b.className='vgo'; b.type='button'; b.textContent='打开文件夹';
         b.onclick=()=>{ quarkPath.push({fid:it.fid, name:it.file_name}); renderQuark(); };
         c.appendChild(b);
       } else if(it.video){
         const b=document.createElement('button'); b.className='vgo'; b.type='button'; b.textContent='▶ 播放';
-        b.onclick=()=>playQuark(it.fid, it.file_name);
+        b.onclick=()=>playQuark(it.fid, it.file_name, it.size);
         c.appendChild(b);
       } else {
         const d=document.createElement('div'); d.className='vd'; d.textContent='非视频文件，无法内嵌播放';
@@ -3235,19 +3271,90 @@ function renderQuark(){
     });
   }).catch(e=>{ box.innerHTML='<div class="vcard" style="grid-column:1/-1"><div class="vt">⚠️ 网络错误</div><div class="vd">'+qkEsc(e.message)+'</div></div>'; });
 }
-function playQuark(fid, name){
+// 真正开播放。先 fetch 探测代理响应的 status + Content-Type，
+// 4xx/5xx 或 JSON 错误就别让 <video> 傻等，否则就黑屏卡到天荒地老
+let _qkCurUrl = '';
+async function playQuark(fid, name, sizeBytes){
   const vp=$('#qkPlayer'); if(!vp) return;
   $('#qkTitle').textContent = name||'视频';
   const v=$('#qkVideo');
-  v.src = QUARK_PROXY.replace(/\/$/,'')+'/quark/play?fid='+encodeURIComponent(fid)+(QUARK_TOKEN?'&token='+encodeURIComponent(QUARK_TOKEN):'');
+  const url = QUARK_PROXY.replace(/\/$/,'')+'/quark/play?fid='+encodeURIComponent(fid)+(QUARK_TOKEN?'&token='+encodeURIComponent(QUARK_TOKEN):'');
+  _qkCurUrl = url;
+  // 隐藏旧的错误提示（新一次尝试）
+  const errEl=$('#qkErr'), errLnk=$('#qkErrLink'), errMsg=$('#qkErrMsg');
+  if(errEl) errEl.classList.add('hidden');
+  if(errLnk) errLnk.classList.add('hidden');
   vp.classList.remove('hidden');
   try{ vp.scrollIntoView({behavior:'smooth', block:'start'}); }catch(e){}
-  try{ v.play().catch(()=>{}); }catch(e){}
+  // 探测：拉 1 字节（有些 CDN 拒绝单字节但接受 0-0，也有些必须 > 1；先 0-0 试）
+  let probeOk = false;
+  try{
+    const probe = await fetch(url, {headers:{'Range':'bytes=0-0'}});
+    const ct = (probe.headers.get('content-type')||'').toLowerCase();
+    // 流媒体响应：2xx / 206 + 视频类 content-type（包括我们主动补的 video/mp4）
+    const isStream = probe.ok && (/^(video|application\/octet-stream|application\/mp4)/.test(ct) || /\bmp4\b|\bquicktime\b/i.test(ct));
+    // 错误响应：JSON 错误体
+    const isErrJson = (probe.status>=400) || /application\/json/i.test(ct) || !probe.ok;
+    if(isErrJson){
+      let msg = '该视频暂时无法播放';
+      try{ const j=await probe.json(); msg = (j && j.error) || msg; }catch(_){}
+      // 超 80MB + 限额 提示给清晰引导
+      if(/size\s*limit|文件过大|限额/i.test(msg)){
+        showQkError('⚠️ 这个视频超过夸克账号的单文件直链限制（普通会员 ≤80MB）。请开通夸克 SVIP、或在夸克 App「下载到本地」、或换更小的片源。', msg);
+      } else {
+        showQkError('⚠️ ' + msg, msg);
+      }
+      return;
+    }
+    if(!isStream){
+      showQkError('⚠️ 代理响应类型不是视频流（Content-Type: '+ct+'），无法播放。', msg||'');
+      return;
+    }
+    probeOk = true;
+  }catch(e){
+    showQkError('⚠️ 探测代理响应时网络错误：' + e.message, e.message);
+    return;
+  }
+  if(!probeOk) return;
+  // 真正设 video 触发播放
+  v.src = url;
+  try{ v.load(); v.play().catch(()=>{}); }catch(e){}
+}
+function showQkError(html, rawErr){
+  const errEl=$('#qkErr'), errLnk=$('#qkErrLink'), errMsg=$('#qkErrMsg');
+  if(!errEl) return;
+  errEl.innerHTML = html;
+  errEl.classList.remove('hidden');
+  if(errLnk) errLnk.classList.remove('hidden');
+  if(errMsg) errMsg.textContent = rawErr ? '（错误码：'+rawErr+'）' : '';
 }
 function closeQuarkPlayer(){
   const vp=$('#qkPlayer'); if(vp) vp.classList.add('hidden');
   const f=$('#qkVideo'); if(f){ try{f.pause();}catch(e){} f.src=''; }
+  const errEl=$('#qkErr'), errLnk=$('#qkErrLink');
+  if(errEl) errEl.classList.add('hidden');
+  if(errLnk) errLnk.classList.add('hidden');
 }
+// video 元素 error 兜底：万一播放器在探测通过后真挂了（中途被切断/限速）也提示
+(function(){
+  function bindErrBtn(){
+    const o=$('#qkOpenNew'), c=$('#qkCopyUrl');
+    if(o) o.onclick=()=>{ if(_qkCurUrl) window.open(_qkCurUrl,'_blank','noopener'); };
+    if(c) c.onclick=async ()=>{ if(!_qkCurUrl) return; try{ await navigator.clipboard.writeText(_qkCurUrl); c.textContent='✅ 已复制'; setTimeout(()=>{c.textContent='📋 复制代理链接';},1400);}catch(_){ window.prompt('复制此链接去浏览器打开：', _qkCurUrl); } };
+  }
+  // DOM 已就绪时直接挂，等会执行一次
+  if(document.readyState!=='loading') bindErrBtn();
+  else document.addEventListener('DOMContentLoaded', bindErrBtn);
+  // video 元素 error 兜底（探测 ok 但真正播不了）
+  window.addEventListener('load', ()=>{
+    const v=$('#qkVideo'); if(!v) return;
+    v.addEventListener('error', ()=>{
+      // 仅当不是隐藏态、确实有 src 才报错（避免冗余提示）
+      if(!v.src || $('#qkPlayer').classList.contains('hidden')) return;
+      showQkError('⚠️ 视频解码失败——可能是 HEVC（h265）、加密 mp4 或浏览器不支持的编码。请用 <b>↗ 在新窗口打开</b> 让浏览器自带播放器尝试，或换 mp4/h264 源。', '');
+    });
+  });
+})();
 function qkEsc(s){ return String(s==null?'':s).replace(/[&<>"]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
 $$('#videoSeg button').forEach(b=>b.onclick=()=>{
   $$('#videoSeg button').forEach(x=>x.classList.remove('on'));
@@ -4522,7 +4629,7 @@ const SHOP=[
   {key:'medicine',icon:'💊',name:'药品',price:15,grow:11,desc:'治病+喂养 +11成长',medicine:true},
 ];
 const FOOD_ITEMS=SHOP.filter(s=>s.food);     // 多种食物（像衣服一样可在超市挑选）
-const APP_VERSION='2026-08-05 16:36';         // 版本时间戳：用于比对本地/GitHub 是否一致
+const APP_VERSION='2026-08-05 21:30';         // 版本时间戳：用于比对本地/GitHub 是否一致
 function dogLevel(g){ if(g>=300)return 3; if(g>=160)return 2; if(g>=60)return 1; return 0; }
 const DOG_NAMES=['幼崽小猫','可爱小猫','帅气大猫','超级神猫'];
 let catState='sit';                       // 当前随机状态（sit/play/sleep/sick/eat 互动态）
@@ -4884,7 +4991,7 @@ $('#btnReset').onclick=()=>{
 };
 window.addEventListener('beforeinstallprompt',e=>e.preventDefault());
 </script>
-<div id="verTag" title="页面版本时间戳，用于比对本地/GitHub 是否一致">v20260805.1636</div>
+<div id="verTag" title="页面版本时间戳，用于比对本地/GitHub 是否一致">v20260805.2129</div>
 <div id="syncBadge" class="sync-badge init" title="数据同步状态：云端为主存，多端一致">☁️</div>
 <div id="syncUploadBtn" title="把本机当前进度强制覆盖上传到云端（替换云端数据，多端将以本机为准）">↑ 强制上传</div>
 <div id="syncDownloadBtn" title="用云端数据覆盖本机（丢弃本机本地改动，以云端为准）——当本地旧缓存盖掉云端设定时使用">↓ 强制下载</div>
