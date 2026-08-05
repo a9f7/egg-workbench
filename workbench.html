@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="zh-CN" data-app-version="20260805.2129">
+<html lang="zh-CN" data-app-version="20260805.2202">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
@@ -3120,6 +3120,7 @@ const VIDEOS={
 const QUARK_PROXY    = 'https://quark.cometet.workers.dev/';   // 你的私有代理地址
 const QUARK_TOKEN    = 'egg_queenie';                          // 与代理端 TOKEN 一致
 const QUARK_ROOT_FID = '0c7e38649a434abf9d859059f97b23b6';       // 起始文件夹 fid = 夸克里「蛋蛋视频」专用文件夹（孩子只看这个）
+const QUARK_PROXY_CN = '';   // 境内 CloudBase 云函数地址（填后启用「直连夸克 CDN」模式，免费更稳）；留空则用上方 QUARK_PROXY(Cloudflare) 作备用。例：https://xxxx.ap-shanghai.service.tcloudbase.com/release/quark-proxy
 /* ===== 内嵌视频播放器（不弹窗，每个合集带集数按钮） ===== */
 function bvidUrl(bvid,p){
   p=p||1;
@@ -3273,50 +3274,76 @@ function renderQuark(){
 }
 // 真正开播放。先 fetch 探测代理响应的 status + Content-Type，
 // 4xx/5xx 或 JSON 错误就别让 <video> 傻等，否则就黑屏卡到天荒地老
+// 播放调度：优先境内直连（QUARK_PROXY_CN 填了才启用），失败回退 Cloudflare 流式
 let _qkCurUrl = '';
+let _qkMode = '';      // 'cn' | 'cf'
+let _qkFid = '', _qkName = '';
 async function playQuark(fid, name, sizeBytes){
+  _qkFid = fid; _qkName = name;
   const vp=$('#qkPlayer'); if(!vp) return;
   $('#qkTitle').textContent = name||'视频';
-  const v=$('#qkVideo');
-  const url = QUARK_PROXY.replace(/\/$/,'')+'/quark/play?fid='+encodeURIComponent(fid)+(QUARK_TOKEN?'&token='+encodeURIComponent(QUARK_TOKEN):'');
-  _qkCurUrl = url;
-  // 隐藏旧的错误提示（新一次尝试）
-  const errEl=$('#qkErr'), errLnk=$('#qkErrLink'), errMsg=$('#qkErrMsg');
+  const v0=$('#qkVideo'); if(v0) v0._cnRetried=false;
+  const errEl=$('#qkErr'), errLnk=$('#qkErrLink');
   if(errEl) errEl.classList.add('hidden');
   if(errLnk) errLnk.classList.add('hidden');
   vp.classList.remove('hidden');
   try{ vp.scrollIntoView({behavior:'smooth', block:'start'}); }catch(e){}
-  // 探测：拉 1 字节（有些 CDN 拒绝单字节但接受 0-0，也有些必须 > 1；先 0-0 试）
+  if(QUARK_PROXY_CN){
+    _qkMode = 'cn';
+    const ok = await playQuarkCN(fid, name);
+    if(ok) return;
+    // 取直链失败 → 回退 Cloudflare 备用（若配了）
+    if(QUARK_PROXY){ showQkError('⚠️ 境内代理取直链失败，正在回退到备用代理…', ''); return playQuarkCF(fid, name); }
+    return; // 错误已在 playQuarkCN 内展示
+  }
+  return playQuarkCF(fid, name);
+}
+// 境内直连模式：云函数只返回直链，前端 <video> 直连夸克 CDN（免费、不流式）
+async function playQuarkCN(fid, name){
+  const v=$('#qkVideo');
+  const api = QUARK_PROXY_CN.replace(/\/$/,'') + '/quark/play?fid='+encodeURIComponent(fid) + (QUARK_TOKEN?'&token='+encodeURIComponent(QUARK_TOKEN):'');
+  _qkCurUrl = api;
+  try{
+    const r = await fetch(api);
+    const j = await r.json().catch(()=>({}));
+    if(!r.ok || !j.url){
+      const msg = (j && j.error) || ('HTTP '+r.status);
+      if(/size\s*limit|文件过大|限额/i.test(msg)) showQkError('⚠️ 这个视频超过夸克账号的单文件直链限制（普通会员 ≤80MB）。请开通夸克 SVIP、或在夸克 App「下载到本地」、或换更小的片源。', msg);
+      else showQkError('⚠️ '+msg, msg);
+      return false;
+    }
+    _qkCurUrl = j.url;       // 直连地址，供「新窗口打开 / 复制」使用
+    v.src = j.url;
+    try{ v.load(); v.play().catch(()=>{}); }catch(e){}
+    return true;
+  }catch(e){
+    showQkError('⚠️ 境内代理请求失败：'+e.message, e.message);
+    return false;
+  }
+}
+// Cloudflare 流式代理模式（备用）
+async function playQuarkCF(fid, name){
+  _qkMode = 'cf';
+  const v=$('#qkVideo');
+  const url = QUARK_PROXY.replace(/\/$/,'')+'/quark/play?fid='+encodeURIComponent(fid)+(QUARK_TOKEN?'&token='+encodeURIComponent(QUARK_TOKEN):'');
+  _qkCurUrl = url;
   let probeOk = false;
   try{
     const probe = await fetch(url, {headers:{'Range':'bytes=0-0'}});
     const ct = (probe.headers.get('content-type')||'').toLowerCase();
-    // 流媒体响应：2xx / 206 + 视频类 content-type（包括我们主动补的 video/mp4）
     const isStream = probe.ok && (/^(video|application\/octet-stream|application\/mp4)/.test(ct) || /\bmp4\b|\bquicktime\b/i.test(ct));
-    // 错误响应：JSON 错误体
     const isErrJson = (probe.status>=400) || /application\/json/i.test(ct) || !probe.ok;
     if(isErrJson){
       let msg = '该视频暂时无法播放';
       try{ const j=await probe.json(); msg = (j && j.error) || msg; }catch(_){}
-      // 超 80MB + 限额 提示给清晰引导
-      if(/size\s*limit|文件过大|限额/i.test(msg)){
-        showQkError('⚠️ 这个视频超过夸克账号的单文件直链限制（普通会员 ≤80MB）。请开通夸克 SVIP、或在夸克 App「下载到本地」、或换更小的片源。', msg);
-      } else {
-        showQkError('⚠️ ' + msg, msg);
-      }
+      if(/size\s*limit|文件过大|限额/i.test(msg)) showQkError('⚠️ 这个视频超过夸克账号的单文件直链限制（普通会员 ≤80MB）。请开通夸克 SVIP、或在夸克 App「下载到本地」、或换更小的片源。', msg);
+      else showQkError('⚠️ ' + msg, msg);
       return;
     }
-    if(!isStream){
-      showQkError('⚠️ 代理响应类型不是视频流（Content-Type: '+ct+'），无法播放。', msg||'');
-      return;
-    }
+    if(!isStream){ showQkError('⚠️ 代理响应类型不是视频流（Content-Type: '+ct+'），无法播放。', msg||''); return; }
     probeOk = true;
-  }catch(e){
-    showQkError('⚠️ 探测代理响应时网络错误：' + e.message, e.message);
-    return;
-  }
+  }catch(e){ showQkError('⚠️ 探测代理响应时网络错误：' + e.message, e.message); return; }
   if(!probeOk) return;
-  // 真正设 video 触发播放
   v.src = url;
   try{ v.load(); v.play().catch(()=>{}); }catch(e){}
 }
@@ -3351,6 +3378,13 @@ function closeQuarkPlayer(){
     v.addEventListener('error', ()=>{
       // 仅当不是隐藏态、确实有 src 才报错（避免冗余提示）
       if(!v.src || $('#qkPlayer').classList.contains('hidden')) return;
+      // 境内直连模式被防盗链拦截 → 自动回退 Cloudflare 备用一次
+      if(_qkMode==='cn' && QUARK_PROXY && !v._cnRetried){
+        v._cnRetried = true;
+        showQkError('⚠️ 直连播放被夸克防盗链拦截，正在回退到备用代理…', '');
+        playQuarkCF(_qkFid, _qkName);
+        return;
+      }
       showQkError('⚠️ 视频解码失败——可能是 HEVC（h265）、加密 mp4 或浏览器不支持的编码。请用 <b>↗ 在新窗口打开</b> 让浏览器自带播放器尝试，或换 mp4/h264 源。', '');
     });
   });
@@ -4629,7 +4663,7 @@ const SHOP=[
   {key:'medicine',icon:'💊',name:'药品',price:15,grow:11,desc:'治病+喂养 +11成长',medicine:true},
 ];
 const FOOD_ITEMS=SHOP.filter(s=>s.food);     // 多种食物（像衣服一样可在超市挑选）
-const APP_VERSION='2026-08-05 21:30';         // 版本时间戳：用于比对本地/GitHub 是否一致
+const APP_VERSION='2026-08-05 22:02';         // 版本时间戳：用于比对本地/GitHub 是否一致
 function dogLevel(g){ if(g>=300)return 3; if(g>=160)return 2; if(g>=60)return 1; return 0; }
 const DOG_NAMES=['幼崽小猫','可爱小猫','帅气大猫','超级神猫'];
 let catState='sit';                       // 当前随机状态（sit/play/sleep/sick/eat 互动态）
@@ -4991,7 +5025,7 @@ $('#btnReset').onclick=()=>{
 };
 window.addEventListener('beforeinstallprompt',e=>e.preventDefault());
 </script>
-<div id="verTag" title="页面版本时间戳，用于比对本地/GitHub 是否一致">v20260805.2129</div>
+<div id="verTag" title="页面版本时间戳，用于比对本地/GitHub 是否一致">v20260805.2202</div>
 <div id="syncBadge" class="sync-badge init" title="数据同步状态：云端为主存，多端一致">☁️</div>
 <div id="syncUploadBtn" title="把本机当前进度强制覆盖上传到云端（替换云端数据，多端将以本机为准）">↑ 强制上传</div>
 <div id="syncDownloadBtn" title="用云端数据覆盖本机（丢弃本机本地改动，以云端为准）——当本地旧缓存盖掉云端设定时使用">↓ 强制下载</div>
