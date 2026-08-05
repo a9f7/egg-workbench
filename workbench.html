@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="zh-CN" data-app-version="20260805.1206">
+<html lang="zh-CN" data-app-version="20260805.1636">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
@@ -298,6 +298,8 @@
   .toast{position:fixed;left:50%;top:20%;transform:translateX(-50%);background:rgba(90,60,90,.92);color:#fff;
     padding:12px 20px;border-radius:16px;font-size:14px;z-index:99;opacity:0;transition:opacity .25s;pointer-events:none;max-width:80%}
   .toast.show{opacity:1}
+  #syncToast{position:fixed;right:6px;bottom:86px;background:rgba(150,40,40,.92);color:#fff;padding:9px 14px;border-radius:14px;font-size:13px;z-index:60;opacity:0;transition:opacity .25s;pointer-events:none;max-width:78%;box-shadow:0 6px 20px rgba(120,30,30,.25)}
+  #syncToast.show{opacity:1}
   .seg{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}
   .seg button{border:none;background:#fff;color:var(--ink);font-family:inherit;font-size:13px;
     padding:8px 12px;border-radius:14px;box-shadow:var(--shadow);cursor:pointer}
@@ -657,6 +659,7 @@ function daysLeft(){
   return Math.max(0, Math.round((e-t)/864e5));
 }
 function toast(msg){ const t=$('#toast'); t.textContent=msg; t.classList.add('show'); clearTimeout(t._h); t._h=setTimeout(()=>t.classList.remove('show'),1600); }
+function syncToast(msg){ const t=$('#syncToast'); if(!t) return; t.textContent=msg; t.classList.add('show'); clearTimeout(t._h); t._h=setTimeout(()=>t.classList.remove('show'),3200); }
 function speak(t){ try{ speechSynthesis.cancel(); const u=new SpeechSynthesisUtterance(t); u.lang='en-US'; u.rate=.9; u.pitch=1.1; speechSynthesis.speak(u);}catch(e){} }
 
 /* ============ state ============ */
@@ -704,18 +707,28 @@ async function cloudSave(obj){
   if(!SYNC.enabled || !SYNC.proxyUrl) return false;
   const content = _b64Utf8(JSON.stringify(obj));
   const mkBody = ()=>({ content, sha: _cloudSha || null });
-  try{
-    let r = await fetch(_apiUrl(), {method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify(mkBody())});
-    if(r.status===409){                         // 并发冲突：重新取 sha 后重试一次（最后写入获胜）
-      await cloudLoad();
-      r = await fetch(_apiUrl(), {method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify(mkBody())});
+  let lastStatus = 0;
+  for(let attempt=0; attempt<3; attempt++){
+    try{
+      const r = await fetch(_apiUrl(), {method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify(mkBody())});
+      lastStatus = r.status;
+      if(r.status===409){                 // 并发冲突（多端同时写）：重新取最新 sha 后重试，最后写入获胜
+        await cloudLoad();                // 刷新 _cloudSha
+        continue;                         // 进入下一轮重试
+      }
+      if(!r.ok){ _lastErr='PUT '+r.status+' '+(await r.text().catch(()=>'')).slice(0,80); throw new Error(_lastErr); }
+      // 成功：尽量读取新 sha；即便 body 解析失败也无妨（下次 syncPull 会自动刷新 sha）
+      try{ const j = await r.json(); if(j && j.sha) _cloudSha = j.sha; }catch(_){}
+      _lastErr='';
+      return true;
+    }catch(e){
+      if(lastStatus===409) continue;       // 兜底（理论上已被上面的 continue 处理）
+      console.warn('cloudSave fail', e);
+      return false;
     }
-    if(!r.ok){ _lastErr='PUT '+r.status+' '+(await r.text().catch(()=>'')).slice(0,80); throw new Error(_lastErr); }
-    const j = await r.json();
-    if(j.sha) _cloudSha = j.sha;
-    _lastErr='';
-    return true;
-  }catch(e){ console.warn('cloudSave fail', e); return false; }
+  }
+  _lastErr='PUT 409 多次冲突';             // 多端高频并发写入极端情况：放弃本次，保留本地缓存
+  return false;
 }
 async function syncPull(){
   if(_dirty) return;                            // 有未保存改动先不覆盖（避免冲掉用户当前进度）
@@ -750,7 +763,7 @@ async function forceUpload(){
   }catch(e){
     setSyncState('offline');
     if(SYNC.keepLocalCache) _cacheLocal();
-    toast('⚠️ 强制上传失败（'+( _lastErr || '网络') +'）');
+    syncToast('⚠️ 强制上传失败（'+( _lastErr || '网络') +'）');
     console.warn('forceUpload fail', e);
   }
 }
@@ -770,7 +783,7 @@ async function forceDownload(){
     toast('☁️ 已用云端数据覆盖本机');
   }catch(e){
     setSyncState('offline');
-    toast('⚠️ 强制下载失败（'+( _lastErr || '网络') +'）');
+    syncToast('⚠️ 强制下载失败（'+( _lastErr || '网络') +'）');
     console.warn('forceDownload fail', e);
   }
 }
@@ -936,7 +949,7 @@ async function flushSave(){
     setSyncState('syncing');
     const ok = await cloudSave(S);
     if(ok){ setSyncState('synced'); if(SYNC.keepLocalCache) _cacheLocal(); if(window._eggBC) window._eggBC.postMessage({s:S}); }
-    else { setSyncState('offline'); if(SYNC.keepLocalCache) _cacheLocal(); _enqueuePending(S); toast('⚠️ 云端同步失败（'+(_lastErr||'网络')+'），已存本地待补传'); }
+    else { setSyncState('offline'); if(SYNC.keepLocalCache) _cacheLocal(); _enqueuePending(S); syncToast('⚠️ 云端同步失败（'+(_lastErr||'网络')+'），进度已存本地'); }
   } else {
     _cacheLocal();
     setSyncState('local');
@@ -4509,7 +4522,7 @@ const SHOP=[
   {key:'medicine',icon:'💊',name:'药品',price:15,grow:11,desc:'治病+喂养 +11成长',medicine:true},
 ];
 const FOOD_ITEMS=SHOP.filter(s=>s.food);     // 多种食物（像衣服一样可在超市挑选）
-const APP_VERSION='2026-08-05 12:06';         // 版本时间戳：用于比对本地/GitHub 是否一致
+const APP_VERSION='2026-08-05 16:36';         // 版本时间戳：用于比对本地/GitHub 是否一致
 function dogLevel(g){ if(g>=300)return 3; if(g>=160)return 2; if(g>=60)return 1; return 0; }
 const DOG_NAMES=['幼崽小猫','可爱小猫','帅气大猫','超级神猫'];
 let catState='sit';                       // 当前随机状态（sit/play/sleep/sick/eat 互动态）
@@ -4871,10 +4884,11 @@ $('#btnReset').onclick=()=>{
 };
 window.addEventListener('beforeinstallprompt',e=>e.preventDefault());
 </script>
-<div id="verTag" title="页面版本时间戳，用于比对本地/GitHub 是否一致">v20260805.1206</div>
+<div id="verTag" title="页面版本时间戳，用于比对本地/GitHub 是否一致">v20260805.1636</div>
 <div id="syncBadge" class="sync-badge init" title="数据同步状态：云端为主存，多端一致">☁️</div>
 <div id="syncUploadBtn" title="把本机当前进度强制覆盖上传到云端（替换云端数据，多端将以本机为准）">↑ 强制上传</div>
 <div id="syncDownloadBtn" title="用云端数据覆盖本机（丢弃本机本地改动，以云端为准）——当本地旧缓存盖掉云端设定时使用">↓ 强制下载</div>
+<div id="syncToast"></div>
 <style>#verTag{position:fixed;right:6px;bottom:4px;font-size:11px;color:#c7b8c0;opacity:.7;z-index:50;pointer-events:none;font-family:ui-monospace,Menlo,Consolas,monospace}
 #syncBadge{position:fixed;right:6px;bottom:22px;font-size:11px;color:#9a8;opacity:.85;z-index:50;pointer-events:none;font-family:ui-monospace,Menlo,Consolas,monospace;background:rgba(255,255,255,.6);padding:1px 5px;border-radius:8px}
 #syncBadge.syncing{color:#c80}
