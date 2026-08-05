@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="zh-CN" data-app-version="20260805.1107">
+<html lang="zh-CN" data-app-version="20260805.1130">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
@@ -544,7 +544,7 @@
   <section class="view" id="v-exercise">
     <div class="card">
       <h3>🏃 运动 & 🧹 家务打卡</h3>
-      <p class="muted">运动打卡 ☀️+2（每日上限5）、家务打卡 ☀️+1（每日上限3）；完成后还能再自选表扬加阳光哦！</p>
+      <p class="muted">运动 & 家务打卡只记「完成」，不再自动发阳光；阳光奖励由家长在「家长模块」里手动给孩子加。</p>
       <div id="exList"></div>
     </div>
   </section>
@@ -911,16 +911,13 @@ function mergeState(local, remote){
     ['c','m','e'].forEach(k=>{ out.today[k] = Math.max(Number(out.today[k])||0, Number(local.today[k])||0); });
     out.today.ex = Array.from(new Set([...(out.today.ex||[]), ...(local.today.ex||[])]));
   }
-  // exDone：按日期+运动名深合并（base/add 取 max，done/praised 取或）
+  // exDone：按日期+任务名深合并，done 取或（不再有 base/add/praised 阳光字段）
   out.exDone = out.exDone||{};
   Object.entries(local.exDone||{}).forEach(([d,exs])=>{
     out.exDone[d] = out.exDone[d]||{};
     Object.entries(exs||{}).forEach(([name,v])=>{
       const cur = out.exDone[d][name] = Object.assign({}, out.exDone[d][name]||{}, v||{});
-      cur.base = Math.max(Number(cur.base)||0, Number(v?.base)||0);
-      cur.add = Math.max(Number(cur.add)||0, Number(v?.add)||0);
       if(v?.done) cur.done = true;
-      if(v?.praised) cur.praised = true;
     });
   });
   out.savedAt = Math.max(Number(out.savedAt)||0, Number(local.savedAt)||0);
@@ -4415,19 +4412,7 @@ function enRetest(btn){
 }
 
 /* ============ exercise ============ */
-const EX_SUN_CAP={sport:5, chore:3};          // 运动每日阳光上限5、家务每日上限3（含打卡基础分+表扬分）
 function isSportId(id){ return id.indexOf('sp_')===0; }
-// 统计当天某类任务已累计获得的阳光（打卡基础分 base + 表扬分 add），用于每日上限判定
-function todayExSun(isSport){
-  const d=S.exDone[todayStr()]||{}; let sum=0;
-  for(const id in d){
-    if(isSportId(id)!==isSport) continue;
-    const e=d[id]; if(!e||!e.done) continue;
-    const base=(e.base!==undefined)? e.base : (isSport?2:1);   // 旧数据无 base 字段时按原规则还原
-    sum += base + (e.add||0);
-  }
-  return sum;
-}
 let exPageS=0, exPageC=0;
 function exPager(box,n,total,setFn){
   if(total<=1) return;
@@ -4455,48 +4440,23 @@ function renderEx(){
     const grid=document.createElement('div'); grid.className='ex-grid';
     g.items.slice(pg*PS,pg*PS+PS).forEach(it=>{
       const done=!!todayEx[it.id];
-      const added=todayEx[it.id]&&todayEx[it.id].add||0;
       const d=document.createElement('div'); d.className='ex-card';
       d.innerHTML=`<div class="ei">${it.icon}</div>
-        <div class="et"><div class="t">${it.name}</div><div class="s">${it.desc}</div>
-        ${done?(added?`<div class="addpick" style="opacity:.5;pointer-events:none"><span style="color:#e67e22;font-weight:bold">已加 ☀️+${added}</span></div>`:`<div class="addpick"><button data-add="1">+1☀️</button><button data-add="2">+2☀️</button><button data-add="3">+3☀️</button></div>`):''}
-        </div>
+        <div class="et"><div class="t">${it.name}</div><div class="s">${it.desc}</div></div>
         <button class="chk ${done?'on':''}" data-id="${it.id}">${done?'已完成✓':'打卡'}</button>`;
       grid.appendChild(d);
     });
     box.appendChild(grid);
     exPager(box,pg,total,g.set);
   });
+  // 运动 / 家务打卡：只记录完成，不再自动发放阳光（阳光奖励统一由家长模块手动加）
   $$('#exList .chk').forEach(b=>b.onclick=()=>{
     const id=b.dataset.id;
     if((S.exDone[todayStr()]||{})[id]){ toast('今天已经打过卡啦～'); return; }
-    const isSport = isSportId(id);
-    const cap = isSport ? EX_SUN_CAP.sport : EX_SUN_CAP.chore;
-    const base = isSport ? 2 : 1;
-    const give = Math.min(base, Math.max(0, cap - todayExSun(isSport)));   // 封顶到当日上限
-    S.exDone[todayStr()]=S.exDone[todayStr()]||{}; S.exDone[todayStr()][id]={done:true, base:give, add:0, praised:false};
-    S.sun += give;
+    const isSport = isSportId(id);   // 仅用于区分文案，不再发放阳光
+    S.exDone[todayStr()]=S.exDone[todayStr()]||{}; S.exDone[todayStr()][id]={done:true};
     save(); renderEx(); renderHome();
-    if(give < base){ toast(isSport ? `运动打卡成功！🎉 今日运动阳光已达上限${cap}，本次仅+${give}` : `家务打卡成功！🎉 今日家务阳光已达上限${cap}，本次仅+${give}`); }
-    else { toast(isSport ? '运动打卡成功！🎉 ☀️+2 可再表扬加阳光' : '家务打卡成功！🎉 ☀️+1 可再表扬加阳光'); }
-  });
-  $$('#exList [data-add]').forEach(b=>b.onclick=()=>{
-    const n=+b.dataset.add;
-    const card=b.closest('.ex-card');
-    const chk=card.querySelector('.chk');
-    const id=chk.dataset.id;
-    const rec=S.exDone[todayStr()]&&S.exDone[todayStr()][id];
-    if(rec && (rec.praised || rec.add)){ return; }   // 已表扬过则不再加
-    // 兼容旧数据：如果存的是 true，转成对象
-    if(rec===true){ S.exDone[todayStr()][id]={done:true,base:2,add:0,praised:false}; }
-    const isSport = isSportId(id);
-    const cap = isSport ? EX_SUN_CAP.sport : EX_SUN_CAP.chore;
-    const give = Math.min(n, Math.max(0, cap - todayExSun(isSport)));   // 封顶到当日上限
-    S.sun += give;
-    const entry = S.exDone[todayStr()][id];
-    entry.add = give; entry.praised = true;
-    save(); renderEx(); renderHome();
-    toast(give < n ? (`🎉 表扬蛋蛋！今日上限${cap}，本次仅+${give}`) : ('🎉 表扬蛋蛋！☀️+'+give));
+    toast(isSport ? '运动打卡成功！🎉 坚持运动，棒棒哒～' : '家务打卡成功！🎉 帮家里分担，真乖～');
   });
 }
 
@@ -4546,7 +4506,7 @@ const SHOP=[
   {key:'medicine',icon:'💊',name:'药品',price:15,grow:11,desc:'治病+喂养 +11成长',medicine:true},
 ];
 const FOOD_ITEMS=SHOP.filter(s=>s.food);     // 多种食物（像衣服一样可在超市挑选）
-const APP_VERSION='2026-08-05 11:07';         // 版本时间戳：用于比对本地/GitHub 是否一致
+const APP_VERSION='2026-08-05 11:30';         // 版本时间戳：用于比对本地/GitHub 是否一致
 function dogLevel(g){ if(g>=300)return 3; if(g>=160)return 2; if(g>=60)return 1; return 0; }
 const DOG_NAMES=['幼崽小猫','可爱小猫','帅气大猫','超级神猫'];
 let catState='sit';                       // 当前随机状态（sit/play/sleep/sick/eat 互动态）
@@ -4908,7 +4868,7 @@ $('#btnReset').onclick=()=>{
 };
 window.addEventListener('beforeinstallprompt',e=>e.preventDefault());
 </script>
-<div id="verTag" title="页面版本时间戳，用于比对本地/GitHub 是否一致">v20260805.1107</div>
+<div id="verTag" title="页面版本时间戳，用于比对本地/GitHub 是否一致">v20260805.1130</div>
 <div id="syncBadge" class="sync-badge init" title="数据同步状态：云端为主存，多端一致">☁️</div>
 <div id="syncUploadBtn" title="把本机当前进度强制覆盖上传到云端（替换云端数据，多端将以本机为准）">↑ 强制上传</div>
 <div id="syncDownloadBtn" title="用云端数据覆盖本机（丢弃本机本地改动，以云端为准）——当本地旧缓存盖掉云端设定时使用">↓ 强制下载</div>
