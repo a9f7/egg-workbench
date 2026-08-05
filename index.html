@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="zh-CN" data-app-version="20260805.1006">
+<html lang="zh-CN" data-app-version="20260805.1011">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
@@ -415,8 +415,7 @@
     </div>
 
     <div class="card">
-      <h3>📚 今日语数英进度 <span style="font-size:11px;color:#888;font-weight:400">v0146</span></h3>
-      <p class="muted">顶部「🟢 验证条」+「📦 导出」+ 几条调试信息，方便确认你看到的版本是不是最新的。</p>
+      <h3>📚 今日语数英进度</h3>
       <div class="progress3">
         <div class="prow"><div class="pn">语文</div><div class="pbar"><div class="pfill ic-c" id="pbC" style="width:0"></div></div><div class="pv" id="pvC">0</div></div>
         <div class="prow"><div class="pn">数学</div><div class="pbar"><div class="pfill ic-m" id="pbM" style="width:0"></div></div><div class="pv" id="pvM">0</div></div>
@@ -532,9 +531,8 @@
   <!-- EXERCISE -->
   <section class="view" id="v-exercise">
     <div class="card">
-      <h3>🏃 运动 & 🧹 家务打卡 <span style="font-size:11px;color:#888;font-weight:400">v0146</span></h3>
+      <h3>🏃 运动 & 🧹 家务打卡</h3>
       <p class="muted">运动打卡 ☀️+2（每日上限5）、家务打卡 ☀️+1（每日上限3）；完成后还能再自选表扬加阳光哦！</p>
-      <div class="parent-sun" style="background:#fff8e1;border-color:#f6dd9e">🟢 进入运动/家务页面后，如果看到「🏃 运动打卡」「🧹 家务打卡」两组卡片 = 版本正确；找不到这一行说明浏览器没刷到新版。</div>
       <div id="exList"></div>
     </div>
   </section>
@@ -4441,7 +4439,7 @@ const SHOP=[
   {key:'medicine',icon:'💊',name:'药品',price:15,grow:11,desc:'治病+喂养 +11成长',medicine:true},
 ];
 const FOOD_ITEMS=SHOP.filter(s=>s.food);     // 多种食物（像衣服一样可在超市挑选）
-const APP_VERSION='2026-08-05 10:06';         // 版本时间戳：用于比对本地/GitHub 是否一致
+const APP_VERSION='2026-08-05 10:11';         // 版本时间戳：用于比对本地/GitHub 是否一致
 function dogLevel(g){ if(g>=300)return 3; if(g>=160)return 2; if(g>=60)return 1; return 0; }
 const DOG_NAMES=['幼崽小猫','可爱小猫','帅气大猫','超级神猫'];
 let catState='sit';                       // 当前随机状态（sit/play/sleep/sick/eat 互动态）
@@ -4803,7 +4801,7 @@ $('#btnReset').onclick=()=>{
 };
 window.addEventListener('beforeinstallprompt',e=>e.preventDefault());
 </script>
-<div id="verTag" title="页面版本时间戳，用于比对本地/GitHub 是否一致">v20260805.1006</div>
+<div id="verTag" title="页面版本时间戳，用于比对本地/GitHub 是否一致">v20260805.1011</div>
 <div id="syncBadge" class="sync-badge init" title="数据同步状态：云端为主存，多端一致">☁️</div>
 <div id="syncUploadBtn" title="把本机当前进度强制覆盖上传到云端（替换云端数据，多端将以本机为准）">↑ 强制上传</div>
 <div id="syncDownloadBtn" title="用云端数据覆盖本机（丢弃本机本地改动，以云端为准）——当本地旧缓存盖掉云端设定时使用">↓ 强制下载</div>
