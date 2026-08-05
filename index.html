@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="zh-CN" data-app-version="20260805.1011">
+<html lang="zh-CN" data-app-version="20260805.1020">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
@@ -3085,7 +3085,7 @@ function openInlinePlayer(bvid,title,eps){
   eps = parseInt(eps||1,10) || 1;
   vp._cur = { bvid:bvid, eps:eps, p:1 };
   $('#vpTitle').textContent = title || '视频';
-  $('#vpFrame').src = bvidUrl(bvid,1);
+  const f0=$('#vpFrame'); f0.dataset.exp='1'; f0.src = bvidUrl(bvid,1);
   // 渲染集数按钮
   const bar=$('#vpEpBar'); bar.innerHTML='';
   if(eps>1){
@@ -3106,7 +3106,7 @@ function openInlinePlayer(bvid,title,eps){
 function jumpToEpisode(p){
   const vp=$('#vPlayer'); if(!vp||!vp._cur) return;
   vp._cur.p = p;
-  $('#vpFrame').src = bvidUrl(vp._cur.bvid, p);
+  const f1=$('#vpFrame'); f1.dataset.exp='1'; f1.src = bvidUrl(vp._cur.bvid, p);
   $$('#vpEpBar .vp-ep').forEach(c=>{
     c.classList.toggle('on', parseInt(c.dataset.p,10) === p);
   });
@@ -3201,6 +3201,25 @@ const vlBtn=$('#vlBtn'); if(vlBtn) vlBtn.onclick=checkVideoAnswer;
 const vlInput=$('#vlInput'); if(vlInput) vlInput.addEventListener('keydown',e=>{ if(e.key==='Enter') checkVideoAnswer(); });
 /* 内嵌视频窗口关闭按钮 */
 $('#vpClose').onclick=closeInlinePlayer;
+/* 内嵌播放器"防逃逸"陷阱：
+   B站 player.html 把整块舞台包成一个 <a href="https://www.bilibili.com/...">，点击会令 iframe 自我导航到 bilibili.com
+   （这是"自我导航"，sandbox 的 allow-popups 只挡"开新窗口"，挡不住它）。
+   做法：监听 iframe 的 load 事件——凡是我们自己切集/换源触发的加载，用 exp 标记放行；
+   凡是播放器内部试图跳出 player.bilibili.com 的导航，立即把 src 拽回播放器页（无法逃离，代价是从头重播当前集）。 */
+(function(){
+  const f=$('#vpFrame'); if(!f) return;
+  let guard=0;
+  f.addEventListener('load',()=>{
+    if(f.dataset.exp==='1'){ delete f.dataset.exp; return; }   // 自己触发的加载，放行
+    const vp=$('#vPlayer'); const cur=(vp&&vp._cur)||null;
+    if(cur && cur.bvid && guard<3){                            // 播放器试图跳出 → 拽回
+      guard++;
+      f.dataset.exp='1';
+      f.src=bvidUrl(cur.bvid, cur.p||1);
+      setTimeout(()=>{ guard=0; }, 2000);
+    }
+  });
+})();
 /* hash 路由：刷新 / 分享链接直接定位到对应板块，像独立页面一样打开 */
 window.addEventListener('hashchange',()=>{
   const v=(location.hash||'#home').slice(1);
@@ -4439,7 +4458,7 @@ const SHOP=[
   {key:'medicine',icon:'💊',name:'药品',price:15,grow:11,desc:'治病+喂养 +11成长',medicine:true},
 ];
 const FOOD_ITEMS=SHOP.filter(s=>s.food);     // 多种食物（像衣服一样可在超市挑选）
-const APP_VERSION='2026-08-05 10:11';         // 版本时间戳：用于比对本地/GitHub 是否一致
+const APP_VERSION='2026-08-05 10:20';         // 版本时间戳：用于比对本地/GitHub 是否一致
 function dogLevel(g){ if(g>=300)return 3; if(g>=160)return 2; if(g>=60)return 1; return 0; }
 const DOG_NAMES=['幼崽小猫','可爱小猫','帅气大猫','超级神猫'];
 let catState='sit';                       // 当前随机状态（sit/play/sleep/sick/eat 互动态）
@@ -4801,7 +4820,7 @@ $('#btnReset').onclick=()=>{
 };
 window.addEventListener('beforeinstallprompt',e=>e.preventDefault());
 </script>
-<div id="verTag" title="页面版本时间戳，用于比对本地/GitHub 是否一致">v20260805.1011</div>
+<div id="verTag" title="页面版本时间戳，用于比对本地/GitHub 是否一致">v20260805.1020</div>
 <div id="syncBadge" class="sync-badge init" title="数据同步状态：云端为主存，多端一致">☁️</div>
 <div id="syncUploadBtn" title="把本机当前进度强制覆盖上传到云端（替换云端数据，多端将以本机为准）">↑ 强制上传</div>
 <div id="syncDownloadBtn" title="用云端数据覆盖本机（丢弃本机本地改动，以云端为准）——当本地旧缓存盖掉云端设定时使用">↓ 强制下载</div>
