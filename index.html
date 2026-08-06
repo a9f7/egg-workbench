@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="zh-CN" data-app-version="20260807.0047">
+<html lang="zh-CN" data-app-version="20260807.0053">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
@@ -215,6 +215,19 @@
   .opt:disabled{opacity:.55;cursor:default}
   .rd-q{padding:8px 0;border-top:1px dashed var(--line)}
   .rd-q:first-child{border-top:none}
+  /* 复习预习·单词紧凑网格 + 小配图 */
+  .rd-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(118px,1fr));gap:6px;margin-top:6px}
+  .rd-item{background:#f8fafd;border:1px solid var(--line);border-radius:10px;padding:7px 4px 6px;
+    display:flex;flex-direction:column;align-items:center;gap:2px;text-align:center;transition:transform .15s,background .15s}
+  .rd-item:hover{transform:translateY(-1px);background:#fff;border-color:var(--pink)}
+  .rd-item .ico{font-size:30px;line-height:1;display:block}
+  .rd-item .wd{font-weight:800;font-size:13px;color:var(--ink);line-height:1.2;word-break:break-word;max-width:100%}
+  .rd-item .zh{font-size:10.5px;color:var(--muted);line-height:1.25;max-width:100%;word-break:break-word}
+  .rd-item .acts{display:flex;gap:3px;align-items:center;justify-content:center;margin-top:3px}
+  .rd-item .acts .speak{width:24px;height:24px;font-size:11px;padding:0;border-radius:50%}
+  .rd-item .acts .rk{font-size:10px;padding:3px 8px;border-radius:9px;box-shadow:0 2px 0 var(--pink-d)}
+  .rd-item.done{background:#e9f8ee;border-color:#bfe6c8}
+  .rd-item.forgot{background:#ffeef2;border-color:#f5b9c8}
   /* buttons */
   .btn{display:inline-block;border:none;background:var(--pink);color:#fff;font-weight:800;
     padding:12px 18px;border-radius:16px;font-size:15px;cursor:pointer;font-family:inherit;
@@ -3464,6 +3477,92 @@ const EN_WORD_CARDS = [
   {p:42, i:5, en:"What's your favourite subject?", zh:"你最喜欢的科目是什么？"},
 ];
 
+/* 单词 → emoji 小配图（兜底：短语/句型按语义给默认图标） */
+const EN_WORD_ICON = {
+  // 家/家具/房间
+  bedroom:'🛏️', window:'🪟', door:'🚪', wall:'🧱', floor:'🟫',
+  kitchen:'🍳', bathroom:'🛁', toilet:'🚽', shower:'🚿', hall:'🏛️',
+  diningroom:'🍽️', livingroom:'🛋️', house:'🏠', home:'🏠',
+  sofa:'🛋️', building:'🏢', garden:'🌷', tree:'🌳',
+  // 学校/学习
+  school:'🏫', classroom:'🏫', library:'📚', playground:'🏃',
+  blackboard:'📋', map:'🗺️', book:'📖', books:'📚',
+  homework:'📝', subject:'📚', lesson:'📖', class:'🏫',
+  pupil:'🧒', star:'⭐', pool:'🏊',
+  art:'🎨', maths:'➕', science:'🔬', music:'🎵',
+  // 食物/饮品
+  flower:'🌸', tea:'🍵', rice:'🍚', soup:'🍲', noodles:'🍜',
+  dumpling:'🥟', fish:'🐟', cake:'🎂', water:'💧', food:'🍱',
+  meal:'🍽️', drink:'🥤', moon:'🌕', seasoning:'🧂',
+  // 颜色
+  pink:'💗', grey:'🐘', white:'⚪', black:'⚫', red:'🔴', blue:'🔵',
+  // 家人/职业
+  mother:'👩', father:'👨', doctor:'👨‍⚕️', teacher:'👩‍🏫',
+  nurse:'👩‍⚕️', driver:'🚕', policeman:'👮', worker:'👷',
+  farmer:'👨‍🌾', painter:'👨‍🎨', reporter:'📰', builder:'👷',
+  job:'💼',
+  // 动作
+  draw:'🎨', read:'📖', write:'✍️', eat:'🍴', drink:'🥤',
+  sleep:'😴', walk:'🚶', clean:'🧹', wash:'🧼', cook:'🍳',
+  sweep:'🧹', open:'🔓', close:'🔒', sing:'🎵', dance:'💃',
+  give:'🎁', take:'✋', see:'👀', look:'👀', watch:'👀',
+  listen:'👂', work:'💼', study:'📚', learn:'📚', help:'🤝',
+  build:'🔨', drive:'🚙', buy:'🛒', wear:'👕', put:'📥',
+  pick:'🌿', come:'🚶', want:'🙏', like:'❤️',
+  love:'❤️', know:'💭', think:'💭', say:'💬', ask:'❓',
+  tell:'💬', try:'🤞', make:'🔨', add:'➕', go:'🚶',
+  // 形容词
+  beautiful:'🌸', happy:'😄', sad:'😢', big:'🐘', small:'🐭',
+  new:'✨', old:'👴', good:'👍', bad:'👎', right:'✅',
+  wrong:'❌', tall:'📏', short:'📏', hot:'🔥', cold:'❄️',
+  expensive:'💰', large:'🐘', best:'🏆', favourite:'⭐',
+  fine:'😊', glad:'😊', kind:'💝', welcome:'👋', bestwishes:'💝',
+  // 时间/数字
+  morning:'🌅', evening:'🌇', afternoon:'🌇', night:'🌙',
+  minute:'⏱️', now:'⏰', first:'1️⃣', next:'➡️', last:'🔚',
+  // 节日
+  christmas:'🎄', newyear:'🎆', midautumn:'🥮', lanternfestival:'🏮',
+  dragonboat:'🐉', spring:'🌸', autumn:'🍂', festival:'🎉',
+  // 衣物
+  computer:'💻', tv:'📺', phone:'📱', clothes:'👕',
+  shirt:'👔', blouse:'👚', coat:'🧥', trousers:'👖',
+  shorts:'🩳', skirt:'👗', shoe:'👟', sock:'🧦',
+  sweater:'🧶', cap:'🧢', jacket:'🧥', jeans:'👖', tshirt:'👕',
+  // 动物
+  baby:'👶', elephant:'🐘', animals:'🐾',
+  // 杂项
+  yuan:'💰', song:'🎵', story:'📖', game:'🎮',
+  sport:'⚽', smile:'😊', photo:'📷', gift:'🎁',
+  clock:'🕐', time:'⏰', men:'👨', women:'👩',
+  world:'🌍', news:'📰', camera:'📷',
+  // 方位
+  between:'↔️', opposite:'↔️', overthere:'👉', nextto:'📍',
+  // 常用短语
+  goahead:'✅', show:'👉', havealook:'👀', acupoftea:'🍵',
+  cominplease:'🚶', haveaseatplease:'💺',
+  theseareforyou:'🎁', cangetdrink:'🥤', thankswaterfine:'💧',
+  cainusebathroom:'🚪', mayihavealook:'👀', goodbyebye:'👋',
+  welcometo:'👋', happynewyear:'🎆', wishyouallthebest:'💝',
+};
+/* 选图：优先整词命中 → 拆词命中 → 按句型兜底 */
+function enIcon(en){
+  if(!en) return '📖';
+  const norm = en.toLowerCase().replace(/[^\w\s]/g,'').trim();
+  const key = norm.replace(/\s+/g,'');
+  if(EN_WORD_ICON[key]) return EN_WORD_ICON[key];
+  // 去掉常见连词/冠词后再查
+  for(const w of norm.split(/\s+/).filter(x=>!['the','a','an','to','is','are','do','does','in','on','of','for','my','your','i','you','we','he','she','it','they','me','him','her','us','them'].includes(x))){
+    if(EN_WORD_ICON[w]) return EN_WORD_ICON[w];
+    // 简单 -s 复数
+    if(EN_WORD_ICON[w.replace(/s$/,'')]) return EN_WORD_ICON[w.replace(/s$/,'')];
+  }
+  // 句型兜底
+  if(/\?$/.test(en.trim())) return '❓';
+  if(/^(how|what|where|when|why|who|which|whose)\b/i.test(en)) return '❓';
+  if(/^(please|let|may|can|could|will|would|come|go|have|show|take|give|help|open|close)/i.test(en)) return '💬';
+  return '📝';
+}
+
 /* 家务打卡项目（与运动分开） */
 const EX_CHORES = [
   {id:'ch_bag',icon:'🎒',name:'整理书包',desc:'把书包整理干净'},
@@ -5106,27 +5205,35 @@ function renderENReview(box){
   box.innerHTML='';
   const prev=document.createElement('div'); prev.className='rec';
   prev.innerHTML='<div class="qhint">📖 <b>预习 · 单元新单词</b>（点🔊听读；记住后点“我记住了”。若之前答错过会标“你忘了”，点“记好了”当场考一次）</div>';
+  const grid=document.createElement('div'); grid.className='rd-grid';
   units.forEach(u=>{
     (u.words||[]).concat(u.chunks||[]).forEach(w=>{
       const key=enGrade+'|'+u.unit+'|'+w[0];
       const remembered=(S.enPrev||[]).includes(key);
       const forgotten=(S.enForget||[]).includes(key);
-      const row=document.createElement('div'); row.className='rd-q'+(remembered&&!forgotten?' done':'')+(forgotten?' forgot':'');
+      const tile=document.createElement('div');
+      tile.className='rd-item'+(remembered&&!forgotten?' done':'')+(forgotten?' forgot':'');
+      tile.title = w[1] + (forgotten?'（你忘了，点"记好了"再考一次）':(remembered?'（已记住，再点取消）':'（点🔊听读，点"记"标记记住）'));
       let btn;
       if(forgotten){
-        btn=`<button class="btn small warn" data-retest="${esc(key)}" data-en="${esc(w[0])}" data-zh="${esc(w[1])}">记好了</button>`;
+        btn=`<button class="btn rk warn" data-retest="${esc(key)}" data-en="${esc(w[0])}" data-zh="${esc(w[1])}">记好</button>`;
       } else if(remembered){
-        btn=`<button class="btn small on" data-prev="${esc(key)}">已记住 ✓</button>`;
+        btn=`<button class="btn rk on" data-prev="${esc(key)}">✓</button>`;
       } else {
-        btn=`<button class="btn small" data-prev="${esc(key)}">我记住了</button>`;
+        btn=`<button class="btn rk" data-prev="${esc(key)}">记</button>`;
       }
-      const status = forgotten ? '⚠️ 你忘了' : (remembered?'✅':'');
-      row.innerHTML=`<div class="qhint"><b>${esc(w[0])}</b> — ${esc(w[1])} ${status}</div>
-        <button class="speak" data-w="${esc(w[0])}">🔊</button>
-        ${btn}`;
-      prev.appendChild(row);
+      const icon=enIcon(w[0]);
+      tile.innerHTML=`<div class="ico">${icon}</div>
+        <div class="wd">${esc(w[0])}</div>
+        <div class="zh">${esc(w[1])}</div>
+        <div class="acts">
+          <button class="speak" data-w="${esc(w[0])}">🔊</button>
+          ${btn}
+        </div>`;
+      grid.appendChild(tile);
     });
   });
+  prev.appendChild(grid);
   box.appendChild(prev);
   const rev=document.createElement('div'); rev.className='rec';
   rev.innerHTML='<div class="qhint">🔁 <b>复习 · 重点句型</b>（看中文，写出英文，点🔊核对读音）</div>';
@@ -5280,7 +5387,7 @@ const SHOP=[
   {key:'medicine',icon:'💊',name:'药品',price:15,grow:11,desc:'治病+喂养 +11成长',medicine:true},
 ];
 const FOOD_ITEMS=SHOP.filter(s=>s.food);     // 多种食物（像衣服一样可在超市挑选）
-const APP_VERSION='2026-08-07 00:47';         // 版本时间戳：用于比对本地/GitHub 是否一致
+const APP_VERSION='2026-08-07 00:53';         // 版本时间戳：用于比对本地/GitHub 是否一致
 function dogLevel(g){ if(g>=300)return 3; if(g>=160)return 2; if(g>=60)return 1; return 0; }
 const DOG_NAMES=['幼崽小猫','可爱小猫','帅气大猫','超级神猫'];
 let catState='sit';                       // 当前随机状态（sit/play/sleep/sick/eat 互动态）
@@ -5642,7 +5749,7 @@ $('#btnReset').onclick=()=>{
 };
 window.addEventListener('beforeinstallprompt',e=>e.preventDefault());
 </script>
-<div id="verTag" title="页面版本时间戳，用于比对本地/GitHub 是否一致">v20260807.0047</div>
+<div id="verTag" title="页面版本时间戳，用于比对本地/GitHub 是否一致">v20260807.0053</div>
 <div id="syncBadge" class="sync-badge init" title="数据同步状态：云端为主存，多端一致">☁️</div>
 <div id="syncUploadBtn" title="把本机当前进度强制覆盖上传到云端（替换云端数据，多端将以本机为准）">↑ 强制上传</div>
 <div id="syncDownloadBtn" title="用云端数据覆盖本机（丢弃本机本地改动，以云端为准）——当本地旧缓存盖掉云端设定时使用">↓ 强制下载</div>
