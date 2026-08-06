@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="zh-CN" data-app-version="20260806.1300">
+<html lang="zh-CN" data-app-version="20260806.1441">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
@@ -689,18 +689,24 @@ const SVER=1;                       // 数据 schema 版本，便于日后迁移
    数据存到 GitHub 私有数据仓库 egg-workbench-data 的 data/state.json。
    浏览器不再直接持 token：所有读写都经「服务端代理」转发，token 只存在
    代理服务端（env GH_TOKEN），前端源码里没有任何密钥，可被 GitHub Pages
-   正常部署。打开页面自动拉取，变动防抖写回，每 60 秒拉取保持多端一致。 */
+   正常部署。   打开页面自动拉取，变动防抖写回，每 60 秒拉取保持多端一致。 */
+// === 部署位置自适应（单一 source 推到两地：境内 CloudBase + 境外 GitHub Pages） ===
+// 唯一一份代码，没有任何"两份产物"——根据访问域决定走哪条代理链：
+//   • tcloudbaseapp.com 域名 → 走 CloudBase 云函数（境内稳定）
+//   • 其他任意域名（含 github.io / 自定义域名）→ 走 Cloudflare Worker（境外）
+// 部署脚本只 curl 一份 HTML 双推，从根本上消除"两份不同步"——同步数据落在同一仓库同一文件。
+const IS_CN = location.hostname.includes('tcloudbaseapp.com') || location.hostname.endsWith('.cn');
 const SYNC = {
   enabled: true,
   owner: 'a9f7',
   repo: 'egg-workbench',
   path: 'sync/state.json',
   branch: 'main',
-  proxyUrl: 'https://egg-workbench-proxy.cometet.workers.dev',  // 服务端代理地址（不含末尾 /）；为空则退回本地模式
+  proxyUrl: IS_CN ? '' : 'https://egg-workbench-proxy.cometet.workers.dev',   // 境外：CF Worker；境内版本置空（避免跨境请求被墙）
   keepLocalCache: true            // 云端为主存、多端一致；本地仅作防丢安全网（云端不通时保命，连通后仍以云端为准）
 };
 // 境内同步优先：CN（CloudBase 云函数，境内稳定）在前，CF（Cloudflare Worker，跨境可能被墙）作回退
-const SYNC_CN = 'https://egg-workbench-d9gcwnalkbdf611d4-1317874230.tcloudbaseapp.com/cloud-sync';
+const SYNC_CN = IS_CN ? 'https://egg-workbench-d9gcwnalkbdf611d4-1317874230.tcloudbaseapp.com/cloud-sync' : '';   // 境外版本置空（避免跨境请求被墙）
 function _syncProxies(){ return [SYNC_CN, SYNC.proxyUrl].filter(Boolean); }
 async function _callState(method, bodyJson){
   let lastErr;
@@ -3132,11 +3138,15 @@ const VIDEOS={
     {icon:'🏝️',t:'数学荒岛历险记（40集）',d:'央视动画，用冒险故事讲数学，轻松有趣，培养数学兴趣不枯燥（ima·数学荒岛历险记）。',bvid:'BV1uW411a7nb',eps:40,tag:'B站·内置',cls:'bili'}
   ]
 };
-/* ===== 夸克网盘私有代理配置（COOKIE 只存在你自己的代理端，这里仅是代理地址+token，可公开） ===== */
-const QUARK_PROXY    = 'https://quark.cometet.workers.dev/';   // 你的私有代理地址
+/* ===== 夸克网盘私有代理配置（COOKIE 只存在你自己的代理端，这里仅是代理地址+token，可公开） =====
+   部署位置自适应：同一份代码根据访问域名 (IS_CN) 选用对应后端，避免跨境访问被墙。
+     • 境外（GitHub Pages / 自定义域名）→  Cloudflare Worker
+     • 境内（CloudBase 域名）           →  CloudBase 云函数（直连夸克 CDN）+ CF Worker 兜底
+   部署脚本 deploy.sh 只 curl 同一份 HTML 双推到两处；两端逻辑只有这几行常量不同。 */
+const QUARK_PROXY    = 'https://quark.cometet.workers.dev/';   // Cloudflare Worker：境外版主用；境内版仅作视频流回退（CN 端 >80MB 直链限制时）
 const QUARK_TOKEN    = 'egg_queenie';                          // 与代理端 TOKEN 一致
 const QUARK_ROOT_FID = '0c7e38649a434abf9d859059f97b23b6';       // 起始文件夹 fid = 夸克里「蛋蛋视频」专用文件夹（孩子只看这个）
-const QUARK_PROXY_CN = 'https://egg-workbench-d9gcwnalkbdf611d4-1317874230.tcloudbaseapp.com/quark-proxy';   // 境内 CloudBase 云函数（直连夸克 CDN，免费更稳）：小文件境内直连，超 80MB 直链限制自动回退上方 QUARK_PROXY(Cloudflare) 流式
+const QUARK_PROXY_CN = IS_CN ? 'https://egg-workbench-d9gcwnalkbdf611d4-1317874230.tcloudbaseapp.com/quark-proxy' : '';   // 境内 CloudBase 云函数（直连夸克 CDN，免费更稳）：境外版本置空
 /* ===== 内嵌视频播放器（不弹窗，每个合集带集数按钮） ===== */
 function bvidUrl(bvid,p){
   p=p||1;
@@ -3514,7 +3524,7 @@ const vlInput=$('#vlInput'); if(vlInput) vlInput.addEventListener('keydown',e=>{
 $('#vpClose').onclick=closeInlinePlayer;
 /* 夸克内嵌播放器关闭按钮 + 未配置代理时隐藏夸克分段 */
 $('#qkClose').onclick=closeQuarkPlayer;
-if(!QUARK_PROXY){ const qb=document.querySelector('#videoSeg button[data-vk="quark"]'); if(qb) qb.style.display='none'; }
+if(!QUARK_PROXY && !QUARK_PROXY_CN){ const qb=document.querySelector('#videoSeg button[data-vk="quark"]'); if(qb) qb.style.display='none'; }   // 任何一边有代理就显示夸克分段（自适应后境外靠 QUARK_PROXY、境内靠 QUARK_PROXY_CN）
 /* 内嵌播放器"防逃逸"陷阱：
    B站 player.html 把整块舞台包成一个 <a href="https://www.bilibili.com/...">，点击会令 iframe 自我导航到 bilibili.com
    （这是"自我导航"，sandbox 的 allow-popups 只挡"开新窗口"，挡不住它）。
@@ -4738,7 +4748,7 @@ const SHOP=[
   {key:'medicine',icon:'💊',name:'药品',price:15,grow:11,desc:'治病+喂养 +11成长',medicine:true},
 ];
 const FOOD_ITEMS=SHOP.filter(s=>s.food);     // 多种食物（像衣服一样可在超市挑选）
-const APP_VERSION='2026-08-06 13:00';         // 版本时间戳：用于比对本地/GitHub 是否一致
+const APP_VERSION='2026-08-06 14:41';         // 版本时间戳：用于比对本地/GitHub 是否一致
 function dogLevel(g){ if(g>=300)return 3; if(g>=160)return 2; if(g>=60)return 1; return 0; }
 const DOG_NAMES=['幼崽小猫','可爱小猫','帅气大猫','超级神猫'];
 let catState='sit';                       // 当前随机状态（sit/play/sleep/sick/eat 互动态）
@@ -5100,7 +5110,7 @@ $('#btnReset').onclick=()=>{
 };
 window.addEventListener('beforeinstallprompt',e=>e.preventDefault());
 </script>
-<div id="verTag" title="页面版本时间戳，用于比对本地/GitHub 是否一致">v20260806.1300</div>
+<div id="verTag" title="页面版本时间戳，用于比对本地/GitHub 是否一致">v20260806.1441</div>
 <div id="syncBadge" class="sync-badge init" title="数据同步状态：云端为主存，多端一致">☁️</div>
 <div id="syncUploadBtn" title="把本机当前进度强制覆盖上传到云端（替换云端数据，多端将以本机为准）">↑ 强制上传</div>
 <div id="syncDownloadBtn" title="用云端数据覆盖本机（丢弃本机本地改动，以云端为准）——当本地旧缓存盖掉云端设定时使用">↓ 强制下载</div>
