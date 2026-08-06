@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="zh-CN" data-app-version="20260806.0846">
+<html lang="zh-CN" data-app-version="20260806.0941">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
@@ -693,12 +693,28 @@ const SVER=1;                       // 数据 schema 版本，便于日后迁移
 const SYNC = {
   enabled: true,
   owner: 'a9f7',
-  repo: 'egg-workbench-data',
-  path: 'data/state.json',
+  repo: 'egg-workbench',
+  path: 'sync/state.json',
   branch: 'main',
   proxyUrl: 'https://egg-workbench-proxy.cometet.workers.dev',  // 服务端代理地址（不含末尾 /）；为空则退回本地模式
   keepLocalCache: true            // 云端为主存、多端一致；本地仅作防丢安全网（云端不通时保命，连通后仍以云端为准）
 };
+// 境内同步优先：CN（CloudBase 云函数，境内稳定）在前，CF（Cloudflare Worker，跨境可能被墙）作回退
+const SYNC_CN = 'https://egg-workbench-d9gcwnalkbdf611d4-1317874230.tcloudbaseapp.com/cloud-sync';
+function _syncProxies(){ return [SYNC_CN, SYNC.proxyUrl].filter(Boolean); }
+async function _callState(method, bodyJson){
+  let lastErr;
+  for(const base of _syncProxies()){
+    try{
+      const url = (base||'').replace(/\/$/,'') + '/state';
+      const opt = { method, headers:{'Content-Type':'application/json','Accept':'application/json'} };
+      if(bodyJson!==undefined) opt.body = JSON.stringify(bodyJson);
+      const r = await fetch(url, opt);
+      return { r };
+    }catch(e){ lastErr = e; /* 跨境被墙/网络错：试下一个代理 */ }
+  }
+  throw lastErr || new Error('所有同步代理都失败');
+}
 let _cloudSha = null;              // 当前云端文件 sha（用于 PUT 冲突处理）
 let _saveTimer = null;
 let _dirty = false;
@@ -710,9 +726,9 @@ function _b64Utf8(str){ return btoa(unescape(encodeURIComponent(str))); }
 function _apiUrl(){ return (SYNC.proxyUrl||'').replace(/\/$/,'') + '/state'; }
 
 async function cloudLoad(){
-  if(!SYNC.enabled || !SYNC.proxyUrl) return null;
+  if(!SYNC.enabled) return null;
   try{
-    const r = await fetch(_apiUrl(), {headers:{'Accept':'application/json'}});
+    const { r } = await _callState('GET');
     if(r.status===404 || r.status===204) return null;   // 文件尚未创建
     if(!r.ok){ _lastErr='GET '+r.status+(await r.text().catch(()=>'')).slice(0,80); throw new Error(_lastErr); }
     const j = await r.json();
@@ -723,13 +739,13 @@ async function cloudLoad(){
   }catch(e){ console.warn('cloudLoad fail', e); return null; }
 }
 async function cloudSave(obj){
-  if(!SYNC.enabled || !SYNC.proxyUrl) return false;
+  if(!SYNC.enabled) return false;
   const content = _b64Utf8(JSON.stringify(obj));
   const mkBody = ()=>({ content, sha: _cloudSha || null });
   let lastStatus = 0;
   for(let attempt=0; attempt<3; attempt++){
     try{
-      const r = await fetch(_apiUrl(), {method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify(mkBody())});
+      const { r } = await _callState('PUT', mkBody());
       lastStatus = r.status;
       if(r.status===409){                 // 并发冲突（多端同时写）：重新取最新 sha 后重试，最后写入获胜
         await cloudLoad();                // 刷新 _cloudSha
@@ -765,12 +781,12 @@ async function _enqueuePending(obj){
 async function forceUpload(){
   // 把本机当前进度强制覆盖到云端：清空本地记忆的 sha，让代理取最新 sha 后用本机内容覆盖写
   // 等同于「用本机替换云端」，多端下一轮 syncPull 都会以本机这份为准
-  if(!SYNC.enabled || !SYNC.proxyUrl){ toast('未开启云端同步'); return; }
+  if(!SYNC.enabled){ toast('未开启云端同步'); return; }
   try{
     setSyncState('syncing');
     _cloudSha = null; _pending = null;          // 强制覆盖，不走冲突重试的旧 sha
     const content = _b64Utf8(JSON.stringify(S));
-    const r = await fetch(_apiUrl(), {method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify({content, sha:null})});
+    const { r } = await _callState('PUT', {content, sha:null});
     if(!r.ok){ const d = await r.text().catch(()=>''); _lastErr = 'PUT '+r.status+' '+d.slice(0,80); throw new Error(_lastErr); }
     const j = await r.json();
     if(j.sha) _cloudSha = j.sha;
@@ -788,7 +804,7 @@ async function forceUpload(){
 }
 async function forceDownload(){
   // 用云端数据覆盖本机：丢弃本地未同步改动，以云端为准（用于本地旧缓存盖掉云端设定的情况）
-  if(!SYNC.enabled || !SYNC.proxyUrl){ toast('未开启云端同步'); return; }
+  if(!SYNC.enabled){ toast('未开启云端同步'); return; }
   try{
     setSyncState('syncing');
     const remote = await cloudLoad();
@@ -815,7 +831,7 @@ function setSyncState(s){
   el.className = 'sync-badge '+s;
 }
 async function bootstrap(){
-  if(SYNC.enabled && SYNC.proxyUrl){
+  if(SYNC.enabled){
     setSyncState('syncing');
     const remote = await cloudLoad();
     const localRaw = (function(){ try{ return JSON.parse(localStorage.getItem(SKEY)); }catch(e){ return null; } })();
@@ -964,7 +980,7 @@ async function flushSave(){
   if(!_dirty) return;
   _dirty = false;
   S.savedAt = Date.now();
-  if(SYNC.enabled && SYNC.proxyUrl){
+  if(SYNC.enabled){
     setSyncState('syncing');
     const ok = await cloudSave(S);
     if(ok){ setSyncState('synced'); if(SYNC.keepLocalCache) _cacheLocal(); if(window._eggBC) window._eggBC.postMessage({s:S}); }
@@ -4706,7 +4722,7 @@ const SHOP=[
   {key:'medicine',icon:'💊',name:'药品',price:15,grow:11,desc:'治病+喂养 +11成长',medicine:true},
 ];
 const FOOD_ITEMS=SHOP.filter(s=>s.food);     // 多种食物（像衣服一样可在超市挑选）
-const APP_VERSION='2026-08-06 08:46';         // 版本时间戳：用于比对本地/GitHub 是否一致
+const APP_VERSION='2026-08-06 09:41';         // 版本时间戳：用于比对本地/GitHub 是否一致
 function dogLevel(g){ if(g>=300)return 3; if(g>=160)return 2; if(g>=60)return 1; return 0; }
 const DOG_NAMES=['幼崽小猫','可爱小猫','帅气大猫','超级神猫'];
 let catState='sit';                       // 当前随机状态（sit/play/sleep/sick/eat 互动态）
@@ -5061,14 +5077,14 @@ $('#btnReset').onclick=()=>{
   if(confirm('确定清空所有打卡进度、阳光和小猫数据吗？\n此操作不可撤销，建议先「导出备份」。')){
     S = normalize(null);
     S.savedAt = Date.now();
-    if(SYNC.enabled && SYNC.proxyUrl){ cloudSave(S); }
+    if(SYNC.enabled){ cloudSave(S); }
     try{ localStorage.removeItem(SKEY); }catch(e){}
     location.reload();
   }
 };
 window.addEventListener('beforeinstallprompt',e=>e.preventDefault());
 </script>
-<div id="verTag" title="页面版本时间戳，用于比对本地/GitHub 是否一致">v20260806.0846</div>
+<div id="verTag" title="页面版本时间戳，用于比对本地/GitHub 是否一致">v20260806.0941</div>
 <div id="syncBadge" class="sync-badge init" title="数据同步状态：云端为主存，多端一致">☁️</div>
 <div id="syncUploadBtn" title="把本机当前进度强制覆盖上传到云端（替换云端数据，多端将以本机为准）">↑ 强制上传</div>
 <div id="syncDownloadBtn" title="用云端数据覆盖本机（丢弃本机本地改动，以云端为准）——当本地旧缓存盖掉云端设定时使用">↓ 强制下载</div>
