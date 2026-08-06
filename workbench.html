@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="zh-CN" data-app-version="20260807.0010">
+<html lang="zh-CN" data-app-version="20260807.0047">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
@@ -732,7 +732,31 @@ function daysLeft(){
 }
 function toast(msg){ const t=$('#toast'); t.textContent=msg; t.classList.add('show'); clearTimeout(t._h); t._h=setTimeout(()=>t.classList.remove('show'),1600); }
 function syncToast(msg){ const t=$('#syncToast'); if(!t) return; t.textContent=msg; t.classList.add('show'); clearTimeout(t._h); t._h=setTimeout(()=>t.classList.remove('show'),3200); }
-function speak(t){ try{ speechSynthesis.cancel(); const u=new SpeechSynthesisUtterance(t); u.lang='en-US'; u.rate=.9; u.pitch=1.1; speechSynthesis.speak(u);}catch(e){} }
+/* 优选柔和的英文女声（不同系统声线名不同，按关键词匹配） */
+let _softEnVoice=null;
+function _loadSoftEnVoice(){
+  try{
+    const vs=window.speechSynthesis.getVoices()||[];
+    if(!vs.length) return;
+    const enUS=vs.filter(v=>/^en[-_]US/i.test(v.lang));
+    const enAny=vs.filter(v=>/^en/i.test(v.lang));
+    const pool=enUS.length?enUS:enAny;
+    if(!pool.length) return;
+    // 优先挑名字里带柔和/女声倾向的声线
+    _softEnVoice = pool.find(v=>/(zira|samantha|victoria|karen|moira|tessa|jenny|aria|sara|susan|female|google|natural|neural)/i.test(v.name)) || pool[0];
+  }catch(e){}
+}
+if('speechSynthesis' in window){ _loadSoftEnVoice(); window.speechSynthesis.onvoiceschanged=()=>{ _loadSoftEnVoice(); }; }
+function speak(t){ try{
+  speechSynthesis.cancel();
+  const u=new SpeechSynthesisUtterance(t);
+  u.lang='en-US';
+  u.rate=.72;        // 放慢一点，更清晰
+  u.pitch=1.0;       // 自然柔和，不再偏高
+  const v=_softEnVoice||(function(){ _loadSoftEnVoice(); return _softEnVoice; })();
+  if(v) u.voice=v;
+  speechSynthesis.speak(u);
+}catch(e){} }
 
 /* ============ state ============ */
 const SKEY='egg_checkin_v1';
@@ -5256,7 +5280,7 @@ const SHOP=[
   {key:'medicine',icon:'💊',name:'药品',price:15,grow:11,desc:'治病+喂养 +11成长',medicine:true},
 ];
 const FOOD_ITEMS=SHOP.filter(s=>s.food);     // 多种食物（像衣服一样可在超市挑选）
-const APP_VERSION='2026-08-07 00:10';         // 版本时间戳：用于比对本地/GitHub 是否一致
+const APP_VERSION='2026-08-07 00:47';         // 版本时间戳：用于比对本地/GitHub 是否一致
 function dogLevel(g){ if(g>=300)return 3; if(g>=160)return 2; if(g>=60)return 1; return 0; }
 const DOG_NAMES=['幼崽小猫','可爱小猫','帅气大猫','超级神猫'];
 let catState='sit';                       // 当前随机状态（sit/play/sleep/sick/eat 互动态）
@@ -5618,7 +5642,7 @@ $('#btnReset').onclick=()=>{
 };
 window.addEventListener('beforeinstallprompt',e=>e.preventDefault());
 </script>
-<div id="verTag" title="页面版本时间戳，用于比对本地/GitHub 是否一致">v20260807.0010</div>
+<div id="verTag" title="页面版本时间戳，用于比对本地/GitHub 是否一致">v20260807.0047</div>
 <div id="syncBadge" class="sync-badge init" title="数据同步状态：云端为主存，多端一致">☁️</div>
 <div id="syncUploadBtn" title="把本机当前进度强制覆盖上传到云端（替换云端数据，多端将以本机为准）">↑ 强制上传</div>
 <div id="syncDownloadBtn" title="用云端数据覆盖本机（丢弃本机本地改动，以云端为准）——当本地旧缓存盖掉云端设定时使用">↓ 强制下载</div>
