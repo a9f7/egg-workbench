@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="zh-CN" data-app-version="20260806.2252">
+<html lang="zh-CN" data-app-version="20260806.2259">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
@@ -156,6 +156,43 @@
   details.rec summary{font-weight:700;cursor:pointer;font-size:15px}
   div.rec{border:1px solid var(--line);border-radius:14px;padding:10px 12px;margin-bottom:10px;background:#fff}
   .rec.done{background:#f3fbf4;border-color:#bfe6c8}
+
+  /* ── 语文背诵卡片（仿古诗+成语卡片） ── */
+  .rcard{position:relative;border:2px solid #b9a3ff;border-radius:22px;
+    background:linear-gradient(160deg,#e9d8ff 0%,#f5e9ff 45%,#ffe7f3 100%);
+    padding:18px 18px 16px;margin-bottom:14px;box-shadow:0 6px 18px rgba(140,100,220,.10);overflow:hidden}
+  .rcard .rc-close{position:absolute;top:10px;right:10px;width:30px;height:30px;border-radius:50%;
+    background:#a6447a;color:#fff;border:none;font-size:16px;cursor:pointer;line-height:1;display:flex;align-items:center;justify-content:center}
+  .rcard .rc-close:hover{background:#8b3565}
+  .rcard .rc-emoji{font-size:42px;text-align:center;margin:4px 0 6px;line-height:1}
+  .rcard .rc-title{text-align:center;font-size:24px;font-weight:800;color:#3a1d6b;letter-spacing:2px;margin:0}
+  .rcard .rc-author{text-align:center;color:#9a5fc7;font-size:13px;margin:4px 0 12px;font-weight:600}
+  .rcard .rc-author .tag{display:inline-block;border:1px solid #c9a4f0;border-radius:8px;padding:1px 8px;margin-right:6px;background:rgba(255,255,255,.4)}
+  .rcard .rc-lines{text-align:center;font-size:20px;font-weight:700;color:#2a1645;
+    line-height:1.9;letter-spacing:3px;margin:6px 0 4px;font-family:"KaiTi","STKaiti","楷体",serif}
+  .rcard .rc-py{text-align:center;color:#a35fc7;font-size:12.5px;line-height:1.7;letter-spacing:.5px;margin:0 0 10px}
+  .rcard .rc-shiiyi{margin:10px 6px 4px;padding:10px 12px;border:1.5px dashed #ff9b54;border-radius:14px;
+    background:rgba(255,247,233,.6);color:#7a4520;font-size:13.5px;line-height:1.7}
+  .rcard .rc-shiiyi b{color:#c0410a}
+  .rcard .rc-yidao{margin:10px 6px 0;font-size:13.5px;color:#d23535;font-weight:600;line-height:1.7}
+  .rcard .rc-tip{margin:8px 6px 0;font-size:13px;color:#7a6a8a;display:flex;align-items:center;gap:6px}
+  .rcard .rc-tip .lk{cursor:pointer;color:#7a4dd1;font-weight:600;text-decoration:underline}
+  .rcard .rc-tip .lk:hover{color:#3a1d6b}
+  .rcard .rc-mark{position:absolute;left:-2px;top:18px;background:#a6447a;color:#fff;font-size:11px;padding:3px 8px 3px 6px;
+    border-radius:0 8px 8px 0;font-weight:600;box-shadow:0 2px 4px rgba(0,0,0,.1)}
+  .rcard .rc-foot{margin-top:14px;text-align:center}
+  .rcard .rc-foot .rc-btn{display:inline-block;background:linear-gradient(180deg,#9a7df0 0%,#7a4dd1 100%);
+    color:#fff;font-weight:800;font-size:15px;border:none;padding:11px 26px;border-radius:18px;cursor:pointer;
+    box-shadow:0 4px 0 #5a2db0;font-family:inherit;transition:transform .1s}
+  .rcard .rc-foot .rc-btn:active{transform:translateY(2px);box-shadow:0 2px 0 #5a2db0}
+  .rcard .rc-foot .rc-btn.on{background:linear-gradient(180deg,#7ed6a4 0%,#4eb87e 100%);box-shadow:0 4px 0 #2e8a5a}
+  .rcard.done{background:linear-gradient(160deg,#d8f5e3 0%,#e8faef 50%,#f3fbf4 100%);border-color:#7ed6a4}
+  .rcard.done .rc-foot .rc-btn{background:linear-gradient(180deg,#7ed6a4 0%,#4eb87e 100%);box-shadow:0 4px 0 #2e8a5a}
+  .rcard .rc-page{position:absolute;bottom:6px;right:10px;font-size:11px;color:#a35fc7;font-weight:600}
+  .rc-pager{display:flex;justify-content:center;gap:10px;margin:14px 0 6px}
+  .rc-pager button{padding:8px 18px;border-radius:14px;border:1px solid var(--line);background:#fff;color:var(--ink);font-weight:700;cursor:pointer;font-family:inherit}
+  .rc-pager button:disabled{opacity:.4;cursor:default}
+  .rc-pager .rc-info{line-height:38px;color:#7a6a8a;font-size:13px}
   .opt{display:block;width:100%;text-align:left;font-family:inherit;font-size:15px;padding:10px 12px;margin:6px 0;
     border:2px solid var(--line);border-radius:12px;background:#fff;color:var(--ink);cursor:pointer}
   .opt:hover{background:#fff7fb}
@@ -1008,100 +1045,132 @@ function _cacheLocal(){ try{ localStorage.setItem(SKEY, JSON.stringify(S)); }cat
    与文件夹内对应 PDF 完全一致。 */
 const CN = [
   {
-    "id": "1",
-    "tag": "古诗",
-    "title": "《鹿柴》[唐]王维",
-    "text": "空山不见人，但闻人语响。\n返景入深林，复照青苔上。"
+    id:'1', tag:'古诗', title:'《鹿柴》', author:'王维', dynasty:'唐', icon:'🌲',
+    text:'空山不见人，但闻人语响。\n返景入深林，复照青苔上。',
+    lines:['空山不见人，','但闻人语响。','返景入深林，','复照青苔上。'],
+    pinyin:['kōng shān bù jiàn rén,','dàn wén rén yǔ xiǎng.','fǎn jǐng rù shēn lín,','fù zhào qīng tái shàng.'],
+    shiYi:'空旷的山中看不见人，只能听到人说话的声音。夕阳的余晖映入幽深的树林，又照在青苔上。',
+    yiDao:'王维写诗最爱"以动衬静"，听不到人却听到说话声，反而显得山更静啦～'
   },
   {
-    "id": "2",
-    "tag": "古诗",
-    "title": "《暮江吟》[唐]白居易",
-    "text": "一道残阳铺水中，半江瑟瑟半江红。\n可怜九月初三夜，露似真珠月似弓。"
+    id:'2', tag:'古诗', title:'《暮江吟》', author:'白居易', dynasty:'唐', icon:'🌅',
+    text:'一道残阳铺水中，半江瑟瑟半江红。\n可怜九月初三夜，露似真珠月似弓。',
+    lines:['一道残阳铺水中，','半江瑟瑟半江红。','可怜九月初三夜，','露似真珠月似弓。'],
+    pinyin:['yī dào cán yáng pū shuǐ zhōng,','bàn jiāng sè sè bàn jiāng hóng.','kě lián jiǔ yuè chū sān yè,','lù sì zhēn zhū yuè sì gōng.'],
+    shiYi:'傍晚时分，夕阳的余晖铺在江面上，江水一半是碧绿色，一半映照着残阳红。九月初三的夜晚多么可爱啊，露水像珍珠一样晶莹，月亮像弯弓一样挂在天上。',
+    yiDao:'白居易用一半"瑟瑟"一半"红"形容江面，原来颜色对比可以这么美，回家看夕阳也能这样写！'
   },
   {
-    "id": "3",
-    "tag": "古诗",
-    "title": "《题西林壁》[宋]苏轼",
-    "text": "横看成岭侧成峰，远近高低各不同。\n不识庐山真面目，只缘身在此山中。"
+    id:'3', tag:'古诗', title:'《题西林壁》', author:'苏轼', dynasty:'宋', icon:'⛰️',
+    text:'横看成岭侧成峰，远近高低各不同。\n不识庐山真面目，只缘身在此山中。',
+    lines:['横看成岭侧成峰，','远近高低各不同。','不识庐山真面目，','只缘身在此山中。'],
+    pinyin:['héng kàn chéng lǐng cè chéng fēng,','yuǎn jìn gāo dī gè bù tóng.','bù shí lú shān zhēn miàn mù,','zhǐ yuán shēn zài cǐ shān zhōng.'],
+    shiYi:'从正面看庐山是一道连绵的山岭，从侧面看它又成了一座高大的山峰，从远处、近处、高处、低处看都各不相同。之所以认不清庐山的真实面目，是因为我自己就身处在这座山里啊。',
+    yiDao:'苏东坡告诉你一个"哲学大招"：换个角度看问题，答案完全不一样哦～'
   },
   {
-    "id": "4",
-    "tag": "古诗",
-    "title": "《雪梅》[宋]卢钺",
-    "text": "梅雪争春未肯降，骚人阁笔费评章。\n梅须逊雪三分白，雪却输梅一段香。"
+    id:'4', tag:'古诗', title:'《雪梅》', author:'卢钺', dynasty:'宋', icon:'❄️',
+    text:'梅雪争春未肯降，骚人阁笔费评章。\n梅须逊雪三分白，雪却输梅一段香。',
+    lines:['梅雪争春未肯降，','骚人阁笔费评章。','梅须逊雪三分白，','雪却输梅一段香。'],
+    pinyin:['méi xuě zhēng chūn wèi kěn jiàng,','sāo rén gé bǐ fèi píng zhāng.','méi xū xùn xuě sān fēn bái,','xuě què shū méi yī duàn xiāng.'],
+    shiYi:'梅花和雪花都争着报春，谁都不肯服输，让诗人都难以下笔评判。梅花比雪花逊色三分洁白，雪花却输给梅花一段清香。',
+    yiDao:'雪白梅香各有长处，谁也代替不了谁——人也是，找到自己的"那一段香"才最棒！'
   },
   {
-    "id": "5",
-    "tag": "古诗",
-    "title": "《嫦娥》[唐]李商隐",
-    "text": "云母屏风烛影深，长河渐落晓星沉。\n嫦娥应悔偷灵药，碧海青天夜夜心。"
+    id:'5', tag:'古诗', title:'《嫦娥》', author:'李商隐', dynasty:'唐', icon:'🌙',
+    text:'云母屏风烛影深，长河渐落晓星沉。\n嫦娥应悔偷灵药，碧海青天夜夜心。',
+    lines:['云母屏风烛影深，','长河渐落晓星沉。','嫦娥应悔偷灵药，','碧海青天夜夜心。'],
+    pinyin:['yún mǔ píng fēng zhú yǐng shēn,','cháng hé jiàn luò xiǎo xīng chén.','cháng é yīng huǐ tōu líng yào,','bì hǎi qīng tiān yè yè xīn.'],
+    shiYi:'透过云母屏风，烛影渐渐幽暗深远，长长的银河慢慢沉落，晨星也消失了。嫦娥应该后悔偷取了长生不老药，如今独处碧海青天，夜夜都感到孤独凄凉。',
+    yiDao:'月亮那么美，但嫦娥住上去却天天后悔——再好的地方，没有家人朋友也孤单啊！'
   },
   {
-    "id": "6",
-    "tag": "古诗",
-    "title": "《出塞》[唐]王昌龄",
-    "text": "秦时明月汉时关，万里长征人未还。\n但使龙城飞将在，不教胡马度阴山。"
+    id:'6', tag:'古诗', title:'《出塞》', author:'王昌龄', dynasty:'唐', icon:'🏹',
+    text:'秦时明月汉时关，万里长征人未还。\n但使龙城飞将在，不教胡马度阴山。',
+    lines:['秦时明月汉时关，','万里长征人未还。','但使龙城飞将在，','不教胡马度阴山。'],
+    pinyin:['qín shí míng yuè hàn shí guān,','wàn lǐ cháng zhēng rén wèi huán.','dàn shǐ lóng chéng fēi jiàng zài,','bù jiào hú mǎ dù yīn shān.'],
+    shiYi:'依旧是秦汉时期的明月和边关，守边将士离家万里还未能归还。倘若有像汉代飞将军李广那样的将领在，就不会让敌人的兵马翻过阴山。',
+    yiDao:'诗人借古喻今，希望有勇敢的将军守护国家——和平来之不易！'
   },
   {
-    "id": "7",
-    "tag": "古诗",
-    "title": "《凉州词》[唐]王翰",
-    "text": "葡萄美酒夜光杯，欲饮琵琶马上催。\n醉卧沙场君莫笑，古来征战几人回？"
+    id:'7', tag:'古诗', title:'《凉州词》', author:'王翰', dynasty:'唐', icon:'🍷',
+    text:'葡萄美酒夜光杯，欲饮琵琶马上催。\n醉卧沙场君莫笑，古来征战几人回？',
+    lines:['葡萄美酒夜光杯，','欲饮琵琶马上催。','醉卧沙场君莫笑，','古来征战几人回？'],
+    pinyin:['pú táo měi jiǔ yè guāng bēi,','yù yǐn pí pá mǎ shàng cuī.','zuì wò shā chǎng jūn mò xiào,','gǔ lái zhēng zhàn jǐ rén huí?'],
+    shiYi:'醇美的葡萄酒盛在夜光杯中，正想开怀畅饮，马上琵琶声频催。即使醉倒在战场上也请诸君不要见笑，自古以来出征打仗的有几个人能活着回来？',
+    yiDao:'看似潇洒豪迈，其实字字是泪——这就是"笑着哭"的中国古诗。'
   },
   {
-    "id": "8",
-    "tag": "古诗",
-    "title": "《夏日绝句》[宋]李清照",
-    "text": "生当作人杰，死亦为鬼雄。\n至今思项羽，不肯过江东。"
+    id:'8', tag:'古诗', title:'《夏日绝句》', author:'李清照', dynasty:'宋', icon:'⚔️',
+    text:'生当作人杰，死亦为鬼雄。\n至今思项羽，不肯过江东。',
+    lines:['生当作人杰，','死亦为鬼雄。','至今思项羽，','不肯过江东。'],
+    pinyin:['shēng dāng zuò rén jié,','sǐ yì wéi guǐ xióng.','zhì jīn sī xiàng yǔ,','bù kěn guò jiāng dōng.'],
+    shiYi:'活着应当做人中豪杰，死了也要成为鬼中英雄。直到今天人们还在思念项羽，因为他宁可战死也不愿逃回江东。',
+    yiDao:'李清照借项羽的故事告诉我们：做人要有骨气！'
   },
   {
-    "id": "9",
-    "tag": "古诗",
-    "title": "《别董大》[唐]高适",
-    "text": "千里黄云白日曛，北风吹雁雪纷纷。\n莫愁前路无知己，天下谁人不识君？"
+    id:'9', tag:'古诗', title:'《别董大》', author:'高适', dynasty:'唐', icon:'🎵',
+    text:'千里黄云白日曛，北风吹雁雪纷纷。\n莫愁前路无知己，天下谁人不识君。',
+    lines:['千里黄云白日曛，','北风吹雁雪纷纷。','莫愁前路无知己，','天下谁人不识君。'],
+    pinyin:['qiān lǐ huáng yún bái rì xūn,','běi fēng chuī yàn xuě fēn fēn.','mò chóu qián lù wú zhī jǐ,','tiān xià shuí rén bù shí jūn.'],
+    shiYi:'千里黄云遮天蔽日，连太阳也昏暗无光，北风裹着大雪吹得大雁纷纷南飞。不要担心前方的路上没有知己，像您这样有才华的人，天下谁不知道您呢？',
+    yiDao:'高适送别朋友反过来夸他，这种"夸夸式告别"又暖又有力！'
   },
   {
-    "id": "10",
-    "tag": "文言",
-    "title": "《王戎不取道旁李》",
-    "text": "王戎七岁，尝与诸小儿游。看道边李树多子折枝，诸儿竞走取之，唯戎不动。人问之，答曰：“树在道边而多子，此必苦李。”取之，信然。"
+    id:'10', tag:'文言', title:'《王戎不取道旁李》', author:'—', dynasty:'—', icon:'🍒',
+    text:'王戎七岁，尝与诸小儿游。看道边李树多子折枝，诸儿竞走取之，唯戎不动。人问之，答曰："树在道边而多子，此必苦李。"取之，信然。',
+    lines:['王戎七岁，尝与诸小儿游。','看道边李树多子折枝，','诸儿竞走取之，唯戎不动。','人问之，答曰："树在道边而多子，此必苦李。"','取之，信然。'],
+    pinyin:['wáng róng qī suì, cháng yǔ zhū xiǎo ér yóu.','kàn dào biān lǐ shù duō zǐ zhé zhī,','zhū ér jìng zǒu qǔ zhī, wéi róng bù dòng.','rén wèn zhī, dá yuē: "shù zài dào biān ér duō zǐ, cǐ bì kǔ lǐ."','qǔ zhī, xìn rán.'],
+    shiYi:'王戎七岁时，曾经和许多小朋友一起玩耍。他们看见路边李树上的果实很多，把树枝都压弯了，小朋友们都争着跑去摘，只有王戎站着不动。别人问他为什么不去，他说："李树长在路边却结这么多果，这一定是苦李子。"大家摘来一尝，果然是苦的。',
+    yiDao:'七岁就能用推理识破"骗局"——观察加思考，比跑得快更重要！'
   },
   {
-    "id": "11",
-    "tag": "日积月累",
-    "title": "关于提问的名言",
-    "text": "好问则裕，自用则小。——《尚书》\n博学之，审问之，慎思之，明辨之，笃行之。——《礼记》\n智能之士，不学不成，不问不知。——王充\n人非生而知之者，孰能无惑？——韩愈"
+    id:'11', tag:'日积月累', title:'关于提问的名言', author:'—', dynasty:'—', icon:'💡',
+    text:'好问则裕，自用则小。——《尚书》\n博学之，审问之，慎思之，明辨之，笃行之。——《礼记》\n智能之士，不学不成，不问不知。——王充\n人非生而知之者，孰能无惑？——韩愈',
+    lines:['好问则裕，自用则小。——《尚书》','博学之，审问之，慎思之，明辨之，笃行之。——《礼记》','智能之士，不学不成，不问不知。——王充','人非生而知之者，孰能无惑？——韩愈'],
+    pinyin:['hào wèn zé yù, zì yòng zé xiǎo.','bó xué zhī, shěn wèn zhī, shèn sī zhī, míng biàn zhī, dǔ xíng zhī.','zhì néng zhī shì, bù xué bù chéng, bù wèn bù zhī.','rén fēi shēng ér zhī zhī zhě, shú néng wú huò?'],
+    shiYi:'喜欢提问的人知识丰富，自以为是的人见识短浅。要广泛学习、详细询问、慎重思考、明辨是非、切实行动。聪明的人不学习就不会成功，不提问就不会明白。没有人是生下来就什么都懂的，谁能没有疑惑呢？',
+    yiDao:'古人都说"不耻下问"，爱问问题的小朋友就是最聪明的小朋友！'
   },
   {
-    "id": "12",
-    "tag": "课文",
-    "title": "《观潮》精彩段（背诵）",
-    "text": "浪潮越来越近，犹如千万匹白色战马齐头并进，浩浩荡荡地飞奔而来；那声音如同山崩地裂，好像大地都被震得颤动起来。"
+    id:'12', tag:'课文', title:'《观潮》精彩段（背诵）', author:'赵宗成、朱明元', dynasty:'现代', icon:'🌊',
+    text:'浪潮越来越近，犹如千万匹白色战马齐头并进，浩浩荡荡地飞奔而来；那声音如同山崩地裂，好像大地都被震得颤动起来。',
+    lines:['浪潮越来越近，','犹如千万匹白色战马齐头并进，','浩浩荡荡地飞奔而来；','那声音如同山崩地裂，','好像大地都被震得颤动起来。'],
+    pinyin:['làng cháo yuè lái yuè jìn,','yóu rú qiān wàn pǐ bái sè zhàn mǎ qí tóu bìng jìn,','hào hào dàng dàng de fēi bēn ér lái;','nà shēng yīn rú tóng shān bēng dì liè,','hǎo xiàng dà dì dōu bèi zhèn de chàn dòng qǐ lái.'],
+    shiYi:'汹涌的潮水越来越近，就像千万匹白色的战马一起并排奔跑，气势浩大地飞奔而来；那声音像山崩塌、大地裂开一样，仿佛整个大地都被震动得颤抖起来。',
+    yiDao:'把浪潮比作"千万匹战马"，把声音比作"山崩地裂"——这就是比喻的力量！'
   },
   {
-    "id": "13",
-    "tag": "古诗",
-    "title": "《浪淘沙》（其七）[唐]刘禹锡",
-    "text": "八月涛声吼地来，头高数丈触山回。\n须臾却入海门去，卷起沙堆似雪堆。"
+    id:'13', tag:'古诗', title:'《浪淘沙》（其七）', author:'刘禹锡', dynasty:'唐', icon:'🌊',
+    text:'八月涛声吼地来，头高数丈触山回。\n须臾却入海门去，卷起沙堆似雪堆。',
+    lines:['八月涛声吼地来，','头高数丈触山回。','须臾却入海门去，','卷起沙堆似雪堆。'],
+    pinyin:['bā yuè tāo shēng hǒu dì lái,','tóu gāo shù zhàng chù shān huí.','xū yú què rù hǎi mén qù,','juǎn qǐ shā duī sì xuě duī.'],
+    shiYi:'八月的波涛声震天动地地涌来，浪头高达数丈撞到山崖又退回。片刻之间又退回到入海口去，卷起的沙堆就像雪堆一样白。',
+    yiDao:'刘禹锡用"吼""触""卷"三个动词把浪写活了，咱们写海也可以这样用动词哦～'
   },
   {
-    "id": "14",
-    "tag": "文言",
-    "title": "《精卫填海》",
-    "text": "炎帝之少女，名曰女娃。女娃游于东海，溺而不返，故为精卫，常衔西山之木石，以堙于东海。"
+    id:'14', tag:'文言', title:'《精卫填海》', author:'—', dynasty:'—', icon:'🐦',
+    text:'炎帝之少女，名曰女娃。女娃游于东海，溺而不返，故为精卫，常衔西山之木石，以堙于东海。',
+    lines:['炎帝之少女，名曰女娃。','女娃游于东海，溺而不返，','故为精卫，','常衔西山之木石，','以堙于东海。'],
+    pinyin:['yán dì zhī shào nǚ, míng yuē nǚ wá.','nǚ wá yóu yú dōng hǎi, nì ér bù fǎn,','gù wéi jīng wèi,','cháng xián xī shān zhī mù shí,','yǐ yīn yú dōng hǎi.'],
+    shiYi:'炎帝的小女儿，名叫女娃。女娃去东海游玩，不幸溺水，再也没有回来，于是化身为精卫鸟，常常叼着西山的小树枝和小石子，想要把东海填平。',
+    yiDao:'小小鸟儿想填平大海听起来很傻，但其实是在告诉我们：再大的困难，只要坚持总有希望！'
   },
   {
-    "id": "15",
-    "tag": "日积月累",
-    "title": "关于天气的谚语",
-    "text": "八月里来雁门开，雁儿脚上带霜来。\n一场秋雨一场寒，十场秋雨要穿棉。\n八月暖，九月温，十月还有小阳春。"
+    id:'15', tag:'日积月累', title:'关于天气的谚语', author:'—', dynasty:'—', icon:'☀️',
+    text:'八月里来雁门开，雁儿脚上带霜来。\n一场秋雨一场寒，十场秋雨要穿棉。\n八月暖，九月温，十月还有小阳春。',
+    lines:['八月里来雁门开，','雁儿脚上带霜来。','一场秋雨一场寒，','十场秋雨要穿棉。','八月暖，九月温，十月还有小阳春。'],
+    pinyin:['bā yuè lǐ lái yàn mén kāi, yàn ér jiǎo shàng dài shuāng lái.','yī chǎng qiū yǔ yī chǎng hán, shí chǎng qiū yǔ yào chuān mián.','bā yuè nuǎn, jiǔ yuè wēn, shí yuè hái yǒu xiǎo yáng chūn.'],
+    shiYi:'农历八月雁门关打开，大雁飞来了，脚上带着霜的痕迹。一场秋雨过后天气就更冷一些，十场秋雨过后就要穿上棉袄了。八月比较温暖，九月气温适宜，到了十月还会出现像春天一样的小阳春天气。',
+    yiDao:'古人没有天气预报，全靠这些"接地气"的谚语，生活中处处都是学问！'
   },
   {
-    "id": "16",
-    "tag": "日积月累",
-    "title": "关于成长的名言",
-    "text": "尺有所短，寸有所长。\n机不可失，时不再来。\n差之毫厘，谬以千里。\n病从口入，祸从口出。\n一言既出，驷马难追。\n比上不足，比下有余。"
+    id:'16', tag:'日积月累', title:'关于成长的名言', author:'—', dynasty:'—', icon:'🌱',
+    text:'尺有所短，寸有所长。\n机不可失，时不再来。\n差之毫厘，谬以千里。\n病从口入，祸从口出。\n一言既出，驷马难追。\n比上不足，比下有余。',
+    lines:['尺有所短，寸有所长。','机不可失，时不再来。','差之毫厘，谬以千里。','病从口入，祸从口出。','一言既出，驷马难追。','比上不足，比下有余。'],
+    pinyin:['chǐ yǒu suǒ duǎn, cùn yǒu suǒ cháng.','jī bù kě shī, shí bù zài lái.','chā zhī háo lí, miù yǐ qiān lǐ.','bìng cóng kǒu rù, huò cóng kǒu chū.','yī yán jì chū, sì mǎ nán zhuī.','bǐ shàng bù zú, bǐ xià yǒu yú.'],
+    shiYi:'尺有它的短处，寸也有它的长处。机会一旦错过就不会再来。开始只差一点点，结果会相差千里。疾病往往因为乱吃东西引起，祸患往往因为乱说话造成。说出口的话，四匹马拉的车也追不回来。比上不足，比下还有余。',
+    yiDao:'六句话讲清了六个做人做事的道理，每一句都能当座右铭！'
   }
 ];
 const CN_TARGET = CN.length;
@@ -1270,16 +1339,66 @@ const CN_READ = [
 
 /* ═══════════ 三年级下册 · 语文（依据人教版三下教材编写） ═══════════ */
 const CN3 = [
-  {id:'1', tag:'古诗', title:'《绝句》[唐]杜甫', text:'迟日江山丽，春风花草香。\n泥融飞燕子，沙暖睡鸳鸯。'},
-  {id:'2', tag:'古诗', title:'《惠崇春江晚景》[宋]苏轼', text:'竹外桃花三两枝，春江水暖鸭先知。\n蒌蒿满地芦芽短，正是河豚欲上时。'},
-  {id:'3', tag:'古诗', title:'《三衢道中》[宋]曾几', text:'梅子黄时日日晴，小溪泛尽却山行。\n绿阴不减来时路，添得黄鹂四五声。'},
-  {id:'4', tag:'古诗', title:'《忆江南》[唐]白居易', text:'江南好，风景旧曾谙。\n日出江花红胜火，春来江水绿如蓝。能不忆江南？'},
-  {id:'5', tag:'文言文', title:'《守株待兔》', text:'宋人有耕者。田中有株。兔走触株，折颈而死。\n因释其耒而守株，冀复得兔。兔不可复得，而身为宋国笑。'},
-  {id:'6', tag:'古诗', title:'《元日》[宋]王安石', text:'爆竹声中一岁除，春风送暖入屠苏。\n千门万户曈曈日，总把新桃换旧符。'},
-  {id:'7', tag:'古诗', title:'《清明》[唐]杜牧', text:'清明时节雨纷纷，路上行人欲断魂。\n借问酒家何处有？牧童遥指杏花村。'},
-  {id:'8', tag:'古诗', title:'《九月九日忆山东兄弟》[唐]王维', text:'独在异乡为异客，每逢佳节倍思亲。\n遥知兄弟登高处，遍插茱萸少一人。'},
-  {id:'9', tag:'古诗', title:'《滁州西涧》[唐]韦应物', text:'独怜幽草涧边生，上有黄鹂深树鸣。\n春潮带雨晚来急，野渡无人舟自横。'},
-  {id:'10', tag:'古诗', title:'《大林寺桃花》[唐]白居易', text:'人间四月芳菲尽，山寺桃花始盛开。\n长恨春归无觅处，不知转入此中来。'}
+  {id:'1', tag:'古诗', title:'《绝句》', author:'杜甫', dynasty:'唐', icon:'🌸',
+    text:'迟日江山丽，春风花草香。\n泥融飞燕子，沙暖睡鸳鸯。',
+    lines:['迟日江山丽，','春风花草香。','泥融飞燕子，','沙暖睡鸳鸯。'],
+    pinyin:['chí rì jiāng shān lì,','chūn fēng huā cǎo xiāng.','ní róng fēi yàn zi,','shā nuǎn shuì yuān yāng.'],
+    shiYi:'春天的阳光下，江山多么秀丽。春风送来花草的芳香。燕子衔着湿润的泥忙着筑巢，鸳鸯睡在温暖的沙滩上。',
+    yiDao:'杜甫用四种小动物写春天——蝴蝶、燕子、鸳鸯……你也能写！'},
+  {id:'2', tag:'古诗', title:'《惠崇春江晚景》', author:'苏轼', dynasty:'宋', icon:'🌸',
+    text:'竹外桃花三两枝，春江水暖鸭先知。\n蒌蒿满地芦芽短，正是河豚欲上时。',
+    lines:['竹外桃花三两枝，','春江水暖鸭先知。','蒌蒿满地芦芽短，','正是河豚欲上时。'],
+    pinyin:['zhú wài táo huā sān liǎng zhī,','chūn jiāng shuǐ nuǎn yā xiān zhī.','lóu hāo mǎn dì lú yá duǎn,','zhèng shì hé tún yù shàng shí.'],
+    shiYi:'竹林外两三枝桃花初放，鸭子在水中嬉戏，它们最先感知了春天江水已经变暖。河滩上已经长满了蒌蒿，芦笋也开始抽芽，而河豚此时正要逆流而上。',
+    yiDao:'"春江水暖鸭先知"——鸭子下水那一刻，就知道春天来啦！'},
+  {id:'3', tag:'古诗', title:'《三衢道中》', author:'曾几', dynasty:'宋', icon:'🌳',
+    text:'梅子黄时日日晴，小溪泛尽却山行。\n绿阴不减来时路，添得黄鹂四五声。',
+    lines:['梅子黄时日日晴，','小溪泛尽却山行。','绿阴不减来时路，','添得黄鹂四五声。'],
+    pinyin:['méi zi huáng shí rì rì qíng,','xiǎo xī fàn jǐn què shān xíng.','lǜ yīn bù jiǎn lái shí lù,','tiān dé huáng lí sì wǔ shēng.'],
+    shiYi:'梅子黄透了的时候，天天都是晴朗的好天气。乘小船到小溪尽头，再走山路继续前行。山路上绿树成荫，和来的时候一样浓密，深林丛中传来几声黄鹂的欢鸣声，比来时更增添了些幽趣。',
+    yiDao:'黄鹂在绿阴里唱歌，回家路上也能发现诗意～'},
+  {id:'4', tag:'古诗', title:'《忆江南》', author:'白居易', dynasty:'唐', icon:'🌊',
+    text:'江南好，风景旧曾谙。\n日出江花红胜火，春来江水绿如蓝。能不忆江南？',
+    lines:['江南好，风景旧曾谙。','日出江花红胜火，','春来江水绿如蓝。','能不忆江南？'],
+    pinyin:['jiāng nán hǎo, fēng jǐng jiù zēng ān.','rì chū jiāng huā hóng shèng huǒ,','chūn lái jiāng shuǐ lǜ rú lán.','néng bù yì jiāng nán?'],
+    shiYi:'江南的风景多么美好，如画的风景久已熟悉。春天到来时，太阳从江面升起，把江边的鲜花照得比火红，碧绿的江水绿得胜过蓝草。怎能叫人不怀念江南？',
+    yiDao:'"红胜火""绿如蓝"——红绿对比色，这就是江南的颜色记忆！'},
+  {id:'5', tag:'文言文', title:'《守株待兔》', author:'—', dynasty:'—', icon:'🐰',
+    text:'宋人有耕者。田中有株。兔走触株，折颈而死。\n因释其耒而守株，冀复得兔。兔不可复得，而身为宋国笑。',
+    lines:['宋人有耕者。田中有株。','兔走触株，折颈而死。','因释其耒而守株，','冀复得兔。','兔不可复得，而身为宋国笑。'],
+    pinyin:['sòng rén yǒu gēng zhě. tián zhōng yǒu zhū.','tù zǒu chù zhū, zhé jǐng ér sǐ.','yīn shì qí lěi ér shǒu zhū,','jì fù dé tù.','tù bù kě fù dé, ér shēn wéi sòng guó xiào.'],
+    shiYi:'宋国有个种田的人。他的田里有一截树桩。一天，一只兔子跑过来撞在树桩上，折断脖子死了。于是他放下农具守在树桩旁边，希望再得到撞死的兔子。兔子不可能再得到，他自己却被宋国人笑话。',
+    yiDao:'天上不会掉馅饼，幸运不会总降临——不劳而获的人最可笑！'},
+  {id:'6', tag:'古诗', title:'《元日》', author:'王安石', dynasty:'宋', icon:'🧨',
+    text:'爆竹声中一岁除，春风送暖入屠苏。\n千门万户曈曈日，总把新桃换旧符。',
+    lines:['爆竹声中一岁除，','春风送暖入屠苏。','千门万户曈曈日，','总把新桃换旧符。'],
+    pinyin:['bào zhú shēng zhōng yī suì chú,','chūn fēng sòng nuǎn rù tú sū.','qiān mén wàn hù tóng tóng rì,','zǒng bǎ xīn táo huàn jiù fú.'],
+    shiYi:'阵阵轰鸣的爆竹声中，旧的一年已经过去；和暖的春风吹来了新年，人们欢乐地畅饮着新屠苏酒。初升的太阳照耀着千家万户，他们都忙着把旧的桃符取下，换上新的桃符。',
+    yiDao:'王安石写的就是过年的样子——爆竹、屠苏、桃符，年味十足！'},
+  {id:'7', tag:'古诗', title:'《清明》', author:'杜牧', dynasty:'唐', icon:'🌧️',
+    text:'清明时节雨纷纷，路上行人欲断魂。\n借问酒家何处有？牧童遥指杏花村。',
+    lines:['清明时节雨纷纷，','路上行人欲断魂。','借问酒家何处有？','牧童遥指杏花村。'],
+    pinyin:['qīng míng shí jié yǔ fēn fēn,','lù shàng xíng rén yù duàn hún.','jiè wèn jiǔ jiā hé chù yǒu?','mù tóng yáo zhǐ xìng huā cūn.'],
+    shiYi:'江南清明时节细雨纷纷飘洒，路上羁旅行人个个落魄断魂。问当地之人何处买酒浇愁，牧童笑而不答遥指杏花山村。',
+    yiDao:'短短四句画出一幅江南烟雨图——画面感拉满！'},
+  {id:'8', tag:'古诗', title:'《九月九日忆山东兄弟》', author:'王维', dynasty:'唐', icon:'🏔️',
+    text:'独在异乡为异客，每逢佳节倍思亲。\n遥知兄弟登高处，遍插茱萸少一人。',
+    lines:['独在异乡为异客，','每逢佳节倍思亲。','遥知兄弟登高处，','遍插茱萸少一人。'],
+    pinyin:['dú zài yì xiāng wéi yì kè,','měi féng jiā jié bèi sī qīn.','yáo zhī xiōng dì dēng gāo chù,','biàn chā zhū yú shǎo yī rén.'],
+    shiYi:'独自远离家乡难免总有一点凄凉，每到重阳佳节倍加思念远方的亲人。远远想到兄弟们身佩茱萸登上高处，也会因为少我一人而生遗憾之情。',
+    yiDao:'王维 17 岁写下的名句，今天读来还是让人鼻子一酸。'},
+  {id:'9', tag:'古诗', title:'《滁州西涧》', author:'韦应物', dynasty:'唐', icon:'🌿',
+    text:'独怜幽草涧边生，上有黄鹂深树鸣。\n春潮带雨晚来急，野渡无人舟自横。',
+    lines:['独怜幽草涧边生，','上有黄鹂深树鸣。','春潮带雨晚来急，','野渡无人舟自横。'],
+    pinyin:['dú lián yōu cǎo jiàn biān shēng,','shàng yǒu huáng lí shēn shù míng.','chūn cháo dài yǔ wǎn lái jí,','yě dù wú rén zhōu zì héng.'],
+    shiYi:'我最怜爱生长在涧边的幽幽野草，还有那树荫深处婉转啼叫的黄鹂。春潮上涨伴着傍晚阵阵急雨，荒野渡口无人撑船，只见一只小船自在地横在水面。',
+    yiDao:'韦应物写的不是热闹的春景，是安静得让你舍不得走的那种美～'},
+  {id:'10', tag:'古诗', title:'《大林寺桃花》', author:'白居易', dynasty:'唐', icon:'🌸',
+    text:'人间四月芳菲尽，山寺桃花始盛开。\n长恨春归无觅处，不知转入此中来。',
+    lines:['人间四月芳菲尽，','山寺桃花始盛开。','长恨春归无觅处，','不知转入此中来。'],
+    pinyin:['rén jiān sì yuè fāng fēi jìn,','shān sì táo huā shǐ shèng kāi.','cháng hèn chūn guī wú mì chù,','bù zhī zhuǎn rù cǐ zhōng lái.'],
+    shiYi:'在人间四月里百花凋零已尽，高山古寺中的桃花才刚刚盛开。我常为春光逝去无处寻觅而怅恨，却不知它已经转到这里来。',
+    yiDao:'原来春天没有真的走，只是躲到了山上的寺庙里——太浪漫了！'}
 ];
 /* 三年级下册 · 生字生词（看拼音写词语） */
 const CN3_WORDS = [
@@ -3148,7 +3267,6 @@ const QUARK_TOKEN    = 'egg_queenie';                          // 与代理端 T
 const QUARK_ROOT_FID = '0c7e38649a434abf9d859059f97b23b6';       // 起始文件夹 fid = 夸克里「蛋蛋视频」专用文件夹（孩子只看这个）
 const QUARK_PROXY_CN = 'https://egg-workbench-d9gcwnalkbdf611d4-1317874230.tcloudbaseapp.com/quark-proxy';   // 列表代理（CloudBase 云函数，境内外通用：云存储/CDN 公网可达）
 const QUARK_STREAM_CN = 'https://egg-workbench-d9gcwnalkbdf611d4-1317874230.tcloudbaseapp.com/quark-stream';   // 视频中转（CloudBase 云函数：下载夸克→云存储→临时直链；绕开夸克防盗链 + API 网关 6MB 限制，境内外通用）
-const QUARK_STREAM_CN= 'https://egg-workbench-d9gcwnalkbdf611d4-1317874230.tcloudbaseapp.com/quark-stream'; // 视频中转（CloudBase 云函数）：中转存云存储+签临时直链，绕开 6MB 限制+夸克防盗链
 /* ===== 内嵌视频播放器（不弹窗，每个合集带集数按钮） ===== */
 function bvidUrl(bvid,p){
   p=p||1;
@@ -3742,23 +3860,89 @@ function renderCNWrong(box){
 }
 function renderCNRecite(box){
   const arr=cnDS.recite;
-  const PS=6, total=Math.ceil(arr.length/PS);
+  const PS=3, total=Math.max(1,Math.ceil(arr.length/PS));
   cnPage=Math.max(0,Math.min(cnPage,total-1));
-  arr.slice(cnPage*PS,cnPage*PS+PS).forEach(it=>{
+  const slice=arr.slice(cnPage*PS,cnPage*PS+PS);
+
+  // 顶部"全部朗读"按钮区
+  const head=document.createElement('div');
+  head.className='rc-toolbar';
+  head.style.cssText='display:flex;gap:8px;justify-content:flex-end;margin:0 0 10px';
+  head.innerHTML='<button id="rcAll" class="rc-tool" style="padding:8px 14px;border-radius:12px;border:1px solid #c9a4f0;background:#fff;color:#7a4dd1;font-weight:700;cursor:pointer;font-family:inherit">🔊 朗读全部</button>';
+  box.appendChild(head);
+  $('#rcAll').onclick=()=>{
+    const text=slice.map(x=>(x.author&&x.author!=='—'?(x.title+' '+(x.author)):x.title)+'。'+(x.lines||[x.text]).join(' ')).join(' ');
+    speakCN(text);
+  };
+
+  slice.forEach(it=>{
     const done=S.cnDone.includes(ck(cnGrade,it.id));
-    const d=document.createElement('details'); d.className='rec'+(done?' done':''); d.open=done;
-    d.innerHTML=`<summary>${done?'✅':''} ${it.title} <span class="pill">${it.tag}</span></summary>
-      <div class="poem">${it.text}</div>
-      <button class="chk ${done?'on':''}" data-id="${it.id}">${done?'已背会 ✓':'我背会了'}</button>`;
-    box.appendChild(d);
+    const card=document.createElement('div');
+    card.className='rcard'+(done?' done':'');
+    const lines=(it.lines||[it.text]).map(l=>'<div>'+esc(l)+'</div>').join('');
+    const pys=(it.pinyin||[]).map(p=>'<div>'+esc(p)+'</div>').join('');
+    const authorStr = it.dynasty&&it.dynasty!=='—' ? '【'+it.dynasty+'】 '+it.author : (it.tag||'');
+    card.innerHTML=`
+      ${done?'':'<div class="rc-mark">第 '+it.id+' 篇</div>'}
+      <button class="rc-close" data-act="close" title="收起">×</button>
+      <div class="rc-emoji">${it.icon||'📜'}</div>
+      <h2 class="rc-title">${esc(it.title)}</h2>
+      <div class="rc-author"><span class="tag">${esc(it.tag)}</span>${esc(authorStr)}</div>
+      <div class="rc-lines">${lines}</div>
+      ${pys?'<div class="rc-py">'+pys+'</div>':''}
+      ${it.shiYi?'<div class="rc-shiiyi">💡 <b>诗意：</b>'+esc(it.shiYi)+'</div>':''}
+      ${it.yiDao?'<div class="rc-yidao">📌 '+esc(it.yiDao)+'</div>':''}
+      <div class="rc-tip">${(it.lines||[it.text]).length? '<span class="lk" data-act="read">🔊 听一遍</span> <span class="muted" style="color:#9a8aaa;font-weight:400">·</span> <span class="lk" data-act="readpy">🎵 读拼音</span>':''}</div>
+      <div class="rc-foot">
+        <button class="rc-btn ${done?'on':''}" data-act="done" data-id="${it.id}">${done?'✅ 我会背了！':'🖊 我会背了！'}</button>
+      </div>`;
+    box.appendChild(card);
   });
-  cnPager(box,cnPage,total);
-  $$('#cnList .chk').forEach(b=>b.onclick=()=>{
+
+  // 翻页
+  const pg=document.createElement('div');
+  pg.className='rc-pager';
+  pg.innerHTML=`<button data-pg="prev" ${cnPage===0?'disabled':''}>‹ 上一页</button>
+    <span class="rc-info">第 ${cnPage+1} / ${total} 页 · 共 ${arr.length} 篇</span>
+    <button data-pg="next" ${cnPage>=total-1?'disabled':''}>下一页 ›</button>`;
+  box.appendChild(pg);
+
+  // 事件绑定
+  $$('#cnList [data-act="close"]').forEach(b=>b.onclick=()=>{ cnPage=0; renderCN(); });
+  $$('#cnList [data-act="read"]').forEach((b,i)=>b.onclick=()=>{
+    const it=slice[i]; speakCN((it.lines||[it.text]).join(' '));
+  });
+  $$('#cnList [data-act="readpy"]').forEach((b,i)=>b.onclick=()=>{
+    const it=slice[i]; const py=(it.pinyin||[]).join(' '); if(!py)return; speakCN(py,'zh-CN',1);
+  });
+  $$('#cnList [data-act="done"]').forEach(b=>b.onclick=()=>{
     const id=b.dataset.id;
     if(S.cnDone.includes(ck(cnGrade,id))){ toast('已经记录过啦～'); return; }
-    S.cnDone.push(ck(cnGrade,id)); S.total.c++; S.today.c++; S.sun+=3; save(); renderCN(); renderHome();
-    toast('太棒了！背诵完成 ☀️+3 📖');
+    S.cnDone.push(ck(cnGrade,id)); S.total.c++; S.today.c++; S.sun+=3; save();
+    toast('太棒了！'+ (slice.find(x=>x.id===id)?.title||'背诵') +' 已会 ☀️+3 📖');
+    renderCN(); renderHome();
   });
+  pg.querySelector('[data-pg="prev"]').onclick=()=>{ if(cnPage>0){cnPage--; renderCN();} };
+  pg.querySelector('[data-pg="next"]').onclick=()=>{ if(cnPage<total-1){cnPage++; renderCN();} };
+}
+
+/* Web Speech API 中文朗读（zh-CN 普通话女声） */
+let _spkUtter=null;
+function speakCN(text, lang, rate){
+  try{
+    if(!('speechSynthesis' in window)){ toast('当前浏览器不支持朗读'); return; }
+    window.speechSynthesis.cancel();
+    const u=new SpeechSynthesisUtterance(text);
+    u.lang=lang||'zh-CN';
+    u.rate=rate||0.85;
+    u.pitch=1.05;
+    // 优选中文女声
+    const voices=window.speechSynthesis.getVoices();
+    const zh=voices.find(v=>/zh|chinese|cmn/i.test(v.lang))||voices[0];
+    if(zh) u.voice=zh;
+    window.speechSynthesis.speak(u);
+    _spkUtter=u;
+  }catch(e){ console.warn('speakCN',e); }
 }
 function renderCNWords(box){
   const arr=cnDS.words.filter((_,i)=>!S.cnW.includes(ck(cnGrade,i)));
@@ -4737,7 +4921,7 @@ const SHOP=[
   {key:'medicine',icon:'💊',name:'药品',price:15,grow:11,desc:'治病+喂养 +11成长',medicine:true},
 ];
 const FOOD_ITEMS=SHOP.filter(s=>s.food);     // 多种食物（像衣服一样可在超市挑选）
-const APP_VERSION='2026-08-06 22:52';         // 版本时间戳：用于比对本地/GitHub 是否一致
+const APP_VERSION='2026-08-06 22:59';         // 版本时间戳：用于比对本地/GitHub 是否一致
 function dogLevel(g){ if(g>=300)return 3; if(g>=160)return 2; if(g>=60)return 1; return 0; }
 const DOG_NAMES=['幼崽小猫','可爱小猫','帅气大猫','超级神猫'];
 let catState='sit';                       // 当前随机状态（sit/play/sleep/sick/eat 互动态）
@@ -5099,7 +5283,7 @@ $('#btnReset').onclick=()=>{
 };
 window.addEventListener('beforeinstallprompt',e=>e.preventDefault());
 </script>
-<div id="verTag" title="页面版本时间戳，用于比对本地/GitHub 是否一致">v20260806.2252</div>
+<div id="verTag" title="页面版本时间戳，用于比对本地/GitHub 是否一致">v20260806.2259</div>
 <div id="syncBadge" class="sync-badge init" title="数据同步状态：云端为主存，多端一致">☁️</div>
 <div id="syncUploadBtn" title="把本机当前进度强制覆盖上传到云端（替换云端数据，多端将以本机为准）">↑ 强制上传</div>
 <div id="syncDownloadBtn" title="用云端数据覆盖本机（丢弃本机本地改动，以云端为准）——当本地旧缓存盖掉云端设定时使用">↓ 强制下载</div>
