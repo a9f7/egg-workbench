@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="zh-CN" data-app-version="20260806.0839">
+<html lang="zh-CN" data-app-version="20260806.0846">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
@@ -3280,12 +3280,38 @@ function renderQuark(){
     });
   };
   // 优先级：CN（境内 CloudBase，稳）→ CF（Cloudflare，跨境可能被墙）
+  // 把每步的实际 URL 与失败原因都展示出来（让用户能直接看，不用开 DevTools）
+  const fails = [];
   (async ()=>{
     if(QUARK_PROXY_CN){
-      try{ const j = await tryFetch(QUARK_PROXY_CN); if(!j || !j._httpStatus || j._httpStatus < 400){ onList(j, 'CN'); return; } }catch(_){ /* 网络错：跨境被墙 / Failed to fetch，回退 CF */ }
+      const uCN = QUARK_PROXY_CN.replace(/\/$/,'')+'/quark/list?pdir_fid='+encodeURIComponent(pdir)+(QUARK_TOKEN?'&token='+encodeURIComponent(QUARK_TOKEN):'');
+      try{
+        const j = await tryFetch(QUARK_PROXY_CN);
+        if(!j || !j._httpStatus || j._httpStatus < 400){ onList(j, 'CN'); return; }
+        fails.push('CN '+uCN+' → HTTP '+j._httpStatus+'（'+qkEsc(j.error||'非 JSON')+'）');
+      }catch(e){
+        fails.push('CN '+uCN+' → '+qkEsc((e && (e.name+' '+e.message)) || String(e)));
+      }
     }
     if(QUARK_PROXY){
-      try{ const j = await tryFetch(QUARK_PROXY); onList(j, 'CF'); }catch(e){ box.innerHTML='<div class="vcard" style="grid-column:1/-1"><div class="vt">⚠️ 网络错误</div><div class="vd">'+qkEsc(e.message)+'</div></div>'; }
+      const uCF = QUARK_PROXY.replace(/\/$/,'')+'/quark/list?pdir_fid='+encodeURIComponent(pdir)+(QUARK_TOKEN?'&token='+encodeURIComponent(QUARK_TOKEN):'');
+      try{
+        const j = await tryFetch(QUARK_PROXY);
+        onList(j, 'CF');
+        if(fails.length){
+          // 列出尝试过的代理（CN 失败但 CF 成功的情况）
+          const warn = document.createElement('div'); warn.className='vcard'; warn.style.gridColumn='1/-1';
+          warn.innerHTML = '<div class="vd" style="color:#b58300">⚠️ '+qkEsc(fails.join(' ｜ '))+'</div>';
+          box.appendChild(warn);
+        }
+      }catch(e){
+        // 全失败：合并两次错误一起展示
+        const all = fails.concat(['CF '+uCF+' → '+qkEsc((e && (e.name+' '+e.message)) || String(e))]).join(' ｜ ');
+        box.innerHTML='<div class="vcard" style="grid-column:1/-1"><div class="vt">⚠️ 网络错误</div><div class="vd">'+all+'</div><div class="vd" style="font-size:12px;margin-top:8px;color:#888">提示：Failed to fetch 通常意味着浏览器无法访问该域名——可能是浏览器代理/扩展/VPN 把它也走代理、或 DNS 污染。<br>请打开 DevTools (F12) → Network 面板，看 list 请求的 Status / Remote Address，能直接看到失败原因。</div></div>';
+      }
+    } else {
+      // 仅有 CN 也没有
+      box.innerHTML='<div class="vcard" style="grid-column:1/-1"><div class="vt">⚠️ 网络错误</div><div class="vd">'+fails.join(' ｜ ')+'</div></div>';
     }
   })();
 }
@@ -4680,7 +4706,7 @@ const SHOP=[
   {key:'medicine',icon:'💊',name:'药品',price:15,grow:11,desc:'治病+喂养 +11成长',medicine:true},
 ];
 const FOOD_ITEMS=SHOP.filter(s=>s.food);     // 多种食物（像衣服一样可在超市挑选）
-const APP_VERSION='2026-08-06 08:39';         // 版本时间戳：用于比对本地/GitHub 是否一致
+const APP_VERSION='2026-08-06 08:46';         // 版本时间戳：用于比对本地/GitHub 是否一致
 function dogLevel(g){ if(g>=300)return 3; if(g>=160)return 2; if(g>=60)return 1; return 0; }
 const DOG_NAMES=['幼崽小猫','可爱小猫','帅气大猫','超级神猫'];
 let catState='sit';                       // 当前随机状态（sit/play/sleep/sick/eat 互动态）
@@ -5042,7 +5068,7 @@ $('#btnReset').onclick=()=>{
 };
 window.addEventListener('beforeinstallprompt',e=>e.preventDefault());
 </script>
-<div id="verTag" title="页面版本时间戳，用于比对本地/GitHub 是否一致">v20260806.0839</div>
+<div id="verTag" title="页面版本时间戳，用于比对本地/GitHub 是否一致">v20260806.0846</div>
 <div id="syncBadge" class="sync-badge init" title="数据同步状态：云端为主存，多端一致">☁️</div>
 <div id="syncUploadBtn" title="把本机当前进度强制覆盖上传到云端（替换云端数据，多端将以本机为准）">↑ 强制上传</div>
 <div id="syncDownloadBtn" title="用云端数据覆盖本机（丢弃本机本地改动，以云端为准）——当本地旧缓存盖掉云端设定时使用">↓ 强制下载</div>
