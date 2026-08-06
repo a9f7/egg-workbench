@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="zh-CN" data-app-version="20260806.1441">
+<html lang="zh-CN" data-app-version="20260806.1645">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
@@ -3398,31 +3398,40 @@ async function playQuarkCN(fid, name){
     return false;
   }
 }
-// Cloudflare 流式代理模式（备用）
+// Cloudflare 代理模式（v20260806.14xx 改造：从「流式转发」改成「返直链」模式）
+// 原因：夸克 CDN（Tengine）已把 Cloudflare Worker 数据中心 IP 全部拉黑，CF 拉夸克永远 412。
+// 现在 CF Worker 也只调夸克 API 拿 download_url、把直链给前端 video 直连 —— 跟 CN 模式同构。
 async function playQuarkCF(fid, name){
   _qkMode = 'cf';
   const v=$('#qkVideo');
   const url = QUARK_PROXY.replace(/\/$/,'')+'/quark/play?fid='+encodeURIComponent(fid)+(QUARK_TOKEN?'&token='+encodeURIComponent(QUARK_TOKEN):'');
   _qkCurUrl = url;
-  let probeOk = false;
   try{
-    const probe = await fetch(url, {headers:{'Range':'bytes=0-0'}});
-    const ct = (probe.headers.get('content-type')||'').toLowerCase();
-    const isStream = probe.ok && (/^(video|application\/octet-stream|application\/mp4)/.test(ct) || /\bmp4\b|\bquicktime\b/i.test(ct));
-    const isErrJson = (probe.status>=400) || /application\/json/i.test(ct) || !probe.ok;
-    if(isErrJson){
-      let msg = '该视频暂时无法播放';
-      try{ const j=await probe.json(); msg = (j && j.error) || msg; }catch(_){}
-      if(/size\s*limit|文件过大|限额/i.test(msg)) showQkError('⚠️ 这个视频超过夸克账号的单文件直链限制（普通会员 ≤80MB）。请开通夸克 SVIP、或在夸克 App「下载到本地」、或换更小的片源。', msg);
-      else showQkError('⚠️ ' + msg, msg);
+    // 不带 Range（避免 CF Worker 误以为要流式响应而走错路径；现在 worker 只返 JSON）
+    const r = await fetch(url);
+    const ct = (r.headers.get('content-type')||'').toLowerCase();
+    // 旧版本 CF Worker 可能还在流式转发（防御兼容）：如果是 video 流，直接喂 video
+    if(r.ok && (/^(video|application\/octet-stream|application\/mp4)/.test(ct) || /\bmp4\b|\bquicktime\b/i.test(ct))){
+      v.src = url;
+      try{ v.load(); v.play().catch(()=>{}); }catch(e){}
       return;
     }
-    if(!isStream){ showQkError('⚠️ 代理响应类型不是视频流（Content-Type: '+ct+'），无法播放。', msg||''); return; }
-    probeOk = true;
-  }catch(e){ showQkError('⚠️ 探测代理响应时网络错误：' + e.message, e.message); return; }
-  if(!probeOk) return;
-  v.src = url;
-  try{ v.load(); v.play().catch(()=>{}); }catch(e){}
+    // 新版本（v20260806.14xx）：返 JSON { url, name, size }
+    let j={};
+    try{ j = await r.json(); }catch(_){}
+    if(r.ok && j && j.url){
+      _qkCurUrl = j.url;
+      v.src = j.url;
+      try{ v.load(); v.play().catch(()=>{}); }catch(e){}
+      return;
+    }
+    // 错误响应
+    const msg = (j && j.error) || ('HTTP '+r.status);
+    if(/size\s*limit|文件过大|限额/i.test(msg)) showQkError('⚠️ 这个视频超过夸克账号的单文件直链限制（普通会员 ≤80MB）。请开通夸克 SVIP、或在夸克 App「下载到本地」、或换更小的片源。', msg);
+    else showQkError('⚠️ ' + msg, msg);
+  }catch(e){
+    showQkError('⚠️ 境外代理请求失败：'+e.message, e.message);
+  }
 }
 function showQkError(html, rawErr){
   const errEl=$('#qkErr'), errLnk=$('#qkErrLink'), errMsg=$('#qkErrMsg');
@@ -3463,12 +3472,18 @@ function closeQuarkPlayer(){
       };
       const reason = reasonMap[code] || '未知错误';
       const detail = (v.error && v.error.message) ? v.error.message : '';
-      // 不再回退 CF（境内访问被墙是死路）
+      // 检测平台：Edge/Chrome on Windows 推荐装 HEVC 扩展；macOS Safari 自带 HEVC 不用装
+      const isWin = /Windows/i.test(navigator.platform || '');
+      const isMac = /Mac/i.test(navigator.platform || '');
+      const hevcHint = isWin
+        ? `<br><span style="font-size:12px;color:#888">👉 Win10/11 Edge/Chrome 需装 <b>HEVC 扩展</b> 才能在页面内播：打开 Microsoft Store 搜「<b>HEVC Video Extensions from Device Manufacturer</b>」免费安装（安装后刷新本页面）。macOS Safari 自带 HEVC 解码不需要装。</span>`
+        : (isMac ? '' : `<br><span style="font-size:12px;color:#888">👉 当前浏览器可能没有 HEVC 解码——建议用 Edge（Win/macOS）或 Safari（macOS）打开。</span>`);
       showQkError(
         `⚠️ 视频在页面内播放失败（MEDIA_ERR 代码 ${code}：${reason}）${detail ? '<br><span style="font-size:12px;color:#888">'+detail+'</span>' : ''}。<br>`+
-        `👉 请点下方「<b>↗ 在新窗口打开</b>」让浏览器自带播放器（内置 HEVC 解码）尝试；<br>`+
-        `👉 或者直接在系统浏览器/夸克 App 里打开「<b>📋 复制代理链接</b>」粘贴去看；<br>`+
-        `<span style="font-size:12px;color:#888">（夸克 CDN 对所有非浏览器直连返 412 Precondition Failed + 防盗链，CN 云函数受 API Gateway 6MB 限制无法转发视频 body——真要 streaming 得走边缘函数，需要单独开通）</span>`,
+        `👉 请点下方「<b>↗ 在新窗口打开</b>」让浏览器自带播放器尝试；<br>`+
+        `👉 或者直接把「<b>📋 复制代理链接</b>」粘到系统浏览器/夸克 App 里打开看。`+
+        hevcHint+
+        `<br><span style="font-size:12px;color:#888">（架构限制：夸克 CDN 现在对所有非浏览器直连返 412，CF Worker / CN 云函数都被拒；只能让浏览器自己拉。视频能否解码取决于浏览器是否带 HEVC 解码器。）</span>`,
         'MEDIA_ERR_' + code
       );
     });
@@ -4748,7 +4763,7 @@ const SHOP=[
   {key:'medicine',icon:'💊',name:'药品',price:15,grow:11,desc:'治病+喂养 +11成长',medicine:true},
 ];
 const FOOD_ITEMS=SHOP.filter(s=>s.food);     // 多种食物（像衣服一样可在超市挑选）
-const APP_VERSION='2026-08-06 14:41';         // 版本时间戳：用于比对本地/GitHub 是否一致
+const APP_VERSION='2026-08-06 16:45';         // 版本时间戳：用于比对本地/GitHub 是否一致
 function dogLevel(g){ if(g>=300)return 3; if(g>=160)return 2; if(g>=60)return 1; return 0; }
 const DOG_NAMES=['幼崽小猫','可爱小猫','帅气大猫','超级神猫'];
 let catState='sit';                       // 当前随机状态（sit/play/sleep/sick/eat 互动态）
@@ -5110,7 +5125,7 @@ $('#btnReset').onclick=()=>{
 };
 window.addEventListener('beforeinstallprompt',e=>e.preventDefault());
 </script>
-<div id="verTag" title="页面版本时间戳，用于比对本地/GitHub 是否一致">v20260806.1441</div>
+<div id="verTag" title="页面版本时间戳，用于比对本地/GitHub 是否一致">v20260806.1645</div>
 <div id="syncBadge" class="sync-badge init" title="数据同步状态：云端为主存，多端一致">☁️</div>
 <div id="syncUploadBtn" title="把本机当前进度强制覆盖上传到云端（替换云端数据，多端将以本机为准）">↑ 强制上传</div>
 <div id="syncDownloadBtn" title="用云端数据覆盖本机（丢弃本机本地改动，以云端为准）——当本地旧缓存盖掉云端设定时使用">↓ 强制下载</div>
