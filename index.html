@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="zh-CN" data-app-version="20260806.1249">
+<html lang="zh-CN" data-app-version="20260806.1300">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
@@ -3350,7 +3350,7 @@ async function playQuark(fid, name, sizeBytes){
   _qkFid = fid; _qkName = name;
   const vp=$('#qkPlayer'); if(!vp) return;
   $('#qkTitle').textContent = name||'视频';
-  const v0=$('#qkVideo'); if(v0) v0._cnRetried=false;
+  // 移除 CF 兜底回退：跨境被墙是死路，错误已经精确显示在 playQuarkCN/CF 内
   const errEl=$('#qkErr'), errLnk=$('#qkErrLink');
   if(errEl) errEl.classList.add('hidden');
   if(errLnk) errLnk.classList.add('hidden');
@@ -3358,11 +3358,10 @@ async function playQuark(fid, name, sizeBytes){
   try{ vp.scrollIntoView({behavior:'smooth', block:'start'}); }catch(e){}
   if(QUARK_PROXY_CN){
     _qkMode = 'cn';
-    const ok = await playQuarkCN(fid, name);
-    if(ok) return;
-    // 取直链失败 → 回退 Cloudflare 备用（若配了）
-    if(QUARK_PROXY){ showQkError('⚠️ 境内代理取直链失败，正在回退到备用代理…', ''); return playQuarkCF(fid, name); }
-    return; // 错误已在 playQuarkCN 内展示
+    // CN 模式：拿直链 + video 直连夸克 CDN（免费、不流式）。
+    // 如果夸克 CDN 因为防盗链/Referer/过期 拒绝播放，错误码会通过 video.onerror 进入精准提示面板；
+    // 用户可以「在新窗口打开」由浏览器自带播放器尝试，或下载到本地用系统播放器看。
+    return playQuarkCN(fid, name);
   }
   return playQuarkCF(fid, name);
 }
@@ -3430,30 +3429,38 @@ function closeQuarkPlayer(){
   if(errEl) errEl.classList.add('hidden');
   if(errLnk) errLnk.classList.add('hidden');
 }
-// video 元素 error 兜底：万一播放器在探测通过后真挂了（中途被切断/限速）也提示
+// video 元素 error 兜底：探测可能过了但真正播放被夸克 CDN 拒了（防盗链 / Referer / 412 Precondition）
+// 提供精准错误码 + 让用户用「新窗口打开」或「下载到本地」两条出路
 (function(){
   function bindErrBtn(){
     const o=$('#qkOpenNew'), c=$('#qkCopyUrl');
     if(o) o.onclick=()=>{ if(_qkCurUrl) window.open(_qkCurUrl,'_blank','noopener'); };
     if(c) c.onclick=async ()=>{ if(!_qkCurUrl) return; try{ await navigator.clipboard.writeText(_qkCurUrl); c.textContent='✅ 已复制'; setTimeout(()=>{c.textContent='📋 复制代理链接';},1400);}catch(_){ window.prompt('复制此链接去浏览器打开：', _qkCurUrl); } };
   }
-  // DOM 已就绪时直接挂，等会执行一次
   if(document.readyState!=='loading') bindErrBtn();
   else document.addEventListener('DOMContentLoaded', bindErrBtn);
-  // video 元素 error 兜底（探测 ok 但真正播不了）
   window.addEventListener('load', ()=>{
     const v=$('#qkVideo'); if(!v) return;
     v.addEventListener('error', ()=>{
-      // 仅当不是隐藏态、确实有 src 才报错（避免冗余提示）
       if(!v.src || $('#qkPlayer').classList.contains('hidden')) return;
-      // 境内直连模式被防盗链拦截 → 自动回退 Cloudflare 备用一次
-      if(_qkMode==='cn' && QUARK_PROXY && !v._cnRetried){
-        v._cnRetried = true;
-        showQkError('⚠️ 直连播放被夸克防盗链拦截，正在回退到备用代理…', '');
-        playQuarkCF(_qkFid, _qkName);
-        return;
-      }
-      showQkError('⚠️ 视频解码失败——可能是 HEVC（h265）、加密 mp4 或浏览器不支持的编码。请用 <b>↗ 在新窗口打开</b> 让浏览器自带播放器尝试，或换 mp4/h264 源。', '');
+      const code = (v.error && typeof v.error.code === 'number') ? v.error.code : 0;
+      // HTMLMediaElement error code: 1=MEDIA_ERR_ABORTED, 2=MEDIA_ERR_NETWORK(网络/防盗链), 3=MEDIA_ERR_DECODE, 4=MEDIA_ERR_SRC_NOT_SUPPORTED(HEVC)
+      const reasonMap = {
+        1: '播放被中止',
+        2: '网络错误（夸克 CDN 拒绝页面内直连，多半是 Referer / 防盗链）',
+        3: '解码失败',
+        4: '源不支持（很可能是 HEVC/h265 编码，浏览器原生 video 无法解码）',
+      };
+      const reason = reasonMap[code] || '未知错误';
+      const detail = (v.error && v.error.message) ? v.error.message : '';
+      // 不再回退 CF（境内访问被墙是死路）
+      showQkError(
+        `⚠️ 视频在页面内播放失败（MEDIA_ERR 代码 ${code}：${reason}）${detail ? '<br><span style="font-size:12px;color:#888">'+detail+'</span>' : ''}。<br>`+
+        `👉 请点下方「<b>↗ 在新窗口打开</b>」让浏览器自带播放器（内置 HEVC 解码）尝试；<br>`+
+        `👉 或者直接在系统浏览器/夸克 App 里打开「<b>📋 复制代理链接</b>」粘贴去看；<br>`+
+        `<span style="font-size:12px;color:#888">（夸克 CDN 对所有非浏览器直连返 412 Precondition Failed + 防盗链，CN 云函数受 API Gateway 6MB 限制无法转发视频 body——真要 streaming 得走边缘函数，需要单独开通）</span>`,
+        'MEDIA_ERR_' + code
+      );
     });
   });
 })();
@@ -4731,7 +4738,7 @@ const SHOP=[
   {key:'medicine',icon:'💊',name:'药品',price:15,grow:11,desc:'治病+喂养 +11成长',medicine:true},
 ];
 const FOOD_ITEMS=SHOP.filter(s=>s.food);     // 多种食物（像衣服一样可在超市挑选）
-const APP_VERSION='2026-08-06 12:49';         // 版本时间戳：用于比对本地/GitHub 是否一致
+const APP_VERSION='2026-08-06 13:00';         // 版本时间戳：用于比对本地/GitHub 是否一致
 function dogLevel(g){ if(g>=300)return 3; if(g>=160)return 2; if(g>=60)return 1; return 0; }
 const DOG_NAMES=['幼崽小猫','可爱小猫','帅气大猫','超级神猫'];
 let catState='sit';                       // 当前随机状态（sit/play/sleep/sick/eat 互动态）
@@ -5093,7 +5100,7 @@ $('#btnReset').onclick=()=>{
 };
 window.addEventListener('beforeinstallprompt',e=>e.preventDefault());
 </script>
-<div id="verTag" title="页面版本时间戳，用于比对本地/GitHub 是否一致">v20260806.1249</div>
+<div id="verTag" title="页面版本时间戳，用于比对本地/GitHub 是否一致">v20260806.1300</div>
 <div id="syncBadge" class="sync-badge init" title="数据同步状态：云端为主存，多端一致">☁️</div>
 <div id="syncUploadBtn" title="把本机当前进度强制覆盖上传到云端（替换云端数据，多端将以本机为准）">↑ 强制上传</div>
 <div id="syncDownloadBtn" title="用云端数据覆盖本机（丢弃本机本地改动，以云端为准）——当本地旧缓存盖掉云端设定时使用">↓ 强制下载</div>
