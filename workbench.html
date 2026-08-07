@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="zh-CN" data-app-version="20260807.2030">
+<html lang="zh-CN" data-app-version="20260807.2102">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
@@ -748,6 +748,7 @@ function syncToast(msg){ const t=$('#syncToast'); if(!t) return; t.textContent=m
 /* 优选柔和的英文女声（不同系统声线名不同，按关键词匹配） */
 let _softEnVoice=null;
 let _lastU=null;   // 保活当前 utterance，防 Chrome 把它 GC 掉导致不发音
+let _speakDiag=''; // 朗读诊断信息（供「测试朗读」按钮回显）
 function _loadSoftEnVoice(){
   try{
     const vs=window.speechSynthesis.getVoices()||[];
@@ -762,20 +763,32 @@ function _loadSoftEnVoice(){
   }catch(e){}
 }
 if('speechSynthesis' in window){ _loadSoftEnVoice(); window.speechSynthesis.onvoiceschanged=()=>{ _loadSoftEnVoice(); }; }
-function speak(t){ try{
-  if(!('speechSynthesis' in window)) return;
-  speechSynthesis.cancel();                 // 先停掉上一条，避免叠音
-  const u=new SpeechSynthesisUtterance(t);
+function speak(t){
+  if(!('speechSynthesis' in window)){ toast('当前浏览器不支持语音朗读'); return; }
+  const synth=window.speechSynthesis;
+  const voices=synth.getVoices()||[];
+  if(!_softEnVoice) _loadSoftEnVoice();
+  if(!voices.length){ _speakDiag='未检测到任何语音包'; toast('⚠️ 系统未安装语音包：请在「设置 → 语音」里添加（如英语(美国) Microsoft 语音）'); }
+  const u=new SpeechSynthesisUtterance(String(t==null?'':t));
   u.lang='en-US';
   u.rate=.72;        // 放慢一点，更清晰
   u.pitch=1.0;       // 自然柔和，不再偏高
-  const v=_softEnVoice||(function(){ _loadSoftEnVoice(); return _softEnVoice; })();
-  if(v) u.voice=v;
+  if(_softEnVoice) u.voice=_softEnVoice;
   _lastU=u;                                // 保活，防止被垃圾回收导致不发音
-  // Chrome/Edge 经典坑：cancel 后立刻 speak 会被丢弃 → 错开 50ms；
-  // speak 后再 resume() 一次，防止引擎用久了「卡死」不出声
-  setTimeout(()=>{ try{ speechSynthesis.speak(u); speechSynthesis.resume(); }catch(e){} }, 50);
-}catch(e){} }
+  u.onerror=(e)=>{ _speakDiag='onerror:'+(e&&e.error||e); console.warn('[speak]',e); };
+  try{
+    // 关键修复：只在真的在播时才打断，避免「cancel 后立刻 speak 被 Chromium 丢弃」导致永远没声
+    if(synth.speaking) try{ synth.cancel(); }catch(e){}
+    synth.speak(u);                        // 在用户手势内同步发声
+  }catch(e){ console.warn('[speak]',e); _speakDiag='throw:'+e; }
+  // 兜底：若 250ms 后仍未开始发声（引擎偶尔「假死」），唤醒并重试一次
+  setTimeout(()=>{
+    if(!synth.speaking && !synth.paused){
+      try{ synth.resume(); synth.speak(u); }catch(e){}
+    }
+    _speakDiag='voices='+voices.length+' speaking='+synth.speaking+' paused='+synth.paused;
+  }, 260);
+}
 
 /* ============ state ============ */
 const SKEY='egg_checkin_v1';
@@ -4353,19 +4366,26 @@ let _spkUtter=null;
 function speakCN(text, lang, rate){
   try{
     if(!('speechSynthesis' in window)){ toast('当前浏览器不支持朗读'); return; }
-    window.speechSynthesis.cancel();
-    const u=new SpeechSynthesisUtterance(text);
+    const synth=window.speechSynthesis;
+    const voices=synth.getVoices()||[];
+    if(!voices.length){ _speakDiag='未检测到任何语音包'; toast('⚠️ 系统未安装语音包：请在「设置 → 语音」里添加（如中文 Microsoft 语音）'); }
+    const u=new SpeechSynthesisUtterance(String(text==null?'':text));
     u.lang=lang||'zh-CN';
     u.rate=rate||0.85;
     u.pitch=1.05;
     // 优选中文女声
-    const voices=window.speechSynthesis.getVoices();
     const zh=voices.find(v=>/zh|chinese|cmn/i.test(v.lang))||voices[0];
     if(zh) u.voice=zh;
     _spkUtter=u;
-    // 同样规避 cancel 后立刻 speak 被丢弃的坑：错开 50ms + resume
-    setTimeout(()=>{ try{ window.speechSynthesis.speak(u); window.speechSynthesis.resume(); }catch(e){} }, 50);
-  }catch(e){ console.warn('speakCN',e); }
+    u.onerror=(e)=>{ _speakDiag='onerror:'+(e&&e.error||e); console.warn('[speakCN]',e); };
+    // 关键修复：只在真的在播时才打断，避免「cancel 后立刻 speak 被丢弃」
+    if(synth.speaking) try{ synth.cancel(); }catch(e){}
+    synth.speak(u);
+    setTimeout(()=>{
+      if(!synth.speaking && !synth.paused){ try{ synth.resume(); synth.speak(u); }catch(e){} }
+      _speakDiag='voices='+voices.length+' speaking='+synth.speaking+' paused='+synth.paused;
+    }, 260);
+  }catch(e){ console.warn('speakCN',e); _speakDiag='throw:'+e; }
 }
 function renderCNWords(box){
   const arr=cnDS.words.filter((_,i)=>!S.cnW.includes(ck(cnGrade,i)));
@@ -5090,6 +5110,7 @@ function renderENCards(box){
     <div class="wctoolbar">
       <span class="muted">共 <b>${cards.length}</b> 张单词卡（来自「英语单词口袋卡」PDF，按 PDF 页码排序）</span>
       <button class="lk" id="wcReadAll">🔊 朗读本页全部</button>
+      <button class="lk" id="wcTest">🔊 测试朗读</button>
     </div>
     <div class="wczh" id="wcZh"></div>
     <div class="wcgrid" id="wcGrid"></div>`;
@@ -5145,6 +5166,12 @@ function renderENCards(box){
     };
     step();
     toast('🔊 朗读前 ' + N + ' 张…');
+  };
+  // 🔊 测试朗读：诊断引擎状态（voices 数量 / 是否在播 / 是否暂停），方便排查没声问题
+  $('#wcTest').onclick = () => {
+    _speakDiag='';
+    speak('hello');
+    setTimeout(()=>toast('朗读诊断：' + (_speakDiag || '无信息')), 320);
   };
 }
 
@@ -5424,7 +5451,7 @@ const SHOP=[
   {key:'medicine',icon:'💊',name:'药品',price:15,grow:11,desc:'治病+喂养 +11成长',medicine:true},
 ];
 const FOOD_ITEMS=SHOP.filter(s=>s.food);     // 多种食物（像衣服一样可在超市挑选）
-const APP_VERSION='2026-08-07 20:30';         // 版本时间戳：用于比对本地/GitHub 是否一致
+const APP_VERSION='2026-08-07 21:02';         // 版本时间戳：用于比对本地/GitHub 是否一致
 function dogLevel(g){ if(g>=300)return 3; if(g>=160)return 2; if(g>=60)return 1; return 0; }
 const DOG_NAMES=['幼崽小猫','可爱小猫','帅气大猫','超级神猫'];
 let catState='sit';                       // 当前随机状态（sit/play/sleep/sick/eat 互动态）
@@ -5786,7 +5813,7 @@ $('#btnReset').onclick=()=>{
 };
 window.addEventListener('beforeinstallprompt',e=>e.preventDefault());
 </script>
-<div id="verTag" title="页面版本时间戳，用于比对本地/GitHub 是否一致">v20260807.2030</div>
+<div id="verTag" title="页面版本时间戳，用于比对本地/GitHub 是否一致">v20260807.2102</div>
 <div id="syncBadge" class="sync-badge init" title="数据同步状态：云端为主存，多端一致">☁️</div>
 <div id="syncUploadBtn" title="把本机当前进度强制覆盖上传到云端（替换云端数据，多端将以本机为准）">↑ 强制上传</div>
 <div id="syncDownloadBtn" title="用云端数据覆盖本机（丢弃本机本地改动，以云端为准）——当本地旧缓存盖掉云端设定时使用">↓ 强制下载</div>
