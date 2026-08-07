@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="zh-CN" data-app-version="20260807.0926">
+<html lang="zh-CN" data-app-version="20260807.0935">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
@@ -5089,15 +5089,24 @@ function renderENCards(box){
   const zhBox = $('#wcZh');
   // 用 DOM API 构造每张卡（避免字符串拼 innerHTML 注入风险）
   cards.forEach((c, idx) => {
+    // 6 张卡排版 2列×3行，background-size: 200% 300% 让背景图渲染成 2×3 倍容器
+    // CSS position 100% 语义=背景图右/下边缘贴容器右/下边缘（即左/上推 1 个容器宽/高），
+    // 负值会把背景推出容器外导致空白，故用 left/right + top/center/bottom 关键字
     const col = c.i % 2;
     const row = Math.floor(c.i / 2);
+    const POS = [
+      ['left','top'],['right','top'],       // 第 1 行
+      ['left','center'],['right','center'], // 第 2 行
+      ['left','bottom'],['right','bottom'], // 第 3 行
+    ];
     const d = document.createElement('div');
     d.className = 'wccard';
     d.dataset.en = c.en;
     d.dataset.zh = c.zh;
     d.style.backgroundImage = `url(${ASSET_CDN}/assets/cards/page_${String(c.p).padStart(2,'0')}.png)`;
-    d.style.backgroundSize = '201% 301%';   // 略大于 200/300 防止边缘露缝
-    d.style.backgroundPosition = `${-col*100}% ${-row*100}%`;
+    d.style.backgroundSize = '200% 300%';   // 精确 2×3 缩放，无缝隙风险
+    d.style.backgroundPosition = `${POS[c.i][0]} ${POS[c.i][1]}`;
+    d.style.backgroundRepeat = 'no-repeat';
     d.title = `${c.zh}（点击发音）`;
     d.onclick = () => {
       // 朗读英文（英文 TTS 函数）
@@ -5403,7 +5412,7 @@ const SHOP=[
   {key:'medicine',icon:'💊',name:'药品',price:15,grow:11,desc:'治病+喂养 +11成长',medicine:true},
 ];
 const FOOD_ITEMS=SHOP.filter(s=>s.food);     // 多种食物（像衣服一样可在超市挑选）
-const APP_VERSION='2026-08-07 09:26';         // 版本时间戳：用于比对本地/GitHub 是否一致
+const APP_VERSION='2026-08-07 09:35';         // 版本时间戳：用于比对本地/GitHub 是否一致
 function dogLevel(g){ if(g>=300)return 3; if(g>=160)return 2; if(g>=60)return 1; return 0; }
 const DOG_NAMES=['幼崽小猫','可爱小猫','帅气大猫','超级神猫'];
 let catState='sit';                       // 当前随机状态（sit/play/sleep/sick/eat 互动态）
@@ -5765,7 +5774,7 @@ $('#btnReset').onclick=()=>{
 };
 window.addEventListener('beforeinstallprompt',e=>e.preventDefault());
 </script>
-<div id="verTag" title="页面版本时间戳，用于比对本地/GitHub 是否一致">v20260807.0926</div>
+<div id="verTag" title="页面版本时间戳，用于比对本地/GitHub 是否一致">v20260807.0935</div>
 <div id="syncBadge" class="sync-badge init" title="数据同步状态：云端为主存，多端一致">☁️</div>
 <div id="syncUploadBtn" title="把本机当前进度强制覆盖上传到云端（替换云端数据，多端将以本机为准）">↑ 强制上传</div>
 <div id="syncDownloadBtn" title="用云端数据覆盖本机（丢弃本机本地改动，以云端为准）——当本地旧缓存盖掉云端设定时使用">↓ 强制下载</div>
