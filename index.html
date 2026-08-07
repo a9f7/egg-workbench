@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="zh-CN" data-app-version="20260807.2251">
+<html lang="zh-CN" data-app-version="20260807.2303">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
@@ -1135,7 +1135,9 @@ const CN = [
     titleHtml:'《鹿<ruby>柴<rt>zhài</rt></ruby>》',
     text:'空山不见人，但闻人语响。\n返景入深林，复照青苔上。',
     lines:['空山不见人，','但闻人语响。','返景入深林，','复照青苔上。'],
-    pinyin:['kōng shān bù jiàn rén,','dàn wén rén yǔ xiǎng.','fǎn jǐng rù shēn lín,','fù zhào qīng tái shàng.'],
+    // 通假字注：「返景入深林」的「景」通「影」（yǐng），朗读时换为正字，避免 TTS 念错音
+    speakLines:['空山不见人，','但闻人语响。','返影入深林，','复照青苔上。'],
+    pinyin:['kōng shān bù jiàn rén,','dàn wén rén yǔ xiǎng.','fǎn yǐng rù shēn lín,','fù zhào qīng tái shàng.'],
     shiYi:'空旷的山中看不见人，只能听到人说话的声音。夕阳的余晖映入幽深的树林，又照在青苔上。',
     yiDao:'王维写诗最爱"以动衬静"，听不到人却听到说话声，反而显得山更静啦～'
   },
@@ -4327,7 +4329,8 @@ function renderCNRecite(box){
   $('#rcAll').onclick=()=>{
     const text=slice.map(x=>{
       const title=x.speakTitle||x.title;
-      return (x.author&&x.author!=='—'?(title+' '+(x.author)):title)+'。'+(x.lines||[x.text]).join(' ');
+      const lines=x.speakLines||x.lines||[x.text];
+      return (x.author&&x.author!=='—'?(title+' '+(x.author)):title)+'。'+lines.join(' ');
     }).join(' ');
     speakCN(text);
   };
@@ -4365,7 +4368,7 @@ function renderCNRecite(box){
   // 事件绑定
   $$('#cnList [data-act="close"]').forEach(b=>b.onclick=()=>{ cnPage=0; renderCN(); });
   $$('#cnList [data-act="read"]').forEach((b,i)=>b.onclick=()=>{
-    const it=slice[i]; speakCN((it.lines||[it.text]).join(' '));
+    const it=slice[i]; speakCN((it.speakLines || it.lines || [it.text]).join(' '));
   });
   /* 拼音已改为字上注音(ruby)，无需单独的"读拼音"按钮 */
   $$('#cnList [data-act="done"]').forEach(b=>b.onclick=()=>{
@@ -5070,7 +5073,7 @@ function renderMath(){
 let enUnit='all', enMode='memory', enQueue=[], enIdx=0;
 function buildENModeSeg(){
   const seg=$('#enModeSeg'); seg.innerHTML='';
-  const opts=[{k:'memory',n:'🧠 单词记忆'},{k:'trans',n:'🌐 英译中'},{k:'dictate',n:'🎧 听写'},{k:'cards',n:'🎴 单词卡'},{k:'review',n:'📚 复习预习'}];
+  const opts=[{k:'memory',n:'🧠 单词记忆'},{k:'trans',n:'🌐 英译中'},{k:'dictate',n:'🎧 听写'},{k:'cards',n:'🎴 单词卡'},{k:'review',n:'📚 复习预习'},{k:'wrong',n:'📒 错题本'}];
   opts.forEach(o=>{
     const b=document.createElement('button'); b.textContent=o.n; b.dataset.k=o.k;
     if(o.k===enMode)b.classList.add('on');
@@ -5078,7 +5081,7 @@ function buildENModeSeg(){
     seg.appendChild(b);
   });
   // 单词卡模式不显示单元选择（覆盖全部）
-  const uSeg=$('#enUnitSeg'); if(uSeg) uSeg.style.display=(enMode==='cards'?'none':'');
+  const uSeg=$('#enUnitSeg'); if(uSeg) uSeg.style.display=(enMode==='cards'||enMode==='wrong'?'none':'');
 }
 function buildENGradeSeg(){
   const seg=$('#enGradeSeg'); if(!seg)return; seg.innerHTML='';
@@ -5202,6 +5205,7 @@ function renderEN(){
   const box=$('#enBox');
   if(enMode==='cards'){ renderENCards(box); return; }
   if(enMode==='review'){ renderENReview(box); return; }
+  if(enMode==='wrong'){ renderENWrong(box); return; }
   if(!enQueue.length||enIdx>=enQueue.length){ buildENQueue(); enIdx=0; }
   const it=enQueue[enIdx];
   if(!it){ box.innerHTML='<p class="muted">暂无题目</p>'; return; }
@@ -5377,6 +5381,70 @@ function enRetest(btn){
   setTimeout(()=>input.focus(),50);
 }
 
+/* 📒 英语错题本：把 S.enWrong / S.enForget 收集为可视列表
+   - 还原每个 key 为 英文 + 中文 + 单元
+   - 点 🔊 听发音；点「✅ 已掌握」从两个数组同时移除
+   - 「⚠️ 你忘了」(曾记住又错) 标橙色，优先列在前面 */
+function renderENWrong(box){
+  S.enWrong = S.enWrong || [];
+  S.enForget = S.enForget || [];
+  const enArr = enGrade==='3x' ? EN3_UNITS : EN_UNITS;
+  const items = [];
+  const seen = new Set();
+  // 先忘词（优先级更高，标橙色），再去重后列错词
+  S.enForget.forEach(k => {
+    const it = parseEnKey(k, enArr); if(it){ items.push({...it, isForget:true}); seen.add(k); }
+  });
+  S.enWrong.forEach(k => {
+    if(seen.has(k)) return;
+    const it = parseEnKey(k, enArr); if(it){ items.push({...it, isForget:false}); }
+  });
+  if(!items.length){
+    box.innerHTML='<p class="muted" style="text-align:center;padding:40px 0"><span style="font-size:48px">🎉</span><br><b style="font-size:18px">还没有英语错题，继续保持！</b><br>答错的单词会自动出现在这里，方便集中练习</p>';
+    return;
+  }
+  const forgetN = items.filter(x=>x.isForget).length;
+  const wrongN = items.length - forgetN;
+  box.innerHTML = `
+    <div class="quiz-top"><span>📒 英语错题本（${enGrade==='3x'?'三年级下':'四年级上'}）</span><span>共 ${items.length} 词${forgetN?` · <span style="color:#e87b00">⚠️忘了 ${forgetN}</span>`:''}${wrongN?` · 错 ${wrongN}`:''}</span></div>
+    <div class="qhint" style="margin-bottom:14px">点 🔊 听读音，点「✅ 已掌握」表示这个单词已会，会从错题本移除（也会从「忘了」清单中一起移除）。</div>
+    <div id="enWrongList"></div>`;
+  const list = $('#enWrongList');
+  items.forEach(it => {
+    const row = document.createElement('div');
+    row.className = 'en-wrong-row' + (it.isForget ? ' forgot' : '');
+    row.style.cssText = 'display:flex;align-items:center;gap:10px;padding:12px 14px;margin:8px 0;border-radius:14px;background:'+(it.isForget?'#fff4e6':'#f7f7f9')+';border:1px solid '+(it.isForget?'#ffb547':'#e3e3eb');
+    row.innerHTML = `
+      <button class="speak en-wrong-sp" data-en="${esc(it.en)}" style="font-size:22px;border:none;background:transparent;cursor:pointer">🔊</button>
+      <div style="flex:1;min-width:0">
+        <div style="font-size:18px;font-weight:700">${esc(it.en)}${it.isForget?'<span style="color:#ff8800;font-size:13px;margin-left:8px">⚠️ 你忘了</span>':''}</div>
+        <div style="font-size:13px;color:#888;margin-top:2px">${esc(it.zh)} · ${esc(it.unit)}</div>
+      </div>
+      <button class="btn small mint en-wrong-master" data-key="${esc(it.key)}">✅ 已掌握</button>`;
+    list.appendChild(row);
+  });
+  list.querySelectorAll('.en-wrong-sp').forEach(b => b.onclick = () => speak(b.dataset.en));
+  list.querySelectorAll('.en-wrong-master').forEach(b => b.onclick = () => {
+    const k = b.dataset.key;
+    S.enWrong = (S.enWrong||[]).filter(x => x !== k);
+    S.enForget = (S.enForget||[]).filter(x => x !== k);
+    save();
+    toast('✅ 已从错题本移除');
+    renderEN();
+  });
+}
+/* 解析错词 key 为 {key, en, zh, unit}；找不到教材对应词时 zh 显示"已不在教材"但仍可移除 */
+function parseEnKey(key, enArr){
+  const parts = String(key||'').split('|');
+  if(parts.length < 3) return null;
+  const [g, uName, en] = parts;
+  const arr = g==='3x' ? EN3_UNITS : EN_UNITS;
+  const u = arr.find(x => x.unit === uName);
+  if(!u) return { key, en, zh:'（找不到教材）', unit: uName };
+  const w = (u.words||[]).find(x => x[0]===en) || (u.chunks||[]).find(x => x[0]===en);
+  return { key, en, zh: w?w[1]:'（已不在教材）', unit: u.unit };
+}
+
 /* ============ exercise ============ */
 function isSportId(id){ return id.indexOf('sp_')===0; }
 let exPageS=0, exPageC=0;
@@ -5473,7 +5541,7 @@ const SHOP=[
   {key:'medicine',icon:'💊',name:'药品',price:15,grow:11,desc:'治病+喂养 +11成长',medicine:true},
 ];
 const FOOD_ITEMS=SHOP.filter(s=>s.food);     // 多种食物（像衣服一样可在超市挑选）
-const APP_VERSION='2026-08-07 22:51';         // 版本时间戳：用于比对本地/GitHub 是否一致
+const APP_VERSION='2026-08-07 23:03';         // 版本时间戳：用于比对本地/GitHub 是否一致
 function dogLevel(g){ if(g>=300)return 3; if(g>=160)return 2; if(g>=60)return 1; return 0; }
 const DOG_NAMES=['幼崽小猫','可爱小猫','帅气大猫','超级神猫'];
 let catState='sit';                       // 当前随机状态（sit/play/sleep/sick/eat 互动态）
@@ -5835,7 +5903,7 @@ $('#btnReset').onclick=()=>{
 };
 window.addEventListener('beforeinstallprompt',e=>e.preventDefault());
 </script>
-<div id="verTag" title="页面版本时间戳，用于比对本地/GitHub 是否一致">v20260807.2251</div>
+<div id="verTag" title="页面版本时间戳，用于比对本地/GitHub 是否一致">v20260807.2303</div>
 <div id="syncBadge" class="sync-badge init" title="数据同步状态：云端为主存，多端一致">☁️</div>
 <div id="syncUploadBtn" title="把本机当前进度强制覆盖上传到云端（替换云端数据，多端将以本机为准）">↑ 强制上传</div>
 <div id="syncDownloadBtn" title="用云端数据覆盖本机（丢弃本机本地改动，以云端为准）——当本地旧缓存盖掉云端设定时使用">↓ 强制下载</div>
