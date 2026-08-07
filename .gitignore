@@ -10,3 +10,6 @@ Thumbs.db
 assets/cards/
 # 本地备份目录（资源/版本/state.json 备份，不进 GitHub）
 backup/
+# 密钥 / 云函数源码（含 GH_TOKEN、夸克 cookie 等，绝不进 GitHub；本地保留）
+cloudbaserc.json
+quark-proxy/
