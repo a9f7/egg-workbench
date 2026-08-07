@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="zh-CN" data-app-version="20260807.1545">
+<html lang="zh-CN" data-app-version="20260807.2030">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
@@ -747,13 +747,15 @@ function toast(msg){ const t=$('#toast'); t.textContent=msg; t.classList.add('sh
 function syncToast(msg){ const t=$('#syncToast'); if(!t) return; t.textContent=msg; t.classList.add('show'); clearTimeout(t._h); t._h=setTimeout(()=>t.classList.remove('show'),3200); }
 /* 优选柔和的英文女声（不同系统声线名不同，按关键词匹配） */
 let _softEnVoice=null;
+let _lastU=null;   // 保活当前 utterance，防 Chrome 把它 GC 掉导致不发音
 function _loadSoftEnVoice(){
   try{
     const vs=window.speechSynthesis.getVoices()||[];
     if(!vs.length) return;
     const enUS=vs.filter(v=>/^en[-_]US/i.test(v.lang));
     const enAny=vs.filter(v=>/^en/i.test(v.lang));
-    const pool=enUS.length?enUS:enAny;
+    // 优先英文(美)；没有英文语音时退而求其次用任意可用语音，保证至少出声
+    const pool=enUS.length?enUS:(enAny.length?enAny:vs);
     if(!pool.length) return;
     // 优先挑名字里带柔和/女声倾向的声线
     _softEnVoice = pool.find(v=>/(zira|samantha|victoria|karen|moira|tessa|jenny|aria|sara|susan|female|google|natural|neural)/i.test(v.name)) || pool[0];
@@ -761,14 +763,18 @@ function _loadSoftEnVoice(){
 }
 if('speechSynthesis' in window){ _loadSoftEnVoice(); window.speechSynthesis.onvoiceschanged=()=>{ _loadSoftEnVoice(); }; }
 function speak(t){ try{
-  speechSynthesis.cancel();
+  if(!('speechSynthesis' in window)) return;
+  speechSynthesis.cancel();                 // 先停掉上一条，避免叠音
   const u=new SpeechSynthesisUtterance(t);
   u.lang='en-US';
   u.rate=.72;        // 放慢一点，更清晰
   u.pitch=1.0;       // 自然柔和，不再偏高
   const v=_softEnVoice||(function(){ _loadSoftEnVoice(); return _softEnVoice; })();
   if(v) u.voice=v;
-  speechSynthesis.speak(u);
+  _lastU=u;                                // 保活，防止被垃圾回收导致不发音
+  // Chrome/Edge 经典坑：cancel 后立刻 speak 会被丢弃 → 错开 50ms；
+  // speak 后再 resume() 一次，防止引擎用久了「卡死」不出声
+  setTimeout(()=>{ try{ speechSynthesis.speak(u); speechSynthesis.resume(); }catch(e){} }, 50);
 }catch(e){} }
 
 /* ============ state ============ */
@@ -4356,8 +4362,9 @@ function speakCN(text, lang, rate){
     const voices=window.speechSynthesis.getVoices();
     const zh=voices.find(v=>/zh|chinese|cmn/i.test(v.lang))||voices[0];
     if(zh) u.voice=zh;
-    window.speechSynthesis.speak(u);
     _spkUtter=u;
+    // 同样规避 cancel 后立刻 speak 被丢弃的坑：错开 50ms + resume
+    setTimeout(()=>{ try{ window.speechSynthesis.speak(u); window.speechSynthesis.resume(); }catch(e){} }, 50);
   }catch(e){ console.warn('speakCN',e); }
 }
 function renderCNWords(box){
@@ -5417,7 +5424,7 @@ const SHOP=[
   {key:'medicine',icon:'💊',name:'药品',price:15,grow:11,desc:'治病+喂养 +11成长',medicine:true},
 ];
 const FOOD_ITEMS=SHOP.filter(s=>s.food);     // 多种食物（像衣服一样可在超市挑选）
-const APP_VERSION='2026-08-07 15:45';         // 版本时间戳：用于比对本地/GitHub 是否一致
+const APP_VERSION='2026-08-07 20:30';         // 版本时间戳：用于比对本地/GitHub 是否一致
 function dogLevel(g){ if(g>=300)return 3; if(g>=160)return 2; if(g>=60)return 1; return 0; }
 const DOG_NAMES=['幼崽小猫','可爱小猫','帅气大猫','超级神猫'];
 let catState='sit';                       // 当前随机状态（sit/play/sleep/sick/eat 互动态）
@@ -5779,7 +5786,7 @@ $('#btnReset').onclick=()=>{
 };
 window.addEventListener('beforeinstallprompt',e=>e.preventDefault());
 </script>
-<div id="verTag" title="页面版本时间戳，用于比对本地/GitHub 是否一致">v20260807.1545</div>
+<div id="verTag" title="页面版本时间戳，用于比对本地/GitHub 是否一致">v20260807.2030</div>
 <div id="syncBadge" class="sync-badge init" title="数据同步状态：云端为主存，多端一致">☁️</div>
 <div id="syncUploadBtn" title="把本机当前进度强制覆盖上传到云端（替换云端数据，多端将以本机为准）">↑ 强制上传</div>
 <div id="syncDownloadBtn" title="用云端数据覆盖本机（丢弃本机本地改动，以云端为准）——当本地旧缓存盖掉云端设定时使用">↓ 强制下载</div>
