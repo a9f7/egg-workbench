@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="zh-CN" data-app-version="20260807.2102">
+<html lang="zh-CN" data-app-version="20260807.2110">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
@@ -749,17 +749,23 @@ function syncToast(msg){ const t=$('#syncToast'); if(!t) return; t.textContent=m
 let _softEnVoice=null;
 let _lastU=null;   // 保活当前 utterance，防 Chrome 把它 GC 掉导致不发音
 let _speakDiag=''; // 朗读诊断信息（供「测试朗读」按钮回显）
+// 优先返回「离线」语音：排除 Online/Neural/Cloud 等依赖云端语音服务的声线，
+// 它们在离线或服务不可用时会被静默丢弃（不出声也不报错）——这正是「中文有声、英文没声」的常见根因
+function _voicesOfflineFirst(){
+  const vs=(window.speechSynthesis.getVoices())||[];
+  const off=vs.filter(v=>!/online|neural|cloud/i.test(v.name||''));
+  return off.length?off:vs;
+}
 function _loadSoftEnVoice(){
   try{
-    const vs=window.speechSynthesis.getVoices()||[];
-    if(!vs.length) return;
-    const enUS=vs.filter(v=>/^en[-_]US/i.test(v.lang));
-    const enAny=vs.filter(v=>/^en/i.test(v.lang));
-    // 优先英文(美)；没有英文语音时退而求其次用任意可用语音，保证至少出声
-    const pool=enUS.length?enUS:(enAny.length?enAny:vs);
+    const pool=_voicesOfflineFirst();
     if(!pool.length) return;
+    const enUS=pool.filter(v=>/^en[-_]US/i.test(v.lang));
+    const enAny=pool.filter(v=>/^en/i.test(v.lang));
+    const sel=enUS.length?enUS:(enAny.length?enAny:pool);
+    if(!sel.length) return;
     // 优先挑名字里带柔和/女声倾向的声线
-    _softEnVoice = pool.find(v=>/(zira|samantha|victoria|karen|moira|tessa|jenny|aria|sara|susan|female|google|natural|neural)/i.test(v.name)) || pool[0];
+    _softEnVoice = sel.find(v=>/(zira|samantha|victoria|karen|moira|tessa|jenny|aria|sara|susan|female|google|natural)/i.test(v.name)) || sel[0];
   }catch(e){}
 }
 if('speechSynthesis' in window){ _loadSoftEnVoice(); window.speechSynthesis.onvoiceschanged=()=>{ _loadSoftEnVoice(); }; }
@@ -767,13 +773,19 @@ function speak(t){
   if(!('speechSynthesis' in window)){ toast('当前浏览器不支持语音朗读'); return; }
   const synth=window.speechSynthesis;
   const voices=synth.getVoices()||[];
-  if(!_softEnVoice) _loadSoftEnVoice();
+  const pool=_voicesOfflineFirst();
   if(!voices.length){ _speakDiag='未检测到任何语音包'; toast('⚠️ 系统未安装语音包：请在「设置 → 语音」里添加（如英语(美国) Microsoft 语音）'); }
   const u=new SpeechSynthesisUtterance(String(t==null?'':t));
   u.lang='en-US';
   u.rate=.72;        // 放慢一点，更清晰
   u.pitch=1.0;       // 自然柔和，不再偏高
-  if(_softEnVoice) u.voice=_softEnVoice;
+  // 选声线：优先离线英文(美)；若无可用离线英文声线，退而用离线中文/任意声线朗读
+  // （英语用中文声线念会带口音，但保证至少出声——比完全没声强。前提：用户机器中文有声）
+  const enUS=pool.filter(v=>/^en[-_]US/i.test(v.lang));
+  const enAny=pool.filter(v=>/^en/i.test(v.lang));
+  const zh=pool.find(v=>/zh|chinese|cmn/i.test(v.lang));
+  const v = enUS[0] || enAny[0] || zh || pool[0] || _softEnVoice || null;
+  if(v) u.voice=v;
   _lastU=u;                                // 保活，防止被垃圾回收导致不发音
   u.onerror=(e)=>{ _speakDiag='onerror:'+(e&&e.error||e); console.warn('[speak]',e); };
   try{
@@ -781,7 +793,7 @@ function speak(t){
     if(synth.speaking) try{ synth.cancel(); }catch(e){}
     synth.speak(u);                        // 在用户手势内同步发声
   }catch(e){ console.warn('[speak]',e); _speakDiag='throw:'+e; }
-  // 兜底：若 250ms 后仍未开始发声（引擎偶尔「假死」），唤醒并重试一次
+  // 兜底：若 260ms 后仍未开始发声（引擎偶尔「假死」），唤醒并重试一次
   setTimeout(()=>{
     if(!synth.speaking && !synth.paused){
       try{ synth.resume(); synth.speak(u); }catch(e){}
@@ -4368,13 +4380,14 @@ function speakCN(text, lang, rate){
     if(!('speechSynthesis' in window)){ toast('当前浏览器不支持朗读'); return; }
     const synth=window.speechSynthesis;
     const voices=synth.getVoices()||[];
+    const pool=_voicesOfflineFirst();
     if(!voices.length){ _speakDiag='未检测到任何语音包'; toast('⚠️ 系统未安装语音包：请在「设置 → 语音」里添加（如中文 Microsoft 语音）'); }
     const u=new SpeechSynthesisUtterance(String(text==null?'':text));
     u.lang=lang||'zh-CN';
     u.rate=rate||0.85;
     u.pitch=1.05;
-    // 优选中文女声
-    const zh=voices.find(v=>/zh|chinese|cmn/i.test(v.lang))||voices[0];
+    // 优选离线中文女声（排除 Online/Neural 等易静默的云端声线）
+    const zh=pool.find(v=>/zh|chinese|cmn/i.test(v.lang))||pool[0];
     if(zh) u.voice=zh;
     _spkUtter=u;
     u.onerror=(e)=>{ _speakDiag='onerror:'+(e&&e.error||e); console.warn('[speakCN]',e); };
@@ -5170,8 +5183,11 @@ function renderENCards(box){
   // 🔊 测试朗读：诊断引擎状态（voices 数量 / 是否在播 / 是否暂停），方便排查没声问题
   $('#wcTest').onclick = () => {
     _speakDiag='';
+    const vs=(window.speechSynthesis.getVoices())||[];
+    // 把本机所有语音名打印到控制台（F12 → Console），便于确认哪个英文声线可用
+    console.log('[可用语音] ' + vs.map(v=>v.name+'('+v.lang+(v.default?'/默认':'')+')').join(' | '));
     speak('hello');
-    setTimeout(()=>toast('朗读诊断：' + (_speakDiag || '无信息')), 320);
+    setTimeout(()=>toast('朗读诊断：' + (_speakDiag || '无信息') + '｜详见 F12 控制台[可用语音]'), 320);
   };
 }
 
@@ -5451,7 +5467,7 @@ const SHOP=[
   {key:'medicine',icon:'💊',name:'药品',price:15,grow:11,desc:'治病+喂养 +11成长',medicine:true},
 ];
 const FOOD_ITEMS=SHOP.filter(s=>s.food);     // 多种食物（像衣服一样可在超市挑选）
-const APP_VERSION='2026-08-07 21:02';         // 版本时间戳：用于比对本地/GitHub 是否一致
+const APP_VERSION='2026-08-07 21:10';         // 版本时间戳：用于比对本地/GitHub 是否一致
 function dogLevel(g){ if(g>=300)return 3; if(g>=160)return 2; if(g>=60)return 1; return 0; }
 const DOG_NAMES=['幼崽小猫','可爱小猫','帅气大猫','超级神猫'];
 let catState='sit';                       // 当前随机状态（sit/play/sleep/sick/eat 互动态）
@@ -5813,7 +5829,7 @@ $('#btnReset').onclick=()=>{
 };
 window.addEventListener('beforeinstallprompt',e=>e.preventDefault());
 </script>
-<div id="verTag" title="页面版本时间戳，用于比对本地/GitHub 是否一致">v20260807.2102</div>
+<div id="verTag" title="页面版本时间戳，用于比对本地/GitHub 是否一致">v20260807.2110</div>
 <div id="syncBadge" class="sync-badge init" title="数据同步状态：云端为主存，多端一致">☁️</div>
 <div id="syncUploadBtn" title="把本机当前进度强制覆盖上传到云端（替换云端数据，多端将以本机为准）">↑ 强制上传</div>
 <div id="syncDownloadBtn" title="用云端数据覆盖本机（丢弃本机本地改动，以云端为准）——当本地旧缓存盖掉云端设定时使用">↓ 强制下载</div>
