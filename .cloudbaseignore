@@ -1,0 +1,16 @@
+# 部署到 CloudBase 静态托管时排除的文件（防止泄露密钥 / 上传无关目录）
+.git
+.workbuddy
+backup
+sync
+quark-proxy
+node_modules
+.cloudbaseignore
+.gitignore
+.cf_token
+cloudbaserc.json
+*.log
+figures_preview.html
+math_test.html
+wb_fullcheck.js
+*.xlsx
