@@ -13,3 +13,5 @@ backup/
 # 密钥 / 云函数源码（含 GH_TOKEN、夸克 cookie 等，绝不进 GitHub；本地保留）
 cloudbaserc.json
 quark-proxy/
+
+.cf_token
