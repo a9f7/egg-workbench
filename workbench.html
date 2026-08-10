@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="zh-CN" data-app-version="20260810.0248">
+<html lang="zh-CN" data-app-version="20260810.0857">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
@@ -4252,8 +4252,9 @@ function _pickMathQ(items, scope, wrongFrontItems){
   /* 错题本前插的题优先 */
   const seen = _ensureTodaySeen(scope);
   const tplMap = _groupByTpl(items);
-  /* 错题前插项（含 tpl） */
+  /* 错题前插项（含 tpl） —— 内部 Fisher-Yates 洗牌，确保每次进入顺序不同 */
   const wrongFront = (wrongFrontItems||[]).filter(w=>w && w.tplId);
+  _shuffleInPlace(wrongFront);
   /* 收集所有 tpl：错题 tpl（优先）+ 基础 tpl（随机） */
   const candidateTpls = [];
   for(const w of wrongFront){
@@ -4267,16 +4268,21 @@ function _pickMathQ(items, scope, wrongFrontItems){
     candidateTpls.push({tplId, pri:1, items:tplMap[tplId]});
   }
   if(candidateTpls.length===0) return null;
-  /* 错题优先：先 50% 概率抽错题 tpl */
+  /* 错题优先：错题 tpl 内部 Fisher-Yates 洗牌 → 抽 "第一道"；基础 tpl 同理 */
   const wrongFirst = candidateTpls.filter(c=>c.isWrong);
   const others = candidateTpls.filter(c=>!c.isWrong);
+  _shuffleInPlace(wrongFirst);
+  _shuffleInPlace(others);
   let chosen;
-  if(wrongFirst.length>0 && Math.random()<0.5){
-    chosen = wrongFirst[Math.floor(Math.random()*wrongFirst.length)];
-  } else if(others.length>0){
-    chosen = others[Math.floor(Math.random()*others.length)];
-  } else {
+  /* 错题前插优先级：错题列表非空时 60% 抽错题（提高错题复现率，但留 40% 让基础题随机穿插） */
+  if(wrongFirst.length>0 && Math.random()<0.6){
     chosen = wrongFirst[0];
+  } else if(others.length>0){
+    chosen = others[0];
+  } else if(wrongFirst.length>0){
+    chosen = wrongFirst[0];
+  } else {
+    return null;
   }
   /* 在该 tpl 下抽 item */
   let pickedItem;
@@ -4382,7 +4388,30 @@ function shuffleCNOpts(){
 }
 /* 答对：从错题本移除；答错：加入错题本（允许重复进入，后续再次答对才移除） */
 function removeWrong(cat, q){ cat = cat||'m'; S.wrong = S.wrong.filter(w => !((w.cat||'m')===cat && w.q===q)); }
-function pushWrong(cat, q, a){ cat = cat||'m'; S.wrong.push({cat:cat, q:q, a:a}); }
+/* pushWrong(cat, q, a, tplId?) —— 严格去重：同 cat+q 不重复堆；超过限额丢弃最早的；条目带 tpl 便于 tpl 剔除时联动 */
+function pushWrong(cat, q, a, tplId){ cat = cat||'m';
+  if(S.wrong.some(w => (w.cat||'m')===cat && w.q===q)) return; /* 去重 */
+  const cap = (cat==='m') ? 30 : 50;
+  const sameCatCount = S.wrong.filter(w => (w.cat||'m')===cat).length;
+  if(sameCatCount >= cap){
+    /* 移除该 cat 下最早一条 */
+    let removed = false;
+    S.wrong = S.wrong.filter(w => {
+      if(removed) return true;
+      if((w.cat||'m')===cat){ removed = true; return false; }
+      return true;
+    });
+  }
+  S.wrong.push({cat:cat, q:q, a:a, tpl:tplId||''});
+}
+/* Fisher-Yates 洗牌（错题内部也需要真随机） */
+function _shuffleInPlace(arr){
+  for(let i=arr.length-1; i>0; i--){
+    const j = Math.floor(Math.random()*(i+1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr;
+}
 function maybeMathSun(){
   if(S.mathCorrect>0 && S.mathCorrect%5===0){ S.sun+=1; toast('🎉 数学答对5题，☀️阳光+1！'); return true; }
   return false;
@@ -5538,16 +5567,29 @@ function renderMath(){
       if(!mathQ||mathQ._unit!==true){
         mathQ={_unit:true, answered:0, total:bank.length, removedCount:_removedTpls().length, wrongFront:[]};
       }
-      /* 收集错题本前插项（按 tpl） */
+      /* 收集错题本前插项（按 tpl 匹配，因为题库的 q 是 gen() 动态生成的会变） */
       if(!mathQ.wrongFront || mathQ.wrongFront.length===0){
         const seen = _ensureTodaySeen(scope);
-        mathQ.wrongFront = S.wrong
-          .filter(w => (w.cat||'m')==='m' && !seen[w.q])
-          .map(w => {
-            const it = bank.find(a => a.q===w.q);
-            if(it){ it.tpl = it.tplId; } /* 记录 tpl 便于清理 */
-            return it ? Object.assign({}, it, {tpl:it.tplId}) : null;
-          }).filter(Boolean);
+        const mapped = [];
+        const used = {};
+        for(const w of S.wrong){
+          if((w.cat||'m')!=='m') continue;
+          if(seen[w.q]) continue;
+          if(w.tpl && used[w.tpl]) continue; /* 同一 tpl 只拉一份 */
+          /* 优先按 tpl 找 item；其次按 q 字面兜底（兼容没有 tpl 字段的旧错题） */
+          let it = null;
+          if(w.tpl){ it = bank.find(a => a.tplId===w.tpl); }
+          if(!it){ it = bank.find(a => a.q===w.q); }
+          if(it){
+            used[w.tpl || ('q:'+w.q)] = 1;
+            /* 在 it 上挂 tpl 标记，便于 _maybeRemoveTpl 清理同 tpl 错题 */
+            it.tpl = it.tplId;
+            mapped.push(Object.assign({}, it, {tpl:it.tplId}));
+          }
+        }
+        /* Fisher-Yates 打乱：内部随机，避免每次都同一顺序 */
+        _shuffleInPlace(mapped);
+        mathQ.wrongFront = mapped;
       }
       /* 抽一道题（tpl 抽 + item 抽 + gen 调） */
       const picked = _pickMathQ(bank, scope, mathQ.wrongFront);
@@ -5606,7 +5648,7 @@ function renderMath(){
           if(mathQ.wrongFront) mathQ.wrongFront = mathQ.wrongFront.filter(w => w.q!==picked.q);
         } else {
           fb.className='feedback no'; fb.innerHTML='❌ 正确答案：<b>'+correct+'</b>';
-          pushWrong('m', picked.q, correct);
+          pushWrong('m', picked.q, correct, picked.tplId);
         }
         /* ★ 更新 tpl 状态：答对 streak++、答错 streak=0 */
         const ts = _tplRecord(picked.tplId, ok);
@@ -6127,7 +6169,7 @@ const SHOP=[
   {key:'medicine',icon:'💊',name:'药品',price:15,grow:11,desc:'治病+喂养 +11成长',medicine:true},
 ];
 const FOOD_ITEMS=SHOP.filter(s=>s.food);     // 多种食物（像衣服一样可在超市挑选）
-const APP_VERSION='2026-08-10 02:48';         // 版本时间戳：用于比对本地/GitHub 是否一致
+const APP_VERSION='2026-08-10 08:57';         // 版本时间戳：用于比对本地/GitHub 是否一致
 function dogLevel(g){ if(g>=300)return 3; if(g>=160)return 2; if(g>=60)return 1; return 0; }
 const DOG_NAMES=['幼崽小猫','可爱小猫','帅气大猫','超级神猫'];
 let catState='sit';                       // 当前随机状态（sit/play/sleep/sick/eat 互动态）
@@ -6489,7 +6531,7 @@ $('#btnReset').onclick=()=>{
 };
 window.addEventListener('beforeinstallprompt',e=>e.preventDefault());
 </script>
-<div id="verTag" title="页面版本时间戳，用于比对本地/GitHub 是否一致">v20260810.0248</div>
+<div id="verTag" title="页面版本时间戳，用于比对本地/GitHub 是否一致">v20260810.0857</div>
 <div id="syncBadge" class="sync-badge init" title="数据同步状态：云端为主存，多端一致">☁️</div>
 <div id="syncUploadBtn" title="把本机当前进度强制覆盖上传到云端（替换云端数据，多端将以本机为准）">↑ 强制上传</div>
 <div id="syncDownloadBtn" title="用云端数据覆盖本机（丢弃本机本地改动，以云端为准）——当本地旧缓存盖掉云端设定时使用">↓ 强制下载</div>
