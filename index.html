@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="zh-CN" data-app-version="20260810.0857">
+<html lang="zh-CN" data-app-version="20260812.1245">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
@@ -557,7 +557,6 @@
   <section class="view" id="v-math">
     <div class="card">
       <h3>➗ 数学专区 · 习题练习</h3>
-      <div class="seg" id="mathGradeSeg" style="margin-bottom:8px"></div>
       <div class="seg" id="mathSeg">
         <button class="on" data-mode="unit">📚 数学练习</button>
         <button data-mode="wrong">错题本</button>
@@ -4201,16 +4200,15 @@ $('#signBtn').onclick=()=>{
 /* ============ chinese ============ */
 let cnMode='recite', cnPage=0;
 let cnQ=null;  // 语文非背诵题的一题一题状态 {idx, list, mode, rIdx?}
-let cnGrade='4s', mathGrade='4s', enGrade='4s';
+let cnGrade='4s', enGrade='4s';
 let cnDS=null;
 const GRADES=[{k:'3x',n:'三年级下册'},{k:'4s',n:'四年级上册'}];
 function cnSet(){ return cnGrade==='3x'
   ? {recite:CN3, words:CN3_WORDS, syn:CN3_SYN, mean:CN3_MEAN, read:CN3_READ}
   : {recite:CN, words:CN_WORDS, syn:CN_SYN, mean:CN_MEAN, read:CN_READ}; }
 function enSet(){ return enGrade==='3x' ? EN3_UNITS : EN_UNITS; }
-function mathSet(){ return mathGrade==='3x'
-  ? {book:MATH3_BOOK, unit:UNIT3_MATH}
-  : {book:MATH_BOOK, unit:UNIT_MATH}; }
+/* 数学：合并三下 + 四上为单一题库 MATH_BANK（120 题），不再分年级 */
+function mathSet(){ return {book:MATH_BANK, unit:MATH_BANK}; }
 
 /* ═══════ 题型（tpl）状态机 ═══════
    同一 tpl 连续答对 3 次 → 标记 removed，下次出题跳过
@@ -4843,23 +4841,23 @@ const MATH3_BOOK=[
 {q:'小明从家出发先向东走，再向南走到学校，他家在学校的（    ）方向。', opts:['东北','西北','东南','西南'], a:1, tip:'选择题'},
 ];
 const UNIT3_MATH=[
-  /* 三下 单元重点题 */
-  {q:'面向东时，左面是（    ）方，右面是（    ）方。', a:'北 南', free:true, tip:'位置与方向'},
-  {q:'估算：181 ÷ 3 ≈ （    ）。', a:'60', free:true, tip:'除法估算'},
-  {q:'□28 ÷ 6，要使商是三位数，□里最小填（    ）。', a:'6', free:true, tip:'商的位数'},
-  {q:'48 × 25 = （    ）。', a:'1200', free:true, tip:'两位数乘两位数'},
-  {q:'一个长方形花坛长15米、宽8米，周长是（    ）米。', a:'46', free:true, tip:'周长计算'},
-  {q:'周长40米、宽8米的长方形，长是（    ）米。', a:'12', free:true, tip:'长方形周长'},
-  {q:'一个正方形边长10分米，面积是（    ）平方分米。', a:'100', free:true, tip:'正方形面积'},
-  {q:'300平方厘米 = （    ）平方分米。', a:'3', free:true, tip:'面积换算'},
-  {q:'连续两个月都是大月的月份是（    ）月和（    ）月。', a:'7 8', free:true, tip:'年、月、日'},
-  {q:'2025年是（    ）年，全年有（    ）天。', a:'平 365', free:true, tip:'平年闰年'},
-  {q:'比较：2.4 ○ 2.1（填“>”或“<”）', a:'>', free:true, tip:'小数比较'},
-  {q:'4.5元 = （    ）元（    ）角。', a:'4 5', free:true, tip:'元角分'},
-  {q:'一套衣服上衣3件、裤子2件，共有（    ）种搭配。', a:'6', free:true, tip:'搭配问题'},
-  {q:'从4、5、6三个数字中选两个组成两位数，能组成（    ）个不同的两位数。', a:'6', free:true, tip:'排列问题'},
-  {q:'25 × 40 的积的末尾有（    ）个0。', a:'3', free:true, tip:'末尾0的个数'},
-  {q:'一个数的5倍是450，这个数是（    ）。', a:'90', free:true, tip:'除法应用'}
+  /* 三下 单元重点题（合并到主题库，每题打 t3- tplId 走"连对3次剔除"机制） */
+  {tplId:'t3-dir-faces',q:'面向东时，左面是（    ）方，右面是（    ）方。', a:'北 南', free:true, tip:'位置与方向'},
+  {tplId:'t3-div-est',q:'估算：181 ÷ 3 ≈ （    ）。', a:'60', free:true, tip:'除法估算'},
+  {tplId:'t3-div-pos',q:'□28 ÷ 6，要使商是三位数，□里最小填（    ）。', a:'6', free:true, tip:'商的位数'},
+  {tplId:'t3-mul-2x2',q:'48 × 25 = （    ）。', a:'1200', free:true, tip:'两位数乘两位数'},
+  {tplId:'t3-peri-rect',q:'一个长方形花坛长15米、宽8米，周长是（    ）米。', a:'46', free:true, tip:'周长计算'},
+  {tplId:'t3-peri-rect-inv',q:'周长40米、宽8米的长方形，长是（    ）米。', a:'12', free:true, tip:'长方形周长'},
+  {tplId:'t3-area-sq',q:'一个正方形边长10分米，面积是（    ）平方分米。', a:'100', free:true, tip:'正方形面积'},
+  {tplId:'t3-area-conv-cmdm',q:'300平方厘米 = （    ）平方分米。', a:'3', free:true, tip:'面积换算'},
+  {tplId:'t3-month-big',q:'连续两个月都是大月的月份是（    ）月和（    ）月。', a:'7 8', free:true, tip:'年、月、日'},
+  {tplId:'t3-year-leap',q:'2025年是（    ）年，全年有（    ）天。', a:'平 365', free:true, tip:'平年闰年'},
+  {tplId:'t3-cmp-dec',q:'比较：2.4 ○ 2.1（填">"或"<"）', a:'>', free:true, tip:'小数比较'},
+  {tplId:'t3-yuan-jiao',q:'4.5元 = （    ）元（    ）角。', a:'4 5', free:true, tip:'元角分'},
+  {tplId:'t3-match',q:'一套衣服上衣3件、裤子2件，共有（    ）种搭配。', a:'6', free:true, tip:'搭配问题'},
+  {tplId:'t3-arrange',q:'从4、5、6三个数字中选两个组成两位数，能组成（    ）个不同的两位数。', a:'6', free:true, tip:'排列问题'},
+  {tplId:'t3-mul-zero',q:'25 × 40 的积的末尾有（    ）个0。', a:'3', free:true, tip:'末尾0的个数'},
+  {tplId:'t3-mul5-inv',q:'一个数的5倍是450，这个数是（    ）。', a:'90', free:true, tip:'除法应用'}
 ];
 
 
@@ -5532,20 +5530,13 @@ const UNIT_MATH=[{tplId:'t-num-base',gen:MATH_TPL_HELPERS.numBase,q:'10个一千
 ];
 
 /* 《数学四年级上册》教材课后「练习」原题：计算 / 比较大小 / 单位与数的运算 */
-const MATH_BOOK = UNIT_MATH;
-function buildMathGradeSeg(){
-  const seg=$('#mathGradeSeg'); if(!seg)return; seg.innerHTML='';
-  GRADES.forEach(g=>{
-    const b=document.createElement('button'); b.textContent=g.n; b.dataset.k=g.k;
-    if(g.k===mathGrade)b.classList.add('on');
-    b.onclick=()=>{ mathGrade=g.k; mathQ=null; buildMathGradeSeg(); renderMath(); };
-    seg.appendChild(b);
-  });
-}
+// 统一题库：四上 104 题 + 三下 16 题 = 120 题；不再分年级
+const MATH_BANK = UNIT_MATH.concat(UNIT3_MATH);
+const MATH_BOOK = MATH_BANK;
+/* 数学已合并三下+四上为单一题库 MATH_BANK，不再有年级切换 UI */
 function renderMath(){
   const box=$('#mathBox');
   if(!box)return;
-  buildMathGradeSeg();
   /* ── 错题本模式 ── */
   if(mathMode==='wrong'){
     const list = S.wrong.filter(w => (w.cat||'m')==='m');
@@ -5562,7 +5553,7 @@ function renderMath(){
   /* ── 数学练习模式（动态抽题 + 题型连续答对 3 次自动剔除） ── */
   if(mathMode==='unit'){
     try {
-      const scope = 'mu-'+mathGrade;
+      const scope = 'mu';
       const bank = mathSet().unit;
       if(!mathQ||mathQ._unit!==true){
         mathQ={_unit:true, answered:0, total:bank.length, removedCount:_removedTpls().length, wrongFront:[]};
@@ -5605,7 +5596,7 @@ function renderMath(){
           '<button class="btn" id="mWrong">📒 看看错题本</button>'+
           (removedN>0?'<br><button class="btn" id="mResetTpl" style="margin-top:8px;background:#f39c12">🔄 恢复已剔除题型（慎点）</button>':'')+'</div>';
         document.getElementById('mRetry').onclick=function(){
-          const scope='mu-'+mathGrade; S.today.seen[scope]={}; save(); mathQ=null; renderMath();
+          const scope='mu'; S.today.seen[scope]={}; save(); mathQ=null; renderMath();
         };
         document.getElementById('mWrong').onclick=function(){ mathMode='wrong'; mathQ=null; renderMath(); };
         const r=document.getElementById('mResetTpl'); if(r) r.onclick=function(){
@@ -6169,7 +6160,7 @@ const SHOP=[
   {key:'medicine',icon:'💊',name:'药品',price:15,grow:11,desc:'治病+喂养 +11成长',medicine:true},
 ];
 const FOOD_ITEMS=SHOP.filter(s=>s.food);     // 多种食物（像衣服一样可在超市挑选）
-const APP_VERSION='2026-08-10 08:57';         // 版本时间戳：用于比对本地/GitHub 是否一致
+const APP_VERSION='2026-08-12 12:45';         // 版本时间戳：用于比对本地/GitHub 是否一致
 function dogLevel(g){ if(g>=300)return 3; if(g>=160)return 2; if(g>=60)return 1; return 0; }
 const DOG_NAMES=['幼崽小猫','可爱小猫','帅气大猫','超级神猫'];
 let catState='sit';                       // 当前随机状态（sit/play/sleep/sick/eat 互动态）
@@ -6531,7 +6522,7 @@ $('#btnReset').onclick=()=>{
 };
 window.addEventListener('beforeinstallprompt',e=>e.preventDefault());
 </script>
-<div id="verTag" title="页面版本时间戳，用于比对本地/GitHub 是否一致">v20260810.0857</div>
+<div id="verTag" title="页面版本时间戳，用于比对本地/GitHub 是否一致">v20260812.1245</div>
 <div id="syncBadge" class="sync-badge init" title="数据同步状态：云端为主存，多端一致">☁️</div>
 <div id="syncUploadBtn" title="把本机当前进度强制覆盖上传到云端（替换云端数据，多端将以本机为准）">↑ 强制上传</div>
 <div id="syncDownloadBtn" title="用云端数据覆盖本机（丢弃本机本地改动，以云端为准）——当本地旧缓存盖掉云端设定时使用">↓ 强制下载</div>
