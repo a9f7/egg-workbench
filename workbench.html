@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="zh-CN" data-app-version="20260812.1540">
+<html lang="zh-CN" data-app-version="20260812.1605">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
@@ -422,6 +422,11 @@
   .vp-close{background:#fb7299;color:#fff;border:none;font-size:18px;font-weight:bold;width:30px;height:30px;border-radius:50%;cursor:pointer;line-height:1;flex-shrink:0}
   .vp-close:hover{background:#e0407f}
   .vp-frame{width:100%;aspect-ratio:16/9;border:0;display:block;background:#000}
+  .vp-seasonbar{display:flex;flex-wrap:wrap;gap:6px;padding:10px 12px;border-bottom:2px solid #ffd0e6;background:#fff6fb;justify-content:center}
+  .vp-sbtn{background:#fff;border:2px solid #fb7299;color:#fb7299;font-weight:800;font-size:13px;padding:6px 10px;border-radius:10px;cursor:pointer;font-family:inherit;transition:all .15s}
+  .vp-sbtn:hover{background:#fff0f6}
+  .vp-sbtn.on{background:#fb7299;color:#fff;border-color:#fb7299}
+  .vp-sbtn small{font-weight:600;opacity:.85}
   .vp-epstrip{padding:10px 12px;max-height:140px;overflow-y:auto;border-top:2px solid #ffd0e6;background:#fffbfd}
   .vp-epstrip::-webkit-scrollbar{width:6px;height:6px}
   .vp-epstrip::-webkit-scrollbar-thumb{background:#ffd0e6;border-radius:3px}
@@ -611,9 +616,9 @@
           <div class="vp-title" id="mp4Title">未选择视频</div>
           <button class="vp-close" id="mp4Close" type="button" aria-label="收起播放器">×</button>
         </div>
-        <div class="vp-seasonbar"><select id="mp4Season" class="vp-season" style="margin:6px 0;padding:6px 10px;font-size:14px;border-radius:8px;border:1px solid #d9dde3;max-width:100%;background:#fff;"></select></div>
+        <div class="vp-seasonbar" id="mp4SeasonBar"></div>
         <video id="mp4Video" class="vp-frame" controls playsinline preload="metadata"></video>
-        <div class="vp-epstrip"><div class="vp-epbar" id="mp4EpBar"></div></div>
+        <div class="vp-epstrip"><div class="vp-epbar" id="mp4EpBar" style="max-height:170px;overflow-y:auto;"></div></div>
       </div>
       <div id="videoBox" class="videogrid"></div>
       <div id="qkPlayer" class="vplayer hidden">
@@ -3887,7 +3892,7 @@ const VIDEOS={
     {icon:'🔠',t:'Jolly Phonics',d:'英国小学官方拼读体系，42音素多感官教学。',url:'https://search.bilibili.com/all?keyword='+encodeURIComponent('Jolly Phonics'),tag:'网络',cls:'bili'},
     {icon:'🗣️',t:'Susan教英语',d:'全英文讲绘本，零基础跟得上（三升四适用）。',url:'https://search.bilibili.com/all?keyword='+encodeURIComponent('Susan教英语'),tag:'B站',cls:'bili'},
     {icon:'🐰',t:'英语兔',d:'千万粉，语法讲得清楚。',url:'https://search.bilibili.com/all?keyword='+encodeURIComponent('英语兔'),tag:'B站',cls:'bili'},
-    {icon:'🐶',t:'Bluey 布鲁伊（英语原声·全三季）',d:'BBC 热门英语启蒙动画，原声无字幕磨耳朵，适合亲子共看。点开即内嵌播放，可按季/集切换（来源：archive.org 粉丝上传，国内访问可能需代理）。',tag:'内嵌·直链',cls:'mp4',mp4:BLUEY_SEASONS}
+    {icon:'🐶',t:'Bluey 布鲁伊（英语原声·4 季 155 集）',d:'BBC 热门英语启蒙动画，原声无字幕磨耳朵，适合亲子共看。点开即内嵌播放，顶部 4 个橙色按钮直接切季（来源：archive.org 粉丝上传，国内访问可能需代理）。',tag:'内嵌·直链',cls:'mp4',mp4:BLUEY_SEASONS}
   ],
   math:[
     {icon:'📊',t:'DK图解数学·全科动画（661集大合集）',d:'DK图解数学 + 超级课堂 + 高斯数学合集，覆盖小学到初中核心概念，动画图解最易懂（来源：ima「蛋蛋教学」·DK图解数学）。',bvid:'BV1mMuFzJELD',eps:661,tag:'B站·内置',cls:'bili'},
@@ -3955,22 +3960,38 @@ function closeInlinePlayer(){
 function openInlineMp4Player(seasons, title){
   const vp=$('#mp4Player'); if(!vp||!seasons||!seasons.length) return;
   closeInlinePlayer(); closeQuarkPlayer();   // 打开前收起其它播放器
-  vp._seasons = seasons;
+  // 规范化：在显示前把每条 ep 的 code 兜底为 S0xE0y（西语/特殊条目保留原值）
+  const norm=seasons.map(s=>({
+    name:s.name,
+    eps:(s.eps||[]).map(e=>{
+      let code=e.code||'';
+      // 02x01 / 03x01 / 04x01 这类 → S02E01 / S03E01 / S04E01
+      let m=code.match(/^0*(\d+)\s*[xX]\s*0*(\d+)$/);
+      if(m) code='S'+String(m[1]).padStart(2,'0')+'E'+String(m[2]).padStart(2,'0');
+      else m=code.match(/^S0*(\d+)E0*(\d+)$/i);
+      if(m) code='S'+String(m[1]).padStart(2,'0')+'E'+String(m[2]).padStart(2,'0');
+      return {code:code, t:e.t, url:e.url};
+    })
+  }));
+  vp._seasons = norm;
   $('#mp4Title').textContent = title || '视频';
-  const sel=$('#mp4Season'); sel.innerHTML='';
-  seasons.forEach((s,i)=>{
-    const o=document.createElement('option'); o.value=String(i);
-    o.textContent=s.name+'（'+(s.eps?s.eps.length:0)+'集）';
-    sel.appendChild(o);
+  // 季切换按钮条（替代 <select>，4 季一眼可见）
+  const sbar=$('#mp4SeasonBar'); if(sbar) sbar.innerHTML='';
+  norm.forEach((s,i)=>{
+    const b=document.createElement('button'); b.type='button';
+    b.className='vp-sbtn'+(i===0?' on':'');
+    b.dataset.si=String(i);
+    b.innerHTML = s.name+' <small>·'+(s.eps?s.eps.length:0)+'集</small>';
+    b.onclick=()=>{
+      $$('#mp4SeasonBar .vp-sbtn').forEach(c=>c.classList.toggle('on', c===b));
+      renderMp4EpBar(i);
+      const eps=(norm[i]&&norm[i].eps)||[];
+      if(eps[0]) loadMp4Ep(eps[0]);
+    };
+    if(sbar) sbar.appendChild(b);
   });
-  sel.onchange=()=>{
-    const si=parseInt(sel.value,10)||0;
-    renderMp4EpBar(si);
-    const eps=(seasons[si]&&seasons[si].eps)||[];
-    if(eps[0]) loadMp4Ep(eps[0]);
-  };
   renderMp4EpBar(0);
-  const first=(seasons[0]&&seasons[0].eps&&seasons[0].eps[0]);
+  const first=(norm[0]&&norm[0].eps&&norm[0].eps[0]);
   if(first) loadMp4Ep(first);
   vp.classList.remove('hidden');
   try{ vp.scrollIntoView({behavior:'smooth', block:'start'}); }catch(e){}
@@ -3978,8 +3999,9 @@ function openInlineMp4Player(seasons, title){
 function renderMp4EpBar(si){
   const vp=$('#mp4Player'); const seasons=(vp&&vp._seasons)||[];
   const bar=$('#mp4EpBar'); if(!bar) return;
-  bar.innerHTML=''; bar.style.maxHeight='170px'; bar.style.overflowY='auto';
+  bar.innerHTML='';
   const eps=(seasons[si]&&seasons[si].eps)||[];
+  if(!eps.length){ bar.innerHTML='<div class="vp-noep">暂无集数</div>'; return; }
   eps.forEach((e,i)=>{
     const c=document.createElement('button'); c.type='button';
     c.className='vp-ep'+(i===0?' on':'');
@@ -6411,7 +6433,7 @@ const SHOP=[
   {key:'medicine',icon:'💊',name:'药品',price:15,grow:11,desc:'治病+喂养 +11成长',medicine:true},
 ];
 const FOOD_ITEMS=SHOP.filter(s=>s.food);     // 多种食物（像衣服一样可在超市挑选）
-const APP_VERSION='2026-08-12 15:40';         // 版本时间戳：用于比对本地/GitHub 是否一致
+const APP_VERSION='2026-08-12 16:05';         // 版本时间戳：用于比对本地/GitHub 是否一致
 function dogLevel(g){ if(g>=300)return 3; if(g>=160)return 2; if(g>=60)return 1; return 0; }
 const DOG_NAMES=['幼崽小猫','可爱小猫','帅气大猫','超级神猫'];
 let catState='sit';                       // 当前随机状态（sit/play/sleep/sick/eat 互动态）
@@ -6773,7 +6795,7 @@ $('#btnReset').onclick=()=>{
 };
 window.addEventListener('beforeinstallprompt',e=>e.preventDefault());
 </script>
-<div id="verTag" title="页面版本时间戳，用于比对本地/GitHub 是否一致">v20260812.1540</div>
+<div id="verTag" title="页面版本时间戳，用于比对本地/GitHub 是否一致">v20260812.1605</div>
 <div id="syncBadge" class="sync-badge init" title="数据同步状态：云端为主存，多端一致">☁️</div>
 <div id="syncUploadBtn" title="把本机当前进度强制覆盖上传到云端（替换云端数据，多端将以本机为准）">↑ 强制上传</div>
 <div id="syncDownloadBtn" title="用云端数据覆盖本机（丢弃本机本地改动，以云端为准）——当本地旧缓存盖掉云端设定时使用">↓ 强制下载</div>
