@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="zh-CN" data-app-version="20260812.1245">
+<html lang="zh-CN" data-app-version="20260812.1540">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
@@ -605,6 +605,15 @@
         </div>
         <iframe id="vpFrame" class="vp-frame" allowfullscreen="true" referrerpolicy="no-referrer" sandbox="allow-scripts allow-same-origin allow-presentation" scrolling="no"></iframe>
         <div class="vp-epstrip"><div class="vp-epbar" id="vpEpBar"></div></div>
+      </div>
+      <div id="mp4Player" class="vplayer hidden">
+        <div class="vp-head">
+          <div class="vp-title" id="mp4Title">未选择视频</div>
+          <button class="vp-close" id="mp4Close" type="button" aria-label="收起播放器">×</button>
+        </div>
+        <div class="vp-seasonbar"><select id="mp4Season" class="vp-season" style="margin:6px 0;padding:6px 10px;font-size:14px;border-radius:8px;border:1px solid #d9dde3;max-width:100%;background:#fff;"></select></div>
+        <video id="mp4Video" class="vp-frame" controls playsinline preload="metadata"></video>
+        <div class="vp-epstrip"><div class="vp-epbar" id="mp4EpBar"></div></div>
       </div>
       <div id="videoBox" class="videogrid"></div>
       <div id="qkPlayer" class="vplayer hidden">
@@ -3673,6 +3682,185 @@ $$('.desktabs .dt').forEach(b=>b.onclick=()=>switchView(b.dataset.v));
 /* ============ 视频专区（语文 / 英语 教学视频） ============ */
 let videoUnlocked=false;     // 视频专区是否已解开「开根号」密码
 let videoCur='chinese';      // 当前子栏目
+/* Bluey 直链数据：解析自 bluey_archive直链.md（archive.org 粉丝上传，内嵌 <video> 播放） */
+const BLUEY_SEASONS = [
+  {
+    name:"第一季（S1）",
+    eps:[
+      {code:"S01E01", t:"S01E01 The Magic Xylophone", url:"https://archive.org/download/blueyseasonone_202305/S01E01%20The%20Magic%20Xylophone.mp4"},
+      {code:"S01E02", t:"S01E02 The Hospital", url:"https://archive.org/download/blueyseasonone_202305/S01E02%20The%20Hospital.mp4"},
+      {code:"S01E03", t:"S01E03 Keepy Uppy", url:"https://archive.org/download/blueyseasonone_202305/S01E03%20Keepy%20Uppy.mp4"},
+      {code:"S01E04", t:"S01E04 Daddy Robot", url:"https://archive.org/download/blueyseasonone_202305/S01E04%20Daddy%20Robot.mp4"},
+      {code:"S01E05", t:"S01E05 Shadowlands", url:"https://archive.org/download/blueyseasonone_202305/S01E05%20Shadowlands.mp4"},
+      {code:"S01E06", t:"S01E06 The Weekend", url:"https://archive.org/download/blueyseasonone_202305/S01E06%20The%20Weekend.mp4"},
+      {code:"S01E07", t:"S01E07 BBQ", url:"https://archive.org/download/blueyseasonone_202305/S01E07%20BBQ.mp4"},
+      {code:"S01E08", t:"S01E08 Fruitbat", url:"https://archive.org/download/blueyseasonone_202305/S01E08%20Fruitbat.mp4"},
+      {code:"S01E09", t:"S01E09 Horsey Ride", url:"https://archive.org/download/blueyseasonone_202305/S01E09%20Horsey%20Ride.mp4"},
+      {code:"S01E10", t:"S01E10 Hotel", url:"https://archive.org/download/blueyseasonone_202305/S01E10%20Hotel.mp4"},
+      {code:"S01E11", t:"S01E11 Bike", url:"https://archive.org/download/blueyseasonone_202305/S01E11%20Bike.mp4"},
+      {code:"S01E12", t:"S01E12 Bob Bilby", url:"https://archive.org/download/blueyseasonone_202305/S01E12%20Bob%20Bilby.mp4"},
+      {code:"S01E13", t:"S01E13 Spy Game", url:"https://archive.org/download/blueyseasonone_202305/S01E13%20Spy%20Game.mp4"},
+      {code:"S01E14", t:"S01E14 Takeaway", url:"https://archive.org/download/blueyseasonone_202305/S01E14%20Takeaway.mp4"},
+      {code:"S01E15", t:"S01E15 Butterflies", url:"https://archive.org/download/blueyseasonone_202305/S01E15%20Butterflies.mp4"},
+      {code:"S01E16", t:"S01E16 Yoga Ball", url:"https://archive.org/download/blueyseasonone_202305/S01E16%20Yoga%20Ball.mp4"},
+      {code:"S01E17", t:"S01E17 Calypso", url:"https://archive.org/download/blueyseasonone_202305/S01E17%20Calypso.mp4"},
+      {code:"S01E18", t:"S01E18 The Doctor", url:"https://archive.org/download/blueyseasonone_202305/S01E18%20The%20Doctor.mp4"},
+      {code:"S01E19", t:"S01E19 The Claw", url:"https://archive.org/download/blueyseasonone_202305/S01E19%20The%20Claw.mp4"},
+      {code:"S01E20", t:"S01E20 Blue Mountains", url:"https://archive.org/download/blueyseasonone_202305/S01E20%20Blue%20Mountains.mp4"},
+      {code:"S01E20", t:"S01E20 Markets (I MISSED THIS EP AAAAAAAAAAAAAA)", url:"https://archive.org/download/blueyseasonone_202305/S01E20%20Markets%20%28I%20MISSED%20THIS%20EP%20AAAAAAAAAAAAAA%29.mp4"},
+      {code:"S01E21", t:"S01E21 The Pool", url:"https://archive.org/download/blueyseasonone_202305/S01E21%20The%20Pool.mp4"},
+      {code:"S01E23", t:"S01E23 Shops", url:"https://archive.org/download/blueyseasonone_202305/S01E23%20Shops.mp4"},
+      {code:"S01E24", t:"S01E24 Wagon Ride", url:"https://archive.org/download/blueyseasonone_202305/S01E24%20Wagon%20Ride.mp4"},
+      {code:"S01E25", t:"S01E25 Taxi", url:"https://archive.org/download/blueyseasonone_202305/S01E25%20Taxi.mp4"},
+      {code:"S01E26", t:"S01E26 The Beach", url:"https://archive.org/download/blueyseasonone_202305/S01E26%20The%20Beach.mp4"},
+      {code:"S01E27", t:"S01E27 Pirates", url:"https://archive.org/download/blueyseasonone_202305/S01E27%20Pirates.mp4"},
+      {code:"S01E28", t:"S01E28 Grannies", url:"https://archive.org/download/blueyseasonone_202305/S01E28%20Grannies.mp4"},
+      {code:"S01E29", t:"S01E29 The Creek", url:"https://archive.org/download/blueyseasonone_202305/S01E29%20The%20Creek.mp4"},
+      {code:"S01E30", t:"S01E30 Fairies", url:"https://archive.org/download/blueyseasonone_202305/S01E30%20Fairies.mp4"},
+      {code:"S01E31", t:"S01E31 Work", url:"https://archive.org/download/blueyseasonone_202305/S01E31%20Work.mp4"},
+      {code:"S01E32", t:"S01E32 Bumpy and the Wise Old Wolfhound", url:"https://archive.org/download/blueyseasonone_202305/S01E32%20Bumpy%20and%20the%20Wise%20Old%20Wolfhound.mp4"},
+      {code:"S01E33", t:"S01E33 Trampoline", url:"https://archive.org/download/blueyseasonone_202305/S01E33%20Trampoline.mp4"},
+      {code:"S01E34", t:"S01E34 The Dump", url:"https://archive.org/download/blueyseasonone_202305/S01E34%20The%20Dump.mp4"},
+      {code:"S01E35", t:"S01E35 Zoo", url:"https://archive.org/download/blueyseasonone_202305/S01E35%20Zoo.mp4"},
+      {code:"S01E36", t:"S01E36 Backpackers", url:"https://archive.org/download/blueyseasonone_202305/S01E36%20Backpackers.mp4"},
+      {code:"S01E37", t:"S01E37 The Adventure", url:"https://archive.org/download/blueyseasonone_202305/S01E37%20The%20Adventure.mp4"},
+      {code:"S01E38", t:"S01E38 Copycat", url:"https://archive.org/download/blueyseasonone_202305/S01E38%20Copycat.mp4"},
+      {code:"S01E39", t:"S01E39 The Sleepover", url:"https://archive.org/download/blueyseasonone_202305/S01E39%20The%20Sleepover.mp4"},
+      {code:"S01E40", t:"S01E40 Early Baby", url:"https://archive.org/download/blueyseasonone_202305/S01E40%20Early%20Baby.mp4"},
+      {code:"S01E41", t:"S01E41 Mums and Dads", url:"https://archive.org/download/blueyseasonone_202305/S01E41%20Mums%20and%20Dads.mp4"},
+      {code:"S01E42", t:"S01E42 Hide and Seek", url:"https://archive.org/download/blueyseasonone_202305/S01E42%20Hide%20and%20Seek.mp4"},
+      {code:"S01E43", t:"S01E43 Camping", url:"https://archive.org/download/blueyseasonone_202305/S01E43%20Camping.mp4"},
+      {code:"S01E44", t:"S01E44 Mount Mumandad", url:"https://archive.org/download/blueyseasonone_202305/S01E44%20Mount%20Mumandad.mp4"},
+      {code:"S01E45", t:"S01E45 Kids", url:"https://archive.org/download/blueyseasonone_202305/S01E45%20Kids.mp4"},
+      {code:"S01E46", t:"S01E46 Chickenrat", url:"https://archive.org/download/blueyseasonone_202305/S01E46%20Chickenrat.mp4"},
+      {code:"S01E47", t:"S01E47 Neighbours", url:"https://archive.org/download/blueyseasonone_202305/S01E47%20Neighbours.mp4"},
+      {code:"S01E48", t:"S01E48 Teasing", url:"https://archive.org/download/blueyseasonone_202305/S01E48%20Teasing.mp4"},
+      {code:"S01E49", t:"S01E49 Asparagus", url:"https://archive.org/download/blueyseasonone_202305/S01E49%20Asparagus.mp4"},
+      {code:"S01E50", t:"S01E50 Shaun", url:"https://archive.org/download/blueyseasonone_202305/S01E50%20Shaun.mp4"},
+      {code:"S01E51", t:"S01E51 Daddy Putdown", url:"https://archive.org/download/blueyseasonone_202305/S01E51%20Daddy%20Putdown.mp4"},
+      {code:"S01E52", t:"S01E52 Verandah Santa", url:"https://archive.org/download/blueyseasonone_202305/S01E52%20Verandah%20Santa.mp4"},
+    ]
+  },
+  {
+    name:"第二季（S2）",
+    eps:[
+      {code:"02x01", t:"02x01 Dance Mode", url:"https://archive.org/download/bluey-complete-season-2/02x01%20Dance%20Mode.mp4"},
+      {code:"02x02", t:"02x02 Hammerbarn", url:"https://archive.org/download/bluey-complete-season-2/02x02%20Hammerbarn.mp4"},
+      {code:"02x03", t:"02x03 Featherwand", url:"https://archive.org/download/bluey-complete-season-2/02x03%20Featherwand.mp4"},
+      {code:"02x04", t:"02x04 Squash", url:"https://archive.org/download/bluey-complete-season-2/02x04%20Squash.mp4"},
+      {code:"02x05", t:"02x05 Hairdressers", url:"https://archive.org/download/bluey-complete-season-2/02x05%20Hairdressers.mp4"},
+      {code:"02x06", t:"02x06 Stumpfest", url:"https://archive.org/download/bluey-complete-season-2/02x06%20Stumpfest.mp4"},
+      {code:"02x07", t:"02x07 Favourite Thing", url:"https://archive.org/download/bluey-complete-season-2/02x07%20Favourite%20Thing.mp4"},
+      {code:"02x08", t:"02x08 Daddy Dropoff", url:"https://archive.org/download/bluey-complete-season-2/02x08%20Daddy%20Dropoff.mp4"},
+      {code:"02x09", t:"02x09 Bingo", url:"https://archive.org/download/bluey-complete-season-2/02x09%20Bingo.mp4"},
+      {code:"02x10", t:"02x10 Rug Island", url:"https://archive.org/download/bluey-complete-season-2/02x10%20Rug%20Island.mp4"},
+      {code:"02x11", t:"02x11 Charades", url:"https://archive.org/download/bluey-complete-season-2/02x11%20Charades.mp4"},
+      {code:"02x12", t:"02x12 Sticky Gecko", url:"https://archive.org/download/bluey-complete-season-2/02x12%20Sticky%20Gecko.mp4"},
+      {code:"02x13", t:"02x13 Dad Baby", url:"https://archive.org/download/bluey-complete-season-2/02x13%20Dad%20Baby.mp4"},
+      {code:"02x14", t:"02x14 Mum School", url:"https://archive.org/download/bluey-complete-season-2/02x14%20Mum%20School.mp4"},
+      {code:"02x15", t:"02x15 Trains", url:"https://archive.org/download/bluey-complete-season-2/02x15%20Trains.mp4"},
+      {code:"02x16", t:"02x16 Army", url:"https://archive.org/download/bluey-complete-season-2/02x16%20Army.mp4"},
+      {code:"02x17", t:"02x17 Fancy Restaurant", url:"https://archive.org/download/bluey-complete-season-2/02x17%20Fancy%20Restaurant.mp4"},
+      {code:"02x18", t:"02x18 Piggyback", url:"https://archive.org/download/bluey-complete-season-2/02x18%20Piggyback.mp4"},
+      {code:"02x19", t:"02x19 The Show", url:"https://archive.org/download/bluey-complete-season-2/02x19%20The%20Show.mp4"},
+      {code:"02x20", t:"02x20 Tickle Crabs", url:"https://archive.org/download/bluey-complete-season-2/02x20%20Tickle%20Crabs.mp4"},
+      {code:"02x21", t:"02x21 Escape", url:"https://archive.org/download/bluey-complete-season-2/02x21%20Escape.mp4"},
+      {code:"02x22", t:"02x22 Bus", url:"https://archive.org/download/bluey-complete-season-2/02x22%20Bus.mp4"},
+      {code:"02x23", t:"02x23 Queens", url:"https://archive.org/download/bluey-complete-season-2/02x23%20Queens.mp4"},
+      {code:"02x24", t:"02x24 Flat Pack", url:"https://archive.org/download/bluey-complete-season-2/02x24%20Flat%20Pack.mp4"},
+      {code:"02x25", t:"02x25 Helicopter", url:"https://archive.org/download/bluey-complete-season-2/02x25%20Helicopter.mp4"},
+      {code:"02x26", t:"02x26 Sleepytime", url:"https://archive.org/download/bluey-complete-season-2/02x26%20Sleepytime.mp4"},
+      {code:"02x27", t:"02x27 Grandad", url:"https://archive.org/download/bluey-complete-season-2/02x27%20Grandad.mp4"},
+      {code:"02x28", t:"02x28 Seesaw", url:"https://archive.org/download/bluey-complete-season-2/02x28%20Seesaw.mp4"},
+      {code:"02x29", t:"02x29 Movies", url:"https://archive.org/download/bluey-complete-season-2/02x29%20Movies.mp4"},
+      {code:"02x30", t:"02x30 Library", url:"https://archive.org/download/bluey-complete-season-2/02x30%20Library.mp4"},
+      {code:"02x31", t:"02x31 Barky Boats", url:"https://archive.org/download/bluey-complete-season-2/02x31%20Barky%20Boats.mp4"},
+      {code:"02x32", t:"02x32 Burger Shop", url:"https://archive.org/download/bluey-complete-season-2/02x32%20Burger%20Shop.mp4"},
+      {code:"02x33", t:"02x33 Circus", url:"https://archive.org/download/bluey-complete-season-2/02x33%20Circus.mp4"},
+      {code:"02x34", t:"02x34 Swim School", url:"https://archive.org/download/bluey-complete-season-2/02x34%20Swim%20School.mp4"},
+      {code:"02x35", t:"02x35 Café", url:"https://archive.org/download/bluey-complete-season-2/02x35%20Caf%C3%A9.mp4"},
+      {code:"02x36", t:"02x36 Postman", url:"https://archive.org/download/bluey-complete-season-2/02x36%20Postman.mp4"},
+      {code:"02x37", t:"02x37 The Quiet Game", url:"https://archive.org/download/bluey-complete-season-2/02x37%20The%20Quiet%20Game.mp4"},
+      {code:"02x38", t:"02x38 Mr. Monkeyjocks", url:"https://archive.org/download/bluey-complete-season-2/02x38%20Mr.%20Monkeyjocks.mp4"},
+      {code:"02x39", t:"02x39 Double Babysitter", url:"https://archive.org/download/bluey-complete-season-2/02x39%20Double%20Babysitter.mp4"},
+      {code:"02x40", t:"02x40 Bad Mood", url:"https://archive.org/download/bluey-complete-season-2/02x40%20Bad%20Mood.mp4"},
+      {code:"02x41", t:"02x41 Octopus", url:"https://archive.org/download/bluey-complete-season-2/02x41%20Octopus.mp4"},
+      {code:"02x42", t:"02x42 Bin Night", url:"https://archive.org/download/bluey-complete-season-2/02x42%20Bin%20Night.mp4"},
+      {code:"02x43", t:"02x43 Muffin Cone", url:"https://archive.org/download/bluey-complete-season-2/02x43%20Muffin%20Cone.mp4"},
+      {code:"02x44", t:"02x44 Duck Cake", url:"https://archive.org/download/bluey-complete-season-2/02x44%20Duck%20Cake.mp4"},
+      {code:"02x45", t:"02x45 Handstand", url:"https://archive.org/download/bluey-complete-season-2/02x45%20Handstand.mp4"},
+      {code:"02x46", t:"02x46 Road Trip", url:"https://archive.org/download/bluey-complete-season-2/02x46%20Road%20Trip.mp4"},
+      {code:"02x47", t:"02x47 Ice Cream", url:"https://archive.org/download/bluey-complete-season-2/02x47%20Ice%20Cream.mp4"},
+      {code:"02x48", t:"02x48 Dunny", url:"https://archive.org/download/bluey-complete-season-2/02x48%20Dunny.mp4"},
+      {code:"02x49", t:"02x49 Typewriter", url:"https://archive.org/download/bluey-complete-season-2/02x49%20Typewriter.mp4"},
+      {code:"02x50", t:"02x50 Baby Race", url:"https://archive.org/download/bluey-complete-season-2/02x50%20Baby%20Race.mp4"},
+      {code:"02x51", t:"02x51 Christmas Swim", url:"https://archive.org/download/bluey-complete-season-2/02x51%20Christmas%20Swim.mp4"},
+      {code:"02x52", t:"02x52 Easter", url:"https://archive.org/download/bluey-complete-season-2/02x52%20Easter.mp4"},
+    ]
+  },
+  {
+    name:"第三季（S3）",
+    eps:[
+      {code:"03x01", t:"03x01 Perfect", url:"https://archive.org/download/bluey-complete-third-season/03x01%20Perfect.mp4"},
+      {code:"03x02", t:"03x02 Bedroom", url:"https://archive.org/download/bluey-complete-third-season/03x02%20Bedroom.mp4"},
+      {code:"03x03", t:"03x03 Obstacle Course", url:"https://archive.org/download/bluey-complete-third-season/03x03%20Obstacle%20Course.mp4"},
+      {code:"03x04", t:"03x04 Promises", url:"https://archive.org/download/bluey-complete-third-season/03x04%20Promises.mp4"},
+      {code:"03x05", t:"03x05 Omelette", url:"https://archive.org/download/bluey-complete-third-season/03x05%20Omelette.mp4"},
+      {code:"03x06", t:"03x06 Born Yesterday", url:"https://archive.org/download/bluey-complete-third-season/03x06%20Born%20Yesterday.mp4"},
+      {code:"03x07", t:"03x07 Mini Bluey", url:"https://archive.org/download/bluey-complete-third-season/03x07%20Mini%20Bluey.mp4"},
+      {code:"03x08", t:"03x08 Unicorse", url:"https://archive.org/download/bluey-complete-third-season/03x08%20Unicorse.mp4"},
+      {code:"03x09", t:"03x09 Curry Quest", url:"https://archive.org/download/bluey-complete-third-season/03x09%20Curry%20Quest.mp4"},
+      {code:"03x10", t:"03x10 Magic", url:"https://archive.org/download/bluey-complete-third-season/03x10%20Magic.mp4"},
+      {code:"03x11", t:"03x11 Chest", url:"https://archive.org/download/bluey-complete-third-season/03x11%20Chest.mp4"},
+      {code:"03x12", t:"03x12 Sheepdog", url:"https://archive.org/download/bluey-complete-third-season/03x12%20Sheepdog.mp4"},
+      {code:"03x13", t:"03x13 Housework", url:"https://archive.org/download/bluey-complete-third-season/03x13%20Housework.mp4"},
+      {code:"03x14", t:"03x14 Pass the Parcel", url:"https://archive.org/download/bluey-complete-third-season/03x14%20Pass%20the%20Parcel.mp4"},
+      {code:"03x15", t:"03x15 Explorers", url:"https://archive.org/download/bluey-complete-third-season/03x15%20Explorers.mp4"},
+      {code:"03x16", t:"03x16 Phones", url:"https://archive.org/download/bluey-complete-third-season/03x16%20Phones.mp4"},
+      {code:"03x17", t:"03x17 Pavlova", url:"https://archive.org/download/bluey-complete-third-season/03x17%20Pavlova.mp4"},
+      {code:"03x18", t:"03x18 Rain", url:"https://archive.org/download/bluey-complete-third-season/03x18%20Rain.mp4"},
+      {code:"03x19", t:"03x19 Pizza Girls", url:"https://archive.org/download/bluey-complete-third-season/03x19%20Pizza%20Girls.mp4"},
+      {code:"03x20", t:"03x20 Driving", url:"https://archive.org/download/bluey-complete-third-season/03x20%20Driving.mp4"},
+      {code:"03x21", t:"03x21 Tina", url:"https://archive.org/download/bluey-complete-third-season/03x21%20Tina.mp4"},
+      {code:"03x22", t:"03x22 Whale Watching", url:"https://archive.org/download/bluey-complete-third-season/03x22%20Whale%20Watching.mp4"},
+      {code:"03x23", t:"03x23 Family Meeting", url:"https://archive.org/download/bluey-complete-third-season/03x23%20Family%20Meeting.mp4"},
+      {code:"03x24", t:"03x24 Faceytalk", url:"https://archive.org/download/bluey-complete-third-season/03x24%20Faceytalk.mp4"},
+      {code:"03x25", t:"03x25 Ragdoll", url:"https://archive.org/download/bluey-complete-third-season/03x25%20Ragdoll.mp4"},
+      {code:"03x26", t:"03x26 Fairytale", url:"https://archive.org/download/bluey-complete-third-season/03x26%20Fairytale.mp4"},
+      {code:"03x27", t:"03x27 Musical Statues", url:"https://archive.org/download/bluey-complete-third-season/03x27%20Musical%20Statues.mp4"},
+      {code:"03x28", t:"03x28 Stories", url:"https://archive.org/download/bluey-complete-third-season/03x28%20Stories.mp4"},
+      {code:"03x29", t:"03x29 Puppets", url:"https://archive.org/download/bluey-complete-third-season/03x29%20Puppets.mp4"},
+      {code:"03x30", t:"03x30 Turtleboy", url:"https://archive.org/download/bluey-complete-third-season/03x30%20Turtleboy.mp4"},
+      {code:"03x31", t:"03x31 Onesies", url:"https://archive.org/download/bluey-complete-third-season/03x31%20Onesies.mp4"},
+      {code:"03x32", t:"03x32 Tradies", url:"https://archive.org/download/bluey-complete-third-season/03x32%20Tradies.mp4"},
+      {code:"03x33", t:"03x33 Granny Mobile", url:"https://archive.org/download/bluey-complete-third-season/03x33%20Granny%20Mobile.mp4"},
+      {code:"03x34", t:"03x34 Space", url:"https://archive.org/download/bluey-complete-third-season/03x34%20Space.mp4"},
+      {code:"03x35", t:"03x35 Smoochy Kiss", url:"https://archive.org/download/bluey-complete-third-season/03x35%20Smoochy%20Kiss.mp4"},
+      {code:"03x36", t:"03x36 Dirt", url:"https://archive.org/download/bluey-complete-third-season/03x36%20Dirt.mp4"},
+      {code:"03x37", t:"03x37 The Decider", url:"https://archive.org/download/bluey-complete-third-season/03x37%20The%20Decider.mp4"},
+      {code:"03x38", t:"03x38 Cubby", url:"https://archive.org/download/bluey-complete-third-season/03x38%20Cubby.mp4"},
+      {code:"03x39", t:"03x39 Exercise", url:"https://archive.org/download/bluey-complete-third-season/03x39%20Exercise.mp4"},
+      {code:"03x40", t:"03x40 Relax", url:"https://archive.org/download/bluey-complete-third-season/03x40%20Relax.mp4"},
+      {code:"03x41", t:"03x41 Stickbird", url:"https://archive.org/download/bluey-complete-third-season/03x41%20Stickbird.mp4"},
+      {code:"03x42", t:"03x42 Show and Tell", url:"https://archive.org/download/bluey-complete-third-season/03x42%20Show%20and%20Tell.mp4"},
+      {code:"03x43", t:"03x43 Dragon", url:"https://archive.org/download/bluey-complete-third-season/03x43%20Dragon.mp4"},
+      {code:"03x44", t:"03x44 Wild Girls", url:"https://archive.org/download/bluey-complete-third-season/03x44%20Wild%20Girls.mp4"},
+      {code:"03x45", t:"03x45 TV Shop", url:"https://archive.org/download/bluey-complete-third-season/03x45%20TV%20Shop.mp4"},
+      {code:"03x46", t:"03x46 Slide", url:"https://archive.org/download/bluey-complete-third-season/03x46%20Slide.mp4"},
+      {code:"03x47", t:"03x47 Cricket", url:"https://archive.org/download/bluey-complete-third-season/03x47%20Cricket.mp4"},
+      {code:"03x48", t:"03x48 Ghostbasket", url:"https://archive.org/download/bluey-complete-third-season/03x48%20Ghostbasket.mp4"},
+      {code:"03x49", t:"03x49 The Sign", url:"https://archive.org/download/bluey-complete-third-season/03x49%20The%20Sign.mp4"},
+      {code:"03x50", t:"03x50 Surprise!", url:"https://archive.org/download/bluey-complete-third-season/03x50%20Surprise%21.mp4"},
+    ]
+  },
+  {
+    name:"西班牙语合集",
+    eps:[
+      {code:"09", t:"09 Bluey Capítulos completos (ES)", url:"https://archive.org/download/09-bluey-capitulos-completos-bob-el-conejo-2023-11-04-18-28-43/09%20Bluey%20_%20Cap%C3%ADtulos%20completos_%20Bob%20el%20conejo_2023-11-04_18-28-43.mp4"},
+    ]
+  },
+];
+
 const VIDEOS={
   chinese:[
     {icon:'📖',t:'人教版四年级语文上册（174集大合集）',d:'紧贴四年级上册部编版教材，逐课精讲课本重点与考点，名师解析，同步课堂精准提分（ima 来源）。',bvid:'BV1neVdzyEZW',eps:174,tag:'B站·内置',cls:'bili'},
@@ -3698,7 +3886,8 @@ const VIDEOS={
     {icon:'📘',t:'牛津拼读世界',d:'官方教材一一对应配套视频，最系统。',url:'https://search.bilibili.com/all?keyword='+encodeURIComponent('牛津拼读世界'),tag:'B站',cls:'bili'},
     {icon:'🔠',t:'Jolly Phonics',d:'英国小学官方拼读体系，42音素多感官教学。',url:'https://search.bilibili.com/all?keyword='+encodeURIComponent('Jolly Phonics'),tag:'网络',cls:'bili'},
     {icon:'🗣️',t:'Susan教英语',d:'全英文讲绘本，零基础跟得上（三升四适用）。',url:'https://search.bilibili.com/all?keyword='+encodeURIComponent('Susan教英语'),tag:'B站',cls:'bili'},
-    {icon:'🐰',t:'英语兔',d:'千万粉，语法讲得清楚。',url:'https://search.bilibili.com/all?keyword='+encodeURIComponent('英语兔'),tag:'B站',cls:'bili'}
+    {icon:'🐰',t:'英语兔',d:'千万粉，语法讲得清楚。',url:'https://search.bilibili.com/all?keyword='+encodeURIComponent('英语兔'),tag:'B站',cls:'bili'},
+    {icon:'🐶',t:'Bluey 布鲁伊（英语原声·全三季）',d:'BBC 热门英语启蒙动画，原声无字幕磨耳朵，适合亲子共看。点开即内嵌播放，可按季/集切换（来源：archive.org 粉丝上传，国内访问可能需代理）。',tag:'内嵌·直链',cls:'mp4',mp4:BLUEY_SEASONS}
   ],
   math:[
     {icon:'📊',t:'DK图解数学·全科动画（661集大合集）',d:'DK图解数学 + 超级课堂 + 高斯数学合集，覆盖小学到初中核心概念，动画图解最易懂（来源：ima「蛋蛋教学」·DK图解数学）。',bvid:'BV1mMuFzJELD',eps:661,tag:'B站·内置',cls:'bili'},
@@ -3762,6 +3951,57 @@ function closeInlinePlayer(){
   const f=$('#vpFrame'); if(f) f.src='';
   const bar=$('#vpEpBar'); if(bar) bar.innerHTML='';
 }
+/* ===== 内嵌 mp4 直链播放器（archive.org 等直链，<video> 原生播放，支持拖动进度） ===== */
+function openInlineMp4Player(seasons, title){
+  const vp=$('#mp4Player'); if(!vp||!seasons||!seasons.length) return;
+  closeInlinePlayer(); closeQuarkPlayer();   // 打开前收起其它播放器
+  vp._seasons = seasons;
+  $('#mp4Title').textContent = title || '视频';
+  const sel=$('#mp4Season'); sel.innerHTML='';
+  seasons.forEach((s,i)=>{
+    const o=document.createElement('option'); o.value=String(i);
+    o.textContent=s.name+'（'+(s.eps?s.eps.length:0)+'集）';
+    sel.appendChild(o);
+  });
+  sel.onchange=()=>{
+    const si=parseInt(sel.value,10)||0;
+    renderMp4EpBar(si);
+    const eps=(seasons[si]&&seasons[si].eps)||[];
+    if(eps[0]) loadMp4Ep(eps[0]);
+  };
+  renderMp4EpBar(0);
+  const first=(seasons[0]&&seasons[0].eps&&seasons[0].eps[0]);
+  if(first) loadMp4Ep(first);
+  vp.classList.remove('hidden');
+  try{ vp.scrollIntoView({behavior:'smooth', block:'start'}); }catch(e){}
+}
+function renderMp4EpBar(si){
+  const vp=$('#mp4Player'); const seasons=(vp&&vp._seasons)||[];
+  const bar=$('#mp4EpBar'); if(!bar) return;
+  bar.innerHTML=''; bar.style.maxHeight='170px'; bar.style.overflowY='auto';
+  const eps=(seasons[si]&&seasons[si].eps)||[];
+  eps.forEach((e,i)=>{
+    const c=document.createElement('button'); c.type='button';
+    c.className='vp-ep'+(i===0?' on':'');
+    c.dataset.url=e.url; c.title=e.t; c.textContent=e.code;
+    c.onclick=()=>loadMp4Ep(e, c);
+    bar.appendChild(c);
+  });
+}
+function loadMp4Ep(e, btn){
+  const v=$('#mp4Video'); if(!v||!e) return;
+  v.src=e.url;
+  $('#mp4Title').textContent = 'Bluey · ' + e.t;
+  try{ v.currentTime=0; const p=v.play(); if(p&&p.catch) p.catch(()=>{}); }catch(err){}
+  if(btn){ $$('#mp4EpBar .vp-ep').forEach(c=>c.classList.toggle('on', c===btn)); }
+  else { $$('#mp4EpBar .vp-ep').forEach((c,i)=>c.classList.toggle('on', i===0)); }
+}
+function closeInlineMp4Player(){
+  const vp=$('#mp4Player'); if(!vp) return;
+  const v=$('#mp4Video'); if(v){ try{v.pause();}catch(e){} try{v.removeAttribute('src'); v.load();}catch(e){} }
+  vp.classList.add('hidden'); vp._seasons=null;
+  const bar=$('#mp4EpBar'); if(bar) bar.innerHTML='';
+}
 function renderVideo(k){
   k=k||'chinese';
   const box=$('#videoBox'); if(!box) return;
@@ -3794,6 +4034,14 @@ function renderVideo(k){
       a.className='vgo'; a.href=v.url; a.target='_blank'; a.rel='noopener';
       a.textContent='▶ 去观看';
       c.appendChild(a);
+    } else if(v.mp4 && Array.isArray(v.mp4)){
+      const btn=document.createElement('button');
+      btn.type='button'; btn.className='vgo';
+      const n=v.mp4.reduce((s,se)=>s+((se.eps&&se.eps.length)||0),0);
+      btn.textContent='▶ 播放（'+n+'集）';
+      const seasons=v.mp4, fullTitle=(v.icon?v.icon+' ':'')+v.t;
+      btn.addEventListener('click',()=>openInlineMp4Player(seasons, fullTitle));
+      c.appendChild(btn);
     }
     box.appendChild(c);
   });
@@ -3808,6 +4056,7 @@ function renderVideoCur(){
   $('#quarkBox').style.display = isQk ? 'grid':'none';
   if(isQk){ $('#vPlayer').classList.add('hidden'); }   // 在夸克分段时收起 B站 播放器
   $('#qkPlayer').classList.add('hidden');              // 切任何栏目先收起夸克播放器
+  closeInlineMp4Player();                              // 切任何栏目先收起 mp4 直链播放器
   const qv=$('#qkVideo'); if(qv){ try{qv.pause();}catch(e){} qv.src=''; }
   if(isQk) renderQuark();
   else renderVideo(videoCur);
@@ -4081,6 +4330,8 @@ const vlBtn=$('#vlBtn'); if(vlBtn) vlBtn.onclick=checkVideoAnswer;
 const vlInput=$('#vlInput'); if(vlInput) vlInput.addEventListener('keydown',e=>{ if(e.key==='Enter') checkVideoAnswer(); });
 /* 内嵌视频窗口关闭按钮 */
 $('#vpClose').onclick=closeInlinePlayer;
+/* mp4 直链内嵌播放器关闭按钮 */
+$('#mp4Close').onclick=closeInlineMp4Player;
 /* 夸克内嵌播放器关闭按钮 + 未配置代理时隐藏夸克分段 */
 $('#qkClose').onclick=closeQuarkPlayer;
 if(!QUARK_PROXY && !QUARK_PROXY_CN && !QUARK_STREAM_CN){ const qb=document.querySelector('#videoSeg button[data-vk="quark"]'); if(qb) qb.style.display='none'; }   // 任何一边有代理就显示夸克分段（现在统一走 CloudBase：列表=QUARK_PROXY_CN，播放=QUARK_STREAM_CN）
@@ -6160,7 +6411,7 @@ const SHOP=[
   {key:'medicine',icon:'💊',name:'药品',price:15,grow:11,desc:'治病+喂养 +11成长',medicine:true},
 ];
 const FOOD_ITEMS=SHOP.filter(s=>s.food);     // 多种食物（像衣服一样可在超市挑选）
-const APP_VERSION='2026-08-12 12:45';         // 版本时间戳：用于比对本地/GitHub 是否一致
+const APP_VERSION='2026-08-12 15:40';         // 版本时间戳：用于比对本地/GitHub 是否一致
 function dogLevel(g){ if(g>=300)return 3; if(g>=160)return 2; if(g>=60)return 1; return 0; }
 const DOG_NAMES=['幼崽小猫','可爱小猫','帅气大猫','超级神猫'];
 let catState='sit';                       // 当前随机状态（sit/play/sleep/sick/eat 互动态）
@@ -6522,7 +6773,7 @@ $('#btnReset').onclick=()=>{
 };
 window.addEventListener('beforeinstallprompt',e=>e.preventDefault());
 </script>
-<div id="verTag" title="页面版本时间戳，用于比对本地/GitHub 是否一致">v20260812.1245</div>
+<div id="verTag" title="页面版本时间戳，用于比对本地/GitHub 是否一致">v20260812.1540</div>
 <div id="syncBadge" class="sync-badge init" title="数据同步状态：云端为主存，多端一致">☁️</div>
 <div id="syncUploadBtn" title="把本机当前进度强制覆盖上传到云端（替换云端数据，多端将以本机为准）">↑ 强制上传</div>
 <div id="syncDownloadBtn" title="用云端数据覆盖本机（丢弃本机本地改动，以云端为准）——当本地旧缓存盖掉云端设定时使用">↓ 强制下载</div>
