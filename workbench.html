@@ -4654,20 +4654,25 @@ function buildListWithWrong(arr, scope, cat){
      否则会出现"一进模式 99 题全占满，刷新后变今日已练完"的 bug。 */
   return wrongItems.concat(shuffle(newItems));
 }
-/* 语文选项打乱：56 道选择题此前 a:0 全是 A，现启动时一次性打乱每题 opts 并更新 a，让正确答案分布到 A/B/C/D */
+/* 语文选择题选项打乱：早期版本 a 全是 0（A），阅读理解的选项又嵌套在 qs[] 里，
+   原 shuffleCNOpts 只洗了顶层带 opts 的题，漏掉了阅读理解 → 阅读理解答案恒为 A。
+   现改为泛型递归洗牌：题目对象若含 opts 数组就洗（同步更新 a），若含 qs 数组就继续往下钻，
+   保证 CN_MEAN/CN3_MEAN/CN_READ/CN3_READ 全部选择题的正确答案随机分布到 A/B/C/D。 */
+function _shuffleOneCNOpt(q){
+  if(Array.isArray(q.opts) && q.opts.length>1){
+    const arr = q.opts.slice();
+    const correct = arr[q.a];
+    for(let i=arr.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [arr[i],arr[j]]=[arr[j],arr[i]]; }
+    q.opts = arr;
+    q.a = arr.indexOf(correct);
+  }
+  if(Array.isArray(q.qs)) q.qs.forEach(_shuffleOneCNOpt); // 阅读理解：选项在 qs[] 里
+}
 function shuffleCNOpts(){
   const groups = [CN_MEAN, CN3_MEAN, CN_READ, CN3_READ];
   groups.forEach(g => {
     if(!Array.isArray(g)) return;
-    g.forEach(q => {
-      if(Array.isArray(q.opts) && q.opts.length>1){
-        const arr = q.opts.slice();
-        const correct = arr[q.a];
-        for(let i=arr.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [arr[i],arr[j]]=[arr[j],arr[i]]; }
-        q.opts = arr;
-        q.a = arr.indexOf(correct);
-      }
-    });
+    g.forEach(_shuffleOneCNOpt);
   });
 }
 /* 答对：从错题本移除；答错：加入错题本（允许重复进入，后续再次答对才移除） */
