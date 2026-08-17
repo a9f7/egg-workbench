@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="zh-CN" data-app-version="20260817.1034">
+<html lang="zh-CN" data-app-version="20260817.1202">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
@@ -1052,7 +1052,7 @@ function normalize(s){
   s.mathCorrect = s.mathCorrect||0; // 累计答对（数学）
   s.engCorrect = s.engCorrect||0;   // 累计英语正确
   s.total = s.total||{c:0,m:0,e:0}; // 累计各科完成
-  s.today = s.today||{date:'',c:0,m:0,e:0,ex:[],seen:{},mathAnswered:0}; // seen: {scope: {q:1}} 每日已出题（按模式+科目+年级+题文去重）；mathAnswered：今日已作答数学题数（用于“先做数学”门禁）
+  s.today = s.today||{date:'',c:0,m:0,e:0,ex:[],seen:{}}; // seen: {scope: {q:1}} 每日已出题（按模式+科目+年级+题文去重）；m：今日已做对数学题数（用于“先做数学”门禁）
   s.wrong = Array.isArray(s.wrong)?s.wrong:[];              // 错题本：[{cat:'m'|'c', q, a, tpl?}]（旧数据无 cat 默认 'm'）
   s.mathTpl = (typeof s.mathTpl==='object' && s.mathTpl) ? s.mathTpl : {};
   /* mathTpl 持久化：{ tplId: {correct:总答对次数, streak:连续答对次数, recent:[Y/N,..], removed:是否已剔除, tplName:描述} }
@@ -1091,7 +1091,7 @@ function load(raw){
   if(raw===undefined){ try{ raw=JSON.parse(localStorage.getItem(SKEY)); }catch(e){ raw=null; } }
   const s=normalize(raw);
   if(s.today.date!==todayStr()){
-    s.today={date:todayStr(),c:0,m:0,e:0,ex:[],seen:{},mathAnswered:0};
+    s.today={date:todayStr(),c:0,m:0,e:0,ex:[],seen:{}};
     s.exDone[s.today.date]=s.exDone[s.today.date]||{};
   }
   return s;
@@ -1128,7 +1128,7 @@ function mergeState(local, remote){
     Object.entries(local.today.seen||{}).forEach(([sc,qs])=>{
       out.today.seen[sc] = Object.assign({}, out.today.seen[sc]||{}, qs);
     });
-    ['c','m','e','mathAnswered'].forEach(k=>{ out.today[k] = Math.max(Number(out.today[k])||0, Number(local.today[k])||0); });
+    ['c','m','e'].forEach(k=>{ out.today[k] = Math.max(Number(out.today[k])||0, Number(local.today[k])||0); });
     out.today.ex = Array.from(new Set([...(out.today.ex||[]), ...(local.today.ex||[])]));
   }
   // exDone：按日期+任务名深合并，done 取或（不再有 base/add/praised 阳光字段）
@@ -3677,16 +3677,16 @@ const EX_CHORES = [
 const VIEWS=['home','chinese','math','english','video','exercise','dog','parent'];
 let parentUnlocked=false;          // 家长专区解锁状态（仅内存，刷新后需重新验证密码）
 /* ═══════ 先做数学门禁 ═══════
-   每天必须先完成至少 MATH_GATE_MIN 道数学题，才能进入语文/英语/打卡等其它模块。
-   计数用 S.today.mathAnswered（今日已作答，含对错，每日 0 点随 today 重置）。 */
+   每天必须先「做对」至少 MATH_GATE_MIN 道数学题，才能进入语文/英语/打卡等其它模块。
+   计数用 S.today.m（今日已做对数学题数，每日 0 点随 today 重置；仅答对才累加，答错不计数）。 */
 const MATH_GATE_MIN = 5;
 function mathGateDone(){
-  return (S.today && (S.today.mathAnswered||0) >= MATH_GATE_MIN);
+  return (S.today && (S.today.m||0) >= MATH_GATE_MIN);
 }
 function mathGateMsg(){
-  const n = (S.today && S.today.mathAnswered)||0;
+  const n = (S.today && S.today.m)||0;
   const left = Math.max(0, MATH_GATE_MIN - n);
-  return '📐 请先完成至少 '+MATH_GATE_MIN+' 道数学题（还差 '+left+' 道），才能开始语文 / 英语 / 打卡哦～';
+  return '📐 请先「做对」至少 '+MATH_GATE_MIN+' 道数学题（还差 '+left+' 道做对），才能开始语文 / 英语 / 打卡哦～';
 }
 function switchView(v){
   if(!VIEWS.includes(v)) v='home';
@@ -4503,8 +4503,8 @@ function renderHome(){
   if(gh && ghc){
     if(mathGateDone()){ ghc.style.display='none'; }
     else {
-      const n=(S.today&&S.today.mathAnswered)||0, left=Math.max(0,MATH_GATE_MIN-n);
-      gh.innerHTML='📐 <b>今日先做数学</b>：还差 <b>'+left+'</b> 道数学题，即可解锁 语文 / 英语 / 运动家务打卡 / 签到。点上面的「➗ 数学」开始吧！';
+      const n=(S.today&&S.today.m)||0, left=Math.max(0,MATH_GATE_MIN-n);
+      gh.innerHTML='📐 <b>今日先做数学</b>：还差 <b>'+left+'</b> 道「做对」数学题，即可解锁 语文 / 英语 / 运动家务打卡 / 签到。点上面的「➗ 数学」开始吧！';
       ghc.style.display='block';
     }
   }
@@ -5957,7 +5957,6 @@ function renderMath(){
       const after=function(ok, correct){
         const fb=document.getElementById(fbId);
         _markSeen(scope, picked.q); // 用户实际答完一题才占 seen 名额
-        S.today.mathAnswered = (S.today.mathAnswered||0)+1; // 今日作答数学题数+1（含对错），用于“先做数学”门禁
         if(ok){
           S.mathCorrect++; S.total.m++; S.today.m++; maybeMathSun();
           fb.className='feedback ok'; fb.innerHTML='🎉 正确！太棒了！';
@@ -6487,7 +6486,7 @@ const SHOP=[
   {key:'medicine',icon:'💊',name:'药品',price:15,grow:11,desc:'治病+喂养 +11成长',medicine:true},
 ];
 const FOOD_ITEMS=SHOP.filter(s=>s.food);     // 多种食物（像衣服一样可在超市挑选）
-const APP_VERSION='2026-08-17 10:34';         // 版本时间戳：用于比对本地/GitHub 是否一致
+const APP_VERSION='2026-08-17 12:02';         // 版本时间戳：用于比对本地/GitHub 是否一致
 function dogLevel(g){ if(g>=300)return 3; if(g>=160)return 2; if(g>=60)return 1; return 0; }
 const DOG_NAMES=['幼崽小猫','可爱小猫','帅气大猫','超级神猫'];
 let catState='sit';                       // 当前随机状态（sit/play/sleep/sick/eat 互动态）
@@ -6849,7 +6848,7 @@ $('#btnReset').onclick=()=>{
 };
 window.addEventListener('beforeinstallprompt',e=>e.preventDefault());
 </script>
-<div id="verTag" title="页面版本时间戳，用于比对本地/GitHub 是否一致">v20260817.1034</div>
+<div id="verTag" title="页面版本时间戳，用于比对本地/GitHub 是否一致">v20260817.1202</div>
 <div id="syncBadge" class="sync-badge init" title="数据同步状态：云端为主存，多端一致">☁️</div>
 <div id="syncUploadBtn" title="把本机当前进度强制覆盖上传到云端（替换云端数据，多端将以本机为准）">↑ 强制上传</div>
 <div id="syncDownloadBtn" title="用云端数据覆盖本机（丢弃本机本地改动，以云端为准）——当本地旧缓存盖掉云端设定时使用">↓ 强制下载</div>
