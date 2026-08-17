@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="zh-CN" data-app-version="20260815.1247">
+<html lang="zh-CN" data-app-version="20260817.0852">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
@@ -1077,6 +1077,10 @@ function normalize(s){
   ['fish','can','milk','jerky','biscuit','medicine'].forEach(k=>{ if(typeof s.dog.inv[k]!=='number') s.dog.inv[k]=0; });
   if(s.dog.inv.food){ s.dog.inv.fish=(s.dog.inv.fish||0)+s.dog.inv.food; delete s.dog.inv.food; }
   s.dog.lastFeed = s.dog.lastFeed||'';   // 最后进食日期，用于“生病”触发判定
+  // 发放：彩虹彩虹衣（c10）直接赠予衣柜，等价于赠送 20 阳光兑换（幂等，仅补发一次，阳光值不动）
+  if(Array.isArray(s.dog.wardrobe) && !s.dog.wardrobe.some(w=>w&&w.id==='c10')){
+    s.dog.wardrobe.push({id:'c10', name:'彩虹彩虹衣', icon:'🌈', rarity:'传说', time:Date.now()});
+  }
   return s;
 }
 function load(raw){
@@ -6451,7 +6455,7 @@ const SHOP=[
   {key:'medicine',icon:'💊',name:'药品',price:15,grow:11,desc:'治病+喂养 +11成长',medicine:true},
 ];
 const FOOD_ITEMS=SHOP.filter(s=>s.food);     // 多种食物（像衣服一样可在超市挑选）
-const APP_VERSION='2026-08-15 12:47';         // 版本时间戳：用于比对本地/GitHub 是否一致
+const APP_VERSION='2026-08-17 08:52';         // 版本时间戳：用于比对本地/GitHub 是否一致
 function dogLevel(g){ if(g>=300)return 3; if(g>=160)return 2; if(g>=60)return 1; return 0; }
 const DOG_NAMES=['幼崽小猫','可爱小猫','帅气大猫','超级神猫'];
 let catState='sit';                       // 当前随机状态（sit/play/sleep/sick/eat 互动态）
@@ -6813,7 +6817,7 @@ $('#btnReset').onclick=()=>{
 };
 window.addEventListener('beforeinstallprompt',e=>e.preventDefault());
 </script>
-<div id="verTag" title="页面版本时间戳，用于比对本地/GitHub 是否一致">v20260815.1247</div>
+<div id="verTag" title="页面版本时间戳，用于比对本地/GitHub 是否一致">v20260817.0852</div>
 <div id="syncBadge" class="sync-badge init" title="数据同步状态：云端为主存，多端一致">☁️</div>
 <div id="syncUploadBtn" title="把本机当前进度强制覆盖上传到云端（替换云端数据，多端将以本机为准）">↑ 强制上传</div>
 <div id="syncDownloadBtn" title="用云端数据覆盖本机（丢弃本机本地改动，以云端为准）——当本地旧缓存盖掉云端设定时使用">↓ 强制下载</div>
