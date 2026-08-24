@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="zh-CN" data-app-version="20260820.0906">
+<html lang="zh-CN" data-app-version="20260824.1639">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
@@ -313,6 +313,12 @@
   /* 状态滤镜：姿势差异由帧图本身表达，这里仅做轻微氛围 */
   .dog.state-sick  .cat-img{filter:drop-shadow(0 8px 10px rgba(80,60,90,.18)) grayscale(.45) brightness(.94)}
   .dog.state-sleep .cat-img{filter:drop-shadow(0 8px 10px rgba(80,60,90,.18)) brightness(.97) saturate(.92)}
+  .dog.state-dead  .cat-img{filter:grayscale(1) brightness(.6) contrast(.9);opacity:.92}
+  .dog-banner{padding:10px 14px;border-radius:14px;font-size:14px;line-height:1.55;margin:0 0 14px}
+  .dog-banner.ok{background:#eafaf0;color:#1e7a45;border:1px solid #b7e6c8}
+  .dog-banner.hungry{background:#fff6e6;color:#9a6b00;border:1px solid #ffe0a3}
+  .dog-banner.sick{background:#fdeef0;color:#b3344a;border:1px solid #f6c2cc}
+  .dog-banner.dead{background:#eef0f3;color:#556;border:1px solid #d3d8df}
   /* 换装状态下给整组（身体+衣服）加轻微呼吸，避免完全静止 */
   .dog.has-outfit .cat-wrap{animation:catBob 3.4s ease-in-out infinite}
   /* 互动短句气泡 */
@@ -1023,6 +1029,7 @@ async function bootstrap(){
     if(db) db.onclick = ()=>forceDownload();
   }catch(_){}
   S.savedAt = S.savedAt || 0;
+  tickDog();            // 每日结算：成长衰减 / 生病概率 / 久病不治死亡（仅跨日推进一次）
   addBoardBars();
   renderHome();
   console.log('[egg-workbench] 版本 '+APP_VERSION+' · data-app-version='+document.documentElement.getAttribute('data-app-version'));
@@ -1081,6 +1088,11 @@ function normalize(s){
   ['fish','can','milk','jerky','biscuit','medicine'].forEach(k=>{ if(typeof s.dog.inv[k]!=='number') s.dog.inv[k]=0; });
   if(s.dog.inv.food){ s.dog.inv.fish=(s.dog.inv.fish||0)+s.dog.inv.food; delete s.dog.inv.food; }
   s.dog.lastFeed = s.dog.lastFeed||'';   // 最后进食日期，用于“生病”触发判定
+  s.dog.status = s.dog.status||'alive';          // alive | dead（死亡后资产冻结，仅可花 100☀️ 复活）
+  s.dog.sick = !!s.dog.sick;                     // 是否生病（需用药医治，否则久病不治会死）
+  s.dog.sickSince = s.dog.sickSince||'';         // 生病起始日，用于“久病不治”死亡判定
+  s.dog.lastTickDate = s.dog.lastTickDate||todayStr();  // 上次每日结算日，避免重复扣成长
+  s.dog.lastCure = s.dog.lastCure||'';            // 最近一次用药治愈日，用于治愈后短暂免疫
   // 发放：彩虹彩虹衣（c10）直接赠予衣柜，等价于赠送 20 阳光兑换（幂等，仅补发一次，阳光值不动）
   if(Array.isArray(s.dog.wardrobe) && !s.dog.wardrobe.some(w=>w&&w.id==='c10')){
     s.dog.wardrobe.push({id:'c10', name:'彩虹彩虹衣', icon:'🌈', rarity:'传说', time:Date.now()});
@@ -3659,13 +3671,14 @@ const EX_SPORTS = [
   {id:'sp_bike',   icon:'🚴', name:'骑车',      desc:'骑小车兜风'},
   {id:'sp_swing',  icon:'🤸', name:'开合跳',    desc:'原地蹦蹦跳'},
   {id:'sp_eye',    icon:'👀', name:'眼保健操',  desc:'保护小眼睛'},
+  {id:'sp_swim',   icon:'🏊', name:'游泳',      desc:'在水里划呀划'},
+  {id:'sp_bad',    icon:'🏸', name:'羽毛球',    desc:'和小伙伴对打'},
 ];
 
 /* 家务打卡项目（id 以 ch_ 开头） */
 const EX_CHORES = [
   {id:'ch_bag',icon:'🎒',name:'整理书包',desc:'把书包整理干净'},
   {id:'ch_sweep',icon:'🧹',name:'扫地拖地',desc:'扫一次地或拖一次地'},
-  {id:'ch_fold',icon:'👕',name:'叠衣服',desc:'把自己的衣服叠整齐'},
   {id:'ch_water',icon:'🌿',name:'浇花',desc:'给家里的花草浇水'},
   {id:'ch_wipe',icon:'🧽',name:'擦桌子',desc:'擦干净饭桌或书桌'},
   {id:'ch_bed',icon:'🛏️',name:'整理床铺',desc:'起床后把被子铺好'},
@@ -4507,6 +4520,17 @@ function renderHome(){
       gh.innerHTML='📐 <b>今日先做数学</b>：还差 <b>'+left+'</b> 道「做对」数学题，即可解锁 语文 / 英语 / 运动家务打卡 / 签到。点上面的「➗ 数学」开始吧！';
       ghc.style.display='block';
     }
+  }
+  // 小猫状态（首页提示）：健康 / 饥饿 / 生病 / 死亡
+  const hv=document.getElementById('view-home');
+  if(hv){
+    let ds=document.getElementById('dogHomeStatus');
+    if(!ds){ ds=document.createElement('div'); ds.id='dogHomeStatus'; ds.style.cssText='margin:0 0 12px;padding:8px 12px;border-radius:12px;font-size:13px;font-weight:700'; hv.insertBefore(ds, hv.firstChild); }
+    const dg=S.dog;
+    if(dg.status==='dead'){ ds.style.background='#eef0f3'; ds.style.color='#556'; ds.textContent='💀 小猫离开了…（花 100☀️ 在「小猫」页复活）'; }
+    else if(dg.sick){ ds.style.background='#fdeef0'; ds.style.color='#b3344a'; ds.textContent='🤒 小猫生病了！去「小猫」页用💊药品医治'; }
+    else if(daysBetween(dg.lastFeed||'', todayStr())>=2){ ds.style.background='#fff6e6'; ds.style.color='#9a6b00'; ds.textContent='😿 小猫两天没吃东西了，去喂喂它吧'; }
+    else { ds.style.background='#eafaf0'; ds.style.color='#1e7a45'; ds.textContent='😺 小猫状态良好'; }
   }
 }
 $('#signBtn').onclick=()=>{
@@ -5999,13 +6023,19 @@ function renderMath(){
           if(!v){toast('✏️ 写一下答案吧');return;}
           // 多空填空题：①答案各空之间允许 空格/逗号/顿号/|/-/等 任意分隔符；②首尾允许带句号（。.．），归一化后再比对，
           // 避免“答案对但因分隔符不同 / 多了或少了句号 被判错”（如正确为 '70 300'，学生填 '70,300' 或 '70。300。'）
+          // 答案判定：①多空/多词答案允许任意分隔符与“有无空格”（如“平行 相等”=“平行相等”）；
+          // ②首尾允许带句号（。.．）；③非数字垃圾（如字母 J）一律判错；④数字答案须为有效数字且相等。
           const normSep = s => String(s)
             .replace(/[　\s]+/g,' ')
             .replace(/[，,、|｜／/\\-－—─~～]+/g,' ')
             .trim().replace(/\s+/g,' ')
             .replace(/^[。.．\s]+/,'')      // 去掉开头句号/空白
             .replace(/[。.．\s]+$/,'');      // 去掉末尾句号/空白
-          const ok = picked.free ? normSep(v)===normSep(String(picked.a)) : Number(v)===picked.a;
+          const normNoSpace = s => normSep(s).replace(/\s+/g,'');   // 仅用于“有无空格”容错
+          const ansA = String(picked.a);
+          const ok = picked.free
+            ? (normSep(v)===normSep(ansA) || normNoSpace(v)===normNoSpace(ansA))
+            : (v!=='' && Number.isFinite(Number(v)) && Number(v)===Number(picked.a));
           after(ok, picked.opts ? picked.opts[picked.a] : picked.a);
         };
         document.getElementById('mSub').onclick=sub;
@@ -6494,9 +6524,14 @@ const SHOP=[
   {key:'medicine',icon:'💊',name:'药品',price:15,grow:11,desc:'治病+喂养 +11成长',medicine:true},
 ];
 const FOOD_ITEMS=SHOP.filter(s=>s.food);     // 多种食物（像衣服一样可在超市挑选）
-const APP_VERSION='2026-08-20 09:06';         // 版本时间戳：用于比对本地/GitHub 是否一致
+const APP_VERSION='2026-08-24 16:39';         // 版本时间戳：用于比对本地/GitHub 是否一致
 function dogLevel(g){ if(g>=300)return 3; if(g>=160)return 2; if(g>=60)return 1; return 0; }
 const DOG_NAMES=['幼崽小猫','可爱小猫','帅气大猫','超级神猫'];
+const DOG_DECAY_PER_DAY=3;     // 隔两三天没喂，每天掉多少成长值
+const DOG_SICK_GROWTH=20;      // 成长值低于此阈值，生病概率上升
+const DOG_DEATH_GRACE=3;       // 生病后多少天不医治就死
+const DOG_REVIVE_COST=100;     // 复活所需阳光值
+const DOG_CURE_COOLDOWN=2;     // 用药治愈后短暂免疫期（天），避免“治愈次日又生病”的挫败感
 let catState='sit';                       // 当前随机状态（sit/play/sleep/sick/eat 互动态）
 let catEatFood=null;                      // 当前正在吃的「食物 id」（用于切换专属进食帧）
 let catFrameTimer=null, catReactTimer=null, catFrameIdx=0, catFrameList=null;
@@ -6586,6 +6621,7 @@ function updateCatVisual(){
   const g=S.dog.growth, lv=dogLevel(g);
   const dog=$('#dog'); dog.className='dog lv'+lv;
   const catCloth=$('#catCloth'); catCloth.style.display='none';   // 不再叠加静态衣服图层
+  if(S.dog.status==='dead'){ dog.classList.add('state-dead'); catPlay('sit', lv); return; }  // 死亡：灰阶+沉寂
   if(S.dog.equipped){
     const eq=CLOTHES_POOL.find(c=>c.id===S.dog.equipped);
     if(eq){
@@ -6607,6 +6643,27 @@ function renderDog(){
   // ═══ 动态小猫：由帧动画引擎 updateCatVisual() 驱动（猫咪本体按状态切换动作帧） ═══
   updateCatVisual();
 
+  // 小猫状态横幅：健康 / 饥饿 / 生病 / 死亡（死亡不可操作，仅可花阳光复活）
+  const shopEl=$('#shop');
+  let banner=document.getElementById('dogStatusBanner');
+  if(!banner){ banner=document.createElement('div'); banner.id='dogStatusBanner'; shopEl.parentNode.insertBefore(banner, shopEl); }
+  if(S.dog.status==='dead'){
+    banner.className='dog-banner dead';
+    banner.innerHTML='💀 <b>小猫离开了…</b> 衣柜与阳光都为你保留着。'+
+      '<div style="margin-top:8px">花 <b>'+DOG_REVIVE_COST+'☀️</b> 让它复活：'+
+      '<button class="btn sm" id="dogReviveBtn"'+(S.sun>=DOG_REVIVE_COST?'':' disabled style="opacity:.5"')+'>💖 复活 ('+DOG_REVIVE_COST+'☀️)</button></div>';
+    const rb=document.getElementById('dogReviveBtn'); if(rb) rb.onclick=reviveDog;
+  } else if(S.dog.sick){
+    banner.className='dog-banner sick';
+    banner.innerHTML='🤒 <b>小猫生病了！</b> 快去背包用 💊药品 医治，久病不治会离开哦～';
+  } else if(daysBetween(S.dog.lastFeed||'', todayStr())>=2){
+    banner.className='dog-banner hungry';
+    banner.innerHTML='😿 <b>小猫饿坏了～</b> 已经两天没吃东西了，去超市买点吃的喂它吧！（太久不喂成长值会下降）';
+  } else {
+    banner.className='dog-banner ok';
+    banner.innerHTML='😺 <b>小猫状态良好</b>'+(S.dog.growth<DOG_SICK_GROWTH?'（成长值偏低，多喂点提升它吧）':'');
+  }
+
   // shop
   const shop=$('#shop'); shop.innerHTML='';
   SHOP.forEach(s=>{
@@ -6618,6 +6675,7 @@ function renderDog(){
     shop.appendChild(d);
   });
   $$('#shop [data-buy]').forEach(b=>b.onclick=()=>{
+    if(S.dog.status==='dead'){ toast('😿 小猫已经离开了，先花 '+DOG_REVIVE_COST+'☀️ 复活它吧'); return; }
     const k=b.dataset.buy, item=SHOP.find(x=>x.key===k);
     if(S.sun<item.price){ toast('阳光不够哦，多做习题赚阳光☀️'); return; }
     S.sun-=item.price;
@@ -6704,10 +6762,12 @@ function renderDog(){
   if(!hasInv && invEl2) invEl2.innerHTML='<span class="muted">背包空空，去超市买点吃的吧～</span>';
 
   const doFeed=(k)=>{
+    if(S.dog.status==='dead'){ toast('😿 小猫已经离开了…先花 '+DOG_REVIVE_COST+'☀️ 复活它吧'); return; }
     const item=SHOP.find(x=>x.key===k);
     if((S.dog.inv[k]||0)<=0) return;
     const before=dogLevel(S.dog.growth);
     S.dog.inv[k]--; S.dog.growth+=item.grow;
+    if(k==='medicine'){ S.dog.sick=false; S.dog.sickSince=''; S.dog.lastCure=todayStr(); }  // 药品医治 → 病愈（并记录治愈日，进入短暂免疫）
     S.dog.lastFeed=todayStr();                // 记录最后进食日 → 影响生病判定
     const after=dogLevel(S.dog.growth);
     save(); renderDog();
@@ -6725,6 +6785,39 @@ function renderDog(){
   };
 }
 function daysBetween(a,b){ const da=new Date(a+'T00:00:00'), db=new Date(b+'T00:00:00'); return Math.round((db-da)/86400000); }
+// 每日结算：成长衰减 / 生病概率 / 久病不治死亡（只在跨日时推进一次，lastTickDate 防重复）
+function tickDog(){
+  const d=S.dog; if(!d) return;
+  const today=todayStr();
+  if(d.status==='dead'){ d.lastTickDate=today; return; }   // 死亡后冻结，不再变化
+  const days=daysBetween(d.lastTickDate||today, today);
+  if(days<=0){ d.lastTickDate=today; return; }
+  const safeDays=Math.min(days,30);
+  let changed=false;
+  const fedGap=daysBetween(d.lastFeed||'', today);          // 距上次进食的天数
+  const neglected = fedGap>=2;                              // 隔两三天没喂
+  // 成长衰减：被 neglect 才掉（按跨过的天数线性扣，不按总缺口复利猛扣）
+  if(neglected){
+    const dec=DOG_DECAY_PER_DAY*Math.min(days,30);
+    const before=d.growth;
+    d.growth=Math.max(0, d.growth-dec);
+    if(d.growth!==before) changed=true;
+  }
+  // 生病判定：逐日掷骰（neglected 或 成长值过低 → 概率上升）；已病则保持；治愈后短暂免疫期内不掷
+  const curedRecently = d.lastCure && daysBetween(d.lastCure, today) < DOG_CURE_COOLDOWN;
+  for(let i=0;i<safeDays && !d.sick && !curedRecently;i++){
+    let p=0;
+    if(neglected) p+=0.45;
+    if(d.growth<DOG_SICK_GROWTH) p+=0.30;
+    if(Math.random()<p){ d.sick=true; d.sickSince=today; changed=true; }
+  }
+  // 死亡判定：已生病且超过宽限期未医治
+  if(d.sick && daysBetween(d.sickSince||today, today)>=DOG_DEATH_GRACE){
+    d.status='dead'; d.sick=false; d.sickSince=''; changed=true;
+  }
+  d.lastTickDate=today;
+  if(changed) save();
+}
 // 是否达到“生病”触发条件：连续 2 天未进食
 function isSickEligible(){
   const lf=S.dog.lastFeed||'';
@@ -6733,6 +6826,8 @@ function isSickEligible(){
 }
 // 进入小猫页时随机抽取随机状态（坐等70% / 自娱10% / 睡觉10% / 生病5%，生病需满足触发条件）
 function pickCatState(){
+  if(S.dog.status==='dead'){ catState='sit'; return; }      // 死亡：固定坐姿 + 灰阶
+  if(S.dog.sick){ catState='sick'; const fx=$('#catFx'); if(fx) spawnFx(fx,['🤒','💧'],2); return; }  // 生病：稳定显示病态
   const eligible=isSickEligible();
   const w = eligible ? {sit:70, play:10, sleep:10, sick:5} : {sit:70, play:10, sleep:10};
   const total=Object.values(w).reduce((a,b)=>a+b,0);
@@ -6774,6 +6869,7 @@ function spawnFx(fx, emojis, n){
   }
 }
 function equipClothes(id){
+  if(S.dog.status==='dead'){ toast('😿 小猫已经离开了，先复活它吧'); return; }
   S.dog.equipped=id; save(); renderDog();
   if(id){
     const c=CLOTHES_POOL.find(x=>x.id===id);
@@ -6783,7 +6879,17 @@ function equipClothes(id){
   }
 }
 // 点击小猫：播放撒娇动作帧（h）约 1.3s 后回到当前随机状态；进食/吃药/撒娇进行中不打断
+function reviveDog(){
+  if(S.dog.status!=='dead') return;
+  if(S.sun<DOG_REVIVE_COST){ toast('☀️ 阳光不够，还差 '+(DOG_REVIVE_COST-S.sun)+' 个阳光'); return; }
+  S.sun-=DOG_REVIVE_COST;
+  S.dog.status='alive'; S.dog.sick=false; S.dog.sickSince='';
+  S.dog.lastFeed=todayStr(); S.dog.lastTickDate=todayStr();   // 复活当天视为已喂，给个缓冲
+  save(); renderDog(); renderHome();
+  toast('✨ 小猫复活啦！要好好照顾它哦～');
+}
 function catClickReact(){
+  if(S.dog.status==='dead'){ toast('💤 小猫睡着了，再也醒不过来了…用 '+DOG_REVIVE_COST+'☀️ 复活它吧'); return; }
   if(catState==='eat'||catState==='medicine'||catState==='react') return;
   const prev=catState; catState='react'; updateCatVisual();
   clearTimeout(catReactTimer);
@@ -6856,7 +6962,7 @@ $('#btnReset').onclick=()=>{
 };
 window.addEventListener('beforeinstallprompt',e=>e.preventDefault());
 </script>
-<div id="verTag" title="页面版本时间戳，用于比对本地/GitHub 是否一致">v20260820.0906</div>
+<div id="verTag" title="页面版本时间戳，用于比对本地/GitHub 是否一致">v20260824.1639</div>
 <div id="syncBadge" class="sync-badge init" title="数据同步状态：云端为主存，多端一致">☁️</div>
 <div id="syncUploadBtn" title="把本机当前进度强制覆盖上传到云端（替换云端数据，多端将以本机为准）">↑ 强制上传</div>
 <div id="syncDownloadBtn" title="用云端数据覆盖本机（丢弃本机本地改动，以云端为准）——当本地旧缓存盖掉云端设定时使用">↓ 强制下载</div>
