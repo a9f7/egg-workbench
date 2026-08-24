@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="zh-CN" data-app-version="20260824.2334">
+<html lang="zh-CN" data-app-version="20260824.2344">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
@@ -653,7 +653,7 @@
   <section class="view" id="v-exercise">
     <div class="card">
       <h3>🏃 运动 & 🧹 家务打卡</h3>
-      <p class="muted">每完成一项运动或家务打卡，自动 ☀️+1 阳光。家长也能在「家长模块」里手动加减阳光。</p>
+      <p class="muted">运动打卡 ☀️+1；家务打卡 ☀️+0.1（洗小袜子 ☀️+1）。家长也能在「家长模块」里手动加减阳光。</p>
       <div id="exList"></div>
     </div>
   </section>
@@ -3678,13 +3678,13 @@ const EX_SPORTS = [
 
 /* 家务打卡项目（id 以 ch_ 开头） */
 const EX_CHORES = [
-  {id:'ch_bag',icon:'🎒',name:'整理书包',desc:'把书包整理干净'},
-  {id:'ch_sweep',icon:'🧹',name:'扫地拖地',desc:'扫一次地或拖一次地'},
-  {id:'ch_water',icon:'🌿',name:'浇花',desc:'给家里的花草浇水'},
-  {id:'ch_wipe',icon:'🧽',name:'擦桌子',desc:'擦干净饭桌或书桌'},
-  {id:'ch_bed',icon:'🛏️',name:'整理床铺',desc:'起床后把被子铺好'},
-  {id:'ch_set',icon:'🥢',name:'摆碗筷',desc:'饭前帮忙摆碗筷'},
-  {id:'ch_sock',icon:'🧦',name:'洗小袜子',desc:'洗自己的小袜子'},
+  {id:'ch_bag',icon:'🎒',name:'整理书包',desc:'把书包整理干净', sun:0.1},
+  {id:'ch_sweep',icon:'🧹',name:'扫地拖地',desc:'扫一次地或拖一次地', sun:0.1},
+  {id:'ch_water',icon:'🌿',name:'浇花',desc:'给家里的花草浇水', sun:0.1},
+  {id:'ch_wipe',icon:'🧽',name:'擦桌子',desc:'擦干净饭桌或书桌', sun:0.1},
+  {id:'ch_bed',icon:'🛏️',name:'整理床铺',desc:'起床后把被子铺好', sun:0.1},
+  {id:'ch_set',icon:'🥢',name:'摆碗筷',desc:'饭前帮忙摆碗筷', sun:0.1},
+  {id:'ch_sock',icon:'🧦',name:'洗小袜子',desc:'洗自己的小袜子', sun:1},
 ];
 
 /* ============ nav ============ */
@@ -6472,10 +6472,12 @@ function renderEx(){
     const id=b.dataset.id;
     if((S.exDone[todayStr()]||{})[id]){ toast('今天已经打过卡啦～'); return; }
     const isSport = isSportId(id);   // 区分运动/家务文案
+    const exItem = (isSport ? EX_SPORTS : EX_CHORES).find(x=>x.id===id);
+    const gain = (exItem && typeof exItem.sun==='number') ? exItem.sun : 1;  // 家务（除洗小袜子=1 外）☀️+0.1
     S.exDone[todayStr()]=S.exDone[todayStr()]||{}; S.exDone[todayStr()][id]={done:true};
-    S.sun += 1;                       // 运动/家务打卡默认 ☀️+1
+    S.sun = Math.round((S.sun + gain) * 10) / 10;   // 防浮点累计误差（0.1+0.1+0.1≠0.3）
     save(); renderEx(); renderHome();
-    toast((isSport ? '运动打卡成功！🎉 坚持运动，棒棒哒～' : '家务打卡成功！🎉 帮家里分担，真乖～') + ' ☀️+1');
+    toast((isSport ? '运动打卡成功！🎉 坚持运动，棒棒哒～' : '家务打卡成功！🎉 帮家里分担，真乖～') + ' ☀️+'+gain);
   });
 }
 
@@ -6525,7 +6527,7 @@ const SHOP=[
   {key:'medicine',icon:'💊',name:'药品',price:15,grow:11,desc:'治病+喂养 +11成长',medicine:true},
 ];
 const FOOD_ITEMS=SHOP.filter(s=>s.food);     // 多种食物（像衣服一样可在超市挑选）
-const APP_VERSION='2026-08-24 23:34';         // 版本时间戳：用于比对本地/GitHub 是否一致
+const APP_VERSION='2026-08-24 23:44';         // 版本时间戳：用于比对本地/GitHub 是否一致
 function dogLevel(g){ if(g>=300)return 3; if(g>=160)return 2; if(g>=60)return 1; return 0; }
 const DOG_NAMES=['幼崽小猫','可爱小猫','帅气大猫','超级神猫'];
 const DOG_DECAY_PER_DAY=3;     // 隔两三天没喂，每天掉多少成长值
@@ -6963,7 +6965,7 @@ $('#btnReset').onclick=()=>{
 };
 window.addEventListener('beforeinstallprompt',e=>e.preventDefault());
 </script>
-<div id="verTag" title="页面版本时间戳，用于比对本地/GitHub 是否一致">v20260824.2334</div>
+<div id="verTag" title="页面版本时间戳，用于比对本地/GitHub 是否一致">v20260824.2344</div>
 <div id="syncBadge" class="sync-badge init" title="数据同步状态：云端为主存，多端一致">☁️</div>
 <div id="syncUploadBtn" title="把本机当前进度强制覆盖上传到云端（替换云端数据，多端将以本机为准）">↑ 强制上传</div>
 <div id="syncDownloadBtn" title="用云端数据覆盖本机（丢弃本机本地改动，以云端为准）——当本地旧缓存盖掉云端设定时使用">↓ 强制下载</div>
