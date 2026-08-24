@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="zh-CN" data-app-version="20260824.1639">
+<html lang="zh-CN" data-app-version="20260824.2334">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
@@ -923,7 +923,7 @@ async function syncPull(){
   if(_dirty) return;                            // 有未保存改动先不覆盖（避免冲掉用户当前进度）
   const remote = await cloudLoad();
   if(!remote){ setSyncState('offline'); if(SYNC.keepLocalCache) _cacheLocal(); return; }
-  S = load(remote);                             // 云端优先：用云端覆盖本地，不再做 merge（云端为唯一权威源）
+  S = load(mergeState(S, remote));             // 合并：本地进度（计数取max、集合并集、喂食日取最新）不被空白云覆盖；其余以云端为准
   setSyncState('synced');
   if(SYNC.keepLocalCache) _cacheLocal();
   if(window._eggBC) window._eggBC.postMessage({s:S});
@@ -990,8 +990,9 @@ async function bootstrap(){
     const remote = await cloudLoad();
     const localRaw = (function(){ try{ return JSON.parse(localStorage.getItem(SKEY)); }catch(e){ return null; } })();
     if(remote){
-      // 云端优先：直接用云端数据，本地旧缓存绝不写回云端（避免盖掉云端设定/他人进度）
-      S = load(remote);
+      // 云端+本地合并（防空白/空云把本地进度整盘覆盖成 0）：计数取 max、集合并集、喂食日取最新，其余以云端为准
+      S = load(localRaw ? mergeState(localRaw, remote) : remote);
+      _dirty = true;                                     // 触发一次 flushSave，把合并结果回写云端（自愈空白云）
       _pending = null;                                   // 丢弃可能残留的旧本地快照，防止补传盖云端
       setSyncState('synced');
     } else if(localRaw){
@@ -6524,7 +6525,7 @@ const SHOP=[
   {key:'medicine',icon:'💊',name:'药品',price:15,grow:11,desc:'治病+喂养 +11成长',medicine:true},
 ];
 const FOOD_ITEMS=SHOP.filter(s=>s.food);     // 多种食物（像衣服一样可在超市挑选）
-const APP_VERSION='2026-08-24 16:39';         // 版本时间戳：用于比对本地/GitHub 是否一致
+const APP_VERSION='2026-08-24 23:34';         // 版本时间戳：用于比对本地/GitHub 是否一致
 function dogLevel(g){ if(g>=300)return 3; if(g>=160)return 2; if(g>=60)return 1; return 0; }
 const DOG_NAMES=['幼崽小猫','可爱小猫','帅气大猫','超级神猫'];
 const DOG_DECAY_PER_DAY=3;     // 隔两三天没喂，每天掉多少成长值
@@ -6962,7 +6963,7 @@ $('#btnReset').onclick=()=>{
 };
 window.addEventListener('beforeinstallprompt',e=>e.preventDefault());
 </script>
-<div id="verTag" title="页面版本时间戳，用于比对本地/GitHub 是否一致">v20260824.1639</div>
+<div id="verTag" title="页面版本时间戳，用于比对本地/GitHub 是否一致">v20260824.2334</div>
 <div id="syncBadge" class="sync-badge init" title="数据同步状态：云端为主存，多端一致">☁️</div>
 <div id="syncUploadBtn" title="把本机当前进度强制覆盖上传到云端（替换云端数据，多端将以本机为准）">↑ 强制上传</div>
 <div id="syncDownloadBtn" title="用云端数据覆盖本机（丢弃本机本地改动，以云端为准）——当本地旧缓存盖掉云端设定时使用">↓ 强制下载</div>
