@@ -474,6 +474,38 @@
   .vl-tip{margin-top:12px;font-size:13px;font-weight:700;min-height:18px}
   .vl-tip.ok{color:#1aa}
   .vl-tip.no{color:#e0407f}
+  /* ===== 小猫小窝家具系统（独立模块，前缀 fh- 避免与主程序冲突） ===== */
+  .fh-room{position:relative;height:380px;border-radius:20px;overflow:hidden;
+    background:linear-gradient(180deg,#fce9f4 0%,#fce9f4 58%,#f5dcc5 58%,#efcdb8 100%);}
+  .fh-room::before{content:'';position:absolute;top:10px;left:14px;right:14px;height:26px;
+    border-top:2.5px dashed rgba(231,169,210,.45);border-radius:50%}
+  .fh-room .fh-wall{position:absolute;top:16px;left:0;right:0;text-align:center;color:#e7a9cd;font-size:12px;letter-spacing:3px;opacity:.7}
+  .fh-floor-deco{position:absolute;bottom:0;left:0;right:0;height:42%;
+    background:repeating-linear-gradient(90deg,rgba(180,130,95,.10) 0 2px,transparent 2px 26px)}
+  .fh-furn{position:absolute;transform:translate(-50%,-100%);text-align:center;z-index:3;cursor:pointer}
+  .fh-furn-floor{z-index:2}
+  .fh-furn-wallpaper{z-index:1}
+  .fh-furn-behind{z-index:2}
+  .fh-furn-front{z-index:4}
+  .fh-furn img{filter:drop-shadow(0 8px 9px rgba(80,55,35,.28));object-position:center bottom}
+  .fh-furn:hover{filter:brightness(1.05)}
+  .fh-cat{position:absolute;left:50%;bottom:8px;transform:translateX(-50%);text-align:center;z-index:5;transition:left .4s ease}
+  .fh-cat img{width:84px;height:auto;filter:drop-shadow(0 8px 10px rgba(80,60,90,.18))}
+  .fh-bubble{position:absolute;top:-40px;left:50%;transform:translateX(-50%) scale(.6);background:#fff;color:#7a5b6a;
+    border:2px solid var(--line,#e9d3e0);border-radius:14px;padding:4px 10px;font-size:12px;font-weight:800;opacity:0;transition:.2s;pointer-events:none;white-space:nowrap}
+  .fh-bubble.show{opacity:1;transform:translateX(-50%) scale(1)}
+  .fh-bubble::after{content:'';position:absolute;bottom:-9px;left:50%;transform:translateX(-50%);
+    border-left:8px solid transparent;border-right:8px solid transparent;border-top:10px solid var(--line,#e9d3e0)}
+  .fh-shop{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:8px}
+  .fh-item{background:#fbf6fb;border:1px solid var(--line,#e9d3e0);border-radius:14px;padding:10px;display:flex;flex-direction:column;gap:5px}
+  .fh-item .nm{font-weight:800;font-size:13px;color:#7a5b6a}
+  .fh-item .ds{font-size:11px;color:#9a8290;line-height:1.4;flex:1}
+  .fh-item .pr{font-weight:800;color:#d99a00;font-size:12px}
+  .fh-item button{border:none;border-radius:12px;padding:7px 12px;font-weight:800;font-size:12px;cursor:pointer;
+    background:var(--pink,#fb7299);color:#fff;transition:transform .15s;margin-top:2px}
+  .fh-item button:disabled{background:#eee;color:#bbb;cursor:not-allowed}
+  .fh-item button:not(:disabled):hover{transform:scale(1.03)}
+  @media(max-width:420px){ .fh-shop{grid-template-columns:1fr} }
 </style>
 </head>
 <body>
@@ -722,6 +754,21 @@
       <div style="margin-top:12px;font-weight:700">🎒 背包</div>
       <div class="inv" id="inv2"></div>
       <p class="muted" style="margin-top:8px">衣柜里点衣服可穿在小猫身上，背包里点物品可喂养 ❤️</p>
+    </div>
+
+    <div class="card" id="catHomeCard">
+      <h3>🏠 蛋蛋的小窝</h3>
+      <p class="muted">用 ☀️ 阳光装扮蛋蛋的专属小窝，买到的家具会自动摆进房间里</p>
+      <div class="fh-room" id="furnRoom">
+        <div class="fh-wall">蛋蛋的小窝</div>
+        <div class="fh-floor-deco"></div>
+        <div class="fh-cat" id="fhCat">
+          <img src="assets/cat-anim-s0a.png" alt="蛋蛋">
+          <div class="fh-bubble" id="fhBubble"></div>
+        </div>
+      </div>
+      <div style="margin-top:12px;font-weight:800;color:#7a5b6a">🪑 家具商店</div>
+      <div class="fh-shop" id="furnShop"></div>
     </div>
   </section>
 
@@ -1083,10 +1130,13 @@ function normalize(s){
     {q:'【拼组】 用两个完全相同的长方形（长是宽的 2 倍）可以拼成一个长方形或一个正方形。关于拼成的两个图形，下面的说法正确的是（    ）。', a:'面积相等，周长不相等'}
   ].forEach(it=>{ if(!s.wrong.some(w=>(w.cat||'m')==='m' && w.q===it.q)) s.wrong.push({cat:'m', q:it.q, a:it.a}); });
   s.exDone = s.exDone||{};          // 运动完成(按日期)
-  s.dog = s.dog||{growth:0, inv:{}, wardrobe:[], equipped:null};
+  s.dog = s.dog||{growth:0, inv:{}, wardrobe:[], equipped:null, furn:{}};
   // 确保各物品计数存在；旧版单「猫粮」(inv.food) 兼容迁移到 小鱼干(fish)
   (s.dog.inv = s.dog.inv||{});
   ['fish','can','milk','jerky','biscuit','medicine'].forEach(k=>{ if(typeof s.dog.inv[k]!=='number') s.dog.inv[k]=0; });
+  s.dog.furn = s.dog.furn||{};
+  // 部署公网：所有家具初始均为「未获得」，从零开始用阳光购买（清掉旧版默认赠送的床/地毯）
+  if(s.dog._furnSeeded){ s.dog.furn={}; delete s.dog._furnSeeded; }
   if(s.dog.inv.food){ s.dog.inv.fish=(s.dog.inv.fish||0)+s.dog.inv.food; delete s.dog.inv.food; }
   s.dog.lastFeed = s.dog.lastFeed||'';   // 最后进食日期，用于“生病”触发判定
   s.dog.status = s.dog.status||'alive';          // alive | dead（死亡后资产冻结，仅可花 100☀️ 复活）
@@ -6885,6 +6935,65 @@ function renderDog(){
     const pick=owned[Math.floor(Math.random()*owned.length)];
     doFeed(pick.key);
   };
+  renderFurnHome(); renderFurnShop();
+}
+/* ===== 小猫小窝家具系统（独立模块，挂在小猫页 v-dog 内） ===== */
+const FURNITURE=[
+  {id:'wallpaper',name:'爱心星星墙纸',desc:'粉墙贴满爱心和星星，温馨小窝更可爱',cost:75,x:50,y:58,w:540,h:210,layer:'wallpaper',img:'assets/furn-wallpaper.png'},
+  {id:'bed',name:'猫窝软垫',desc:'柔软的小床，午睡更香',cost:80,x:26,y:86,w:240,h:185,img:'assets/furn-bed.png'},
+  {id:'rug',name:'云朵地毯',desc:'软绵绵的云朵地毯，踩上去超舒服',cost:55,x:18,y:97,w:260,h:130,layer:'floor',img:'assets/furn-rug.png'},
+  {id:'curtain',name:'温馨窗帘',desc:'粉嫩蝴蝶结窗帘，挡住窗外光线',cost:65,x:50,y:52,w:340,h:220,layer:'behind',img:'assets/furn-curtain.png'},
+  {id:'tree',name:'猫爬架',desc:'磨爪登高看风景，带猫窝小屋',cost:90,x:91,y:104,w:167,h:233,layer:'front',img:'assets/furn-tree.png'},
+  {id:'desk',name:'书桌',desc:'写作业画画的好地方',cost:70,x:52,y:73,w:180,h:140,layer:'behind',img:'assets/furn-desk.png'},
+  {id:'wardrobe',name:'衣柜',desc:'装满漂亮衣服的大柜子',cost:100,x:88,y:78,w:173,h:187,img:'assets/furn-wardrobe.png'},
+  {id:'nightstand',name:'床头柜',desc:'放台灯和睡前故事书',cost:50,x:6,y:84,w:142,h:157,layer:'behind',img:'assets/furn-nightstand.png'},
+  {id:'yarn',name:'毛线球',desc:'滚来滚去的解闷玩具',cost:60,x:68,y:94,w:70,h:70,img:'assets/furn-yarn.png'}
+];
+function renderFurnHome(){
+  const room=document.getElementById('furnRoom'); if(!room) return;
+  room.querySelectorAll('.fh-furn').forEach(n=>n.remove());
+  FURNITURE.forEach(f=>{
+    if(!S.dog.furn[f.id]) return;
+    const el=document.createElement('div');
+    el.className='fh-furn'+(f.layer?' fh-furn-'+f.layer:'');
+    el.style.left=f.x+'%'; el.style.top=f.y+'%';
+    el.innerHTML=`<img src="${f.img}" style="width:${f.w}px;height:${f.h}px;object-fit:contain;border-radius:12px" alt="${f.name}">`;
+    el.onclick=()=>onFurnClick(f);
+    room.appendChild(el);
+  });
+}
+function onFurnClick(f){
+  const cat=document.getElementById('fhCat');
+  if(cat) cat.style.left=Math.max(18,Math.min(82,f.x-5))+'%';
+  const b=document.getElementById('fhBubble');
+  if(b){ const msgs=['喵~ 这是我的！','好喜欢这个！','摸摸新家具 ✨','闻一闻… 嗯！'];
+    b.textContent=msgs[Math.floor(Math.random()*msgs.length)];
+    b.classList.add('show'); clearTimeout(b._t); b._t=setTimeout(()=>b.classList.remove('show'),1200); }
+}
+function renderFurnShop(){
+  const box=document.getElementById('furnShop'); if(!box) return;
+  box.innerHTML='';
+  FURNITURE.forEach(f=>{
+    const owned=!!S.dog.furn[f.id];
+    const div=document.createElement('div'); div.className='fh-item';
+    div.innerHTML=`<div class="nm">${f.name}</div><div class="ds">${f.desc}</div><div class="pr">☀️ ${f.cost}</div>`;
+    const btn=document.createElement('button');
+    if(owned){ btn.textContent='已拥有 ✓'; btn.disabled=true; }
+    else{
+      btn.textContent='兑换';
+      btn.disabled = S.sun < f.cost;
+      btn.onclick=()=>{
+        if(S.sun < f.cost){ toast('阳光不够哦，多做习题赚阳光☀️'); return; }
+        S.sun -= f.cost;
+        S.dog.furn[f.id]=true;
+        save();
+        renderFurnHome(); renderFurnShop(); renderHome();
+        toast('兑换成功：'+f.name+' 🎁');
+      };
+    }
+    div.appendChild(btn);
+    box.appendChild(div);
+  });
 }
 function daysBetween(a,b){ const da=new Date(a+'T00:00:00'), db=new Date(b+'T00:00:00'); return Math.round((db-da)/86400000); }
 // 每日结算：成长衰减 / 生病概率 / 久病不治死亡（只在跨日时推进一次，lastTickDate 防重复）
