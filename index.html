@@ -1090,9 +1090,9 @@ function normalize(s){
   if(!s || typeof s!=='object') s={};
   s.v = SVER;
   s.savedAt = (typeof s.savedAt==='number')?s.savedAt:0;   // 云端多端一致用：最后写入时间戳
-  s.sun = s.sun||0;                 // 累计阳光
-  // 家具模块启动礼：新用户一次性 +200☀️，避免「小猫小窝」一上来全锁死、看着像失效（已有存档只触发一次）
-  if(!s._sunStarter){ s.sun = (s.sun||0) + 200; s._sunStarter = true; }
+  s.sun = s.sun||0;                 // 累计阳光（无新手阳光礼包：家具初始全部未获得，靠自己攒）
+  // 撤销之前的 +200 启动礼：若旧存档带 _sunStarter 标记，清掉标记并退回当时多加的 200☀️
+  if(s._sunStarter){ delete s._sunStarter; s.sun = Math.max(0,(s.sun||0)-200); }
   s.parentPwd = s.parentPwd||'4321'; // 家长专区密码（初始 4321；不随阳光清零，独立保存）
   s.lastSign = s.lastSign||'';      // 上次签到日期
   s.streak = s.streak||0;           // 连续打卡
