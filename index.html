@@ -1090,7 +1090,9 @@ function normalize(s){
   if(!s || typeof s!=='object') s={};
   s.v = SVER;
   s.savedAt = (typeof s.savedAt==='number')?s.savedAt:0;   // 云端多端一致用：最后写入时间戳
-  s.sun = s.sun||0;                 // 累计阳光（新用户从 0 开始，无新手礼包）
+  s.sun = s.sun||0;                 // 累计阳光
+  // 家具模块启动礼：新用户一次性 +200☀️，避免「小猫小窝」一上来全锁死、看着像失效（已有存档只触发一次）
+  if(!s._sunStarter){ s.sun = (s.sun||0) + 200; s._sunStarter = true; }
   s.parentPwd = s.parentPwd||'4321'; // 家长专区密码（初始 4321；不随阳光清零，独立保存）
   s.lastSign = s.lastSign||'';      // 上次签到日期
   s.streak = s.streak||0;           // 连续打卡
@@ -1137,8 +1139,7 @@ function normalize(s){
   (s.dog.inv = s.dog.inv||{});
   ['fish','can','milk','jerky','biscuit','medicine'].forEach(k=>{ if(typeof s.dog.inv[k]!=='number') s.dog.inv[k]=0; });
   s.dog.furn = s.dog.furn||{};
-  // 部署公网：所有家具初始均为「未获得」，从零开始用阳光购买（清掉旧版默认赠送的床/地毯）
-  if(s.dog._furnSeeded){ s.dog.furn={}; delete s.dog._furnSeeded; }
+  // 所有家具初始均为「未获得」，由用户在家具商店用阳光逐步兑换
   if(s.dog.inv.food){ s.dog.inv.fish=(s.dog.inv.fish||0)+s.dog.inv.food; delete s.dog.inv.food; }
   s.dog.lastFeed = s.dog.lastFeed||'';   // 最后进食日期，用于“生病”触发判定
   s.dog.status = s.dog.status||'alive';          // alive | dead（死亡后资产冻结，仅可花 100☀️ 复活）
