@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="zh-CN" data-app-version="20260824.2351">
+<html lang="zh-CN" data-app-version="20260828.0910">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
@@ -1109,6 +1109,8 @@ function normalize(s){
   s.total = s.total||{c:0,m:0,e:0}; // 累计各科完成
   s.today = s.today||{date:'',c:0,m:0,e:0,ex:[],seen:{}}; // seen: {scope: {q:1}} 每日已出题（按模式+科目+年级+题文去重）；m：今日已做对数学题数（用于“先做数学”门禁）
   s.wrong = Array.isArray(s.wrong)?s.wrong:[];              // 错题本：[{cat:'m'|'c', q, a, tpl?}]（旧数据无 cat 默认 'm'）
+  s.wrongToday = (typeof s.wrongToday==='number')?s.wrongToday:0;  // 今日累计做错数（数/语/英共享，每日重置）
+  s.wrongDate  = s.wrongDate||'';                                 // 该计数器对应日期（!=今天则重置）
   s.mathTpl = (typeof s.mathTpl==='object' && s.mathTpl) ? s.mathTpl : {};
   /* mathTpl 持久化：{ tplId: {correct:总答对次数, streak:连续答对次数, recent:[Y/N,..], removed:是否已剔除, tplName:描述} }
      - 同一 tpl 连续答对 3 次 → removed=true，下次抽题跳过
@@ -4917,6 +4919,23 @@ function maybeCnSun(){
   if(S.cnQuiz>0 && S.cnQuiz%5===0){ S.sun+=1; toast('🎉 语文答题5题，☀️阳光+1！'); return true; }
   return false;
 }
+/* 错题扣阳光（数学/语文/英语 共享同一每日计数器）
+   - 每日刷新：wrongDate 不为今天时 wrongToday 清零
+   - 第 1、2 次错误免扣；从第 3 次起每错 1 道扣 1 ☀️ */
+function maybeWrongPenalty(){
+  const t = todayStr();
+  if(S.wrongDate !== t){ S.wrongToday = 0; S.wrongDate = t; }
+  S.wrongToday = (S.wrongToday||0) + 1;
+  let msg;
+  if(S.wrongToday >= 3){
+    S.sun = Math.max(0, S.sun - 1);
+    msg = '💔 今天第 '+S.wrongToday+' 次做错，☀️阳光 -1（剩 '+S.sun+'）';
+  } else {
+    msg = '⚠️ 今天第 '+S.wrongToday+' 次做错（前 2 次免扣，第 3 次起每次 -1☀️）';
+  }
+  toast(msg, 2600);
+  return S.wrongToday;
+}
 function cnPager(box,n,total){
   if(total<=1) return;
   const bar=el('div','cn-pager');
@@ -5104,6 +5123,7 @@ function renderCNWords(box){
       setTimeout(()=>{ cnQ=null; renderCNWords(box); }, got?700:1200);
     } else {
       fb.className='feedback no'; fb.innerHTML='❌ 正确写法：<b>'+it.w+'</b>';
+      maybeWrongPenalty(); save();
     }
   };
   $('#wQB').onclick=sub;
@@ -5136,6 +5156,7 @@ function renderCNSyn(box){
       setTimeout(()=>{ cnQ=null; renderCNSyn(box); }, got?700:1200);
     } else {
       fb.className='feedback no'; fb.innerHTML='❌ 正确答案：<b>'+it.a+'</b>';
+      maybeWrongPenalty(); save();
     }
   };
   $('#sQB').onclick=sub;
@@ -5188,6 +5209,7 @@ function renderCNMean(box){
     } else {
       _markSeen(cnQ.scope, it.q); // 答错也算已出（今天不再出，但继续入错题本）
       pushWrong('c', it.q, it.opts[it.a]);
+      maybeWrongPenalty(); save();
       fb.className='feedback no'; fb.innerHTML='❌ 再想想，正确答案是 '+it.opts[it.a];
       setTimeout(()=>{ cnQ.idx++; cnQ=null; renderCNMean(box); },1400);
     }
@@ -5259,6 +5281,7 @@ function renderCNRead(box){
     } else {
       _markSeen(scope, curQ.q.q); // 答错也算已出
       pushWrong('c', curQ.q.q, q.opts[q.a]);
+      maybeWrongPenalty(); save();
       fb.className='feedback no'; fb.innerHTML='❌ 再想想，正确答案是 '+q.opts[q.a];
       setTimeout(()=>{ cnQ.qIdx++; cnQ=null; renderCNRead(box); },1400);
     }
@@ -6140,6 +6163,7 @@ function renderMath(){
         } else {
           fb.className='feedback no'; fb.innerHTML='❌ 正确答案：<b>'+correct+'</b>';
           pushWrong('m', picked.q, correct, picked.tplId);
+          maybeWrongPenalty();
         }
         /* ★ 更新 tpl 状态：答对 streak++、答错 streak=0 */
         const ts = _tplRecord(picked.tplId, ok);
@@ -6419,6 +6443,7 @@ function enMarkWrong(it){
     S.enForget = S.enForget||[];
     if(!S.enForget.includes(it.key)) S.enForget.push(it.key);
   }
+  maybeWrongPenalty();
 }
 /* 复习预习板：结合教材，预习单元新词（听读+记住）+ 复习重点句型（中→英自测） */
 function renderENReview(box){
@@ -6676,7 +6701,7 @@ const SHOP=[
   {key:'medicine',icon:'💊',name:'药品',price:15,grow:11,desc:'治病+喂养 +11成长',medicine:true},
 ];
 const FOOD_ITEMS=SHOP.filter(s=>s.food);     // 多种食物（像衣服一样可在超市挑选）
-const APP_VERSION='2026-08-24 23:51';         // 版本时间戳：用于比对本地/GitHub 是否一致
+const APP_VERSION='2026-08-28 09:10';         // 版本时间戳：用于比对本地/GitHub 是否一致
 function dogLevel(g){ if(g>=300)return 3; if(g>=160)return 2; if(g>=60)return 1; return 0; }
 const DOG_NAMES=['幼崽小猫','可爱小猫','帅气大猫','超级神猫'];
 const DOG_DECAY_PER_DAY=3;     // 隔两三天没喂，每天掉多少成长值
@@ -7173,7 +7198,7 @@ $('#btnReset').onclick=()=>{
 };
 window.addEventListener('beforeinstallprompt',e=>e.preventDefault());
 </script>
-<div id="verTag" title="页面版本时间戳，用于比对本地/GitHub 是否一致">v20260824.2351</div>
+<div id="verTag" title="页面版本时间戳，用于比对本地/GitHub 是否一致">v20260828.0910</div>
 <div id="syncBadge" class="sync-badge init" title="数据同步状态：云端为主存，多端一致">☁️</div>
 <div id="syncUploadBtn" title="把本机当前进度强制覆盖上传到云端（替换云端数据，多端将以本机为准）">↑ 强制上传</div>
 <div id="syncDownloadBtn" title="用云端数据覆盖本机（丢弃本机本地改动，以云端为准）——当本地旧缓存盖掉云端设定时使用">↓ 强制下载</div>
