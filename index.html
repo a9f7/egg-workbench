@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="zh-CN" data-app-version="20260828.0910">
+<html lang="zh-CN" data-app-version="20260828.1840">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
@@ -8,8 +8,8 @@
 <meta name="apple-mobile-web-app-title" content="蛋蛋打卡">
 <meta name="theme-color" content="#ff8fb8">
 <link rel="manifest" href="data:application/manifest+json,%7B%22name%22:%22%E8%9B%8B%E8%9B%8B%E7%9A%84%E5%81%87%E6%9C%9F%E9%A2%84%E4%B9%A0%E6%89%93%E5%8D%A1%22,%22short_name%22:%22%E8%9B%8B%E8%9B%8B%E6%89%93%E5%8D%A1%22,%22start_url%22:%22.%22,%22display%22:%22standalone%22,%22background_color%22:%22%23fff7fb%22,%22theme_color%22:%22%23ff8fb8%22%7D">
-<meta name="description" content="蛋蛋的假期预习打卡工作台：三年级下册·四年级上册 语文背诵、数学练习、英语拼写（教科版，含复习预习）、运动打卡、阳光值与小猫养成，假期预习好帮手。">
-<title>蛋蛋的假期预习打卡工作台</title>
+<meta name="description" content="蛋蛋的四年级学习工作台：四年级上册（含三年级下册复习）语文背诵、数学练习、英语单词记忆/英译中/听写/造句、运动打卡、阳光值与小猫养成，四年级学习好帮手。">
+<title>蛋蛋的四年级学习工作台</title>
 <style>
   :root{
     --pink:#ff8fb8; --pink-d:#ff6fa3; --mint:#5ec9b8; --sky:#6db4ff; --lav:#a98bff;
@@ -512,7 +512,7 @@
 <div class="app">
   <div class="topbar">
     <div class="logo">🌈</div>
-    <div class="ttl">蛋蛋的假期预习打卡<small>三升四年级 · 加油鸭！</small></div>
+    <div class="ttl">蛋蛋的四年级学习工作台<small>四年级 · 加油鸭！</small></div>
     <div class="sun-badge">☀️ <span id="sunTop">0</span></div>
     <button class="sign-btn" id="signBtn">签到+1</button>
   </div>
@@ -558,7 +558,7 @@
     <div class="mini-stat" style="margin-top:10px">
       <div class="m" data-go="exercise"><b id="mEx">0</b><span>运动打卡</span></div>
       <div class="m" data-go="exercise"><b id="mCh">0</b><span>家务打卡</span></div>
-      <div class="m" data-go="home"><b id="mDay">0</b><span>假期剩余天</span></div>
+      <div class="m" data-go="home"><b id="mDay">0</b><span>开学倒计时</span></div>
       <div class="m" data-go="dog"><b id="mSun">0</b><span>累计阳光</span></div>
     </div>
 
@@ -1090,9 +1090,7 @@ function normalize(s){
   if(!s || typeof s!=='object') s={};
   s.v = SVER;
   s.savedAt = (typeof s.savedAt==='number')?s.savedAt:0;   // 云端多端一致用：最后写入时间戳
-  s.sun = s.sun||0;                 // 累计阳光（无新手阳光礼包：家具初始全部未获得，靠自己攒）
-  // 撤销之前的 +200 启动礼：若旧存档带 _sunStarter 标记，清掉标记并退回当时多加的 200☀️
-  if(s._sunStarter){ delete s._sunStarter; s.sun = Math.max(0,(s.sun||0)-200); }
+  s.sun = s.sun||0;                 // 累计阳光（新用户从 0 开始，无新手礼包）
   s.parentPwd = s.parentPwd||'4321'; // 家长专区密码（初始 4321；不随阳光清零，独立保存）
   s.lastSign = s.lastSign||'';      // 上次签到日期
   s.streak = s.streak||0;           // 连续打卡
@@ -1139,7 +1137,8 @@ function normalize(s){
   (s.dog.inv = s.dog.inv||{});
   ['fish','can','milk','jerky','biscuit','medicine'].forEach(k=>{ if(typeof s.dog.inv[k]!=='number') s.dog.inv[k]=0; });
   s.dog.furn = s.dog.furn||{};
-  // 所有家具初始均为「未获得」，由用户在家具商店用阳光逐步兑换
+  // 部署公网：所有家具初始均为「未获得」，从零开始用阳光购买（清掉旧版默认赠送的床/地毯）
+  if(s.dog._furnSeeded){ s.dog.furn={}; delete s.dog._furnSeeded; }
   if(s.dog.inv.food){ s.dog.inv.fish=(s.dog.inv.fish||0)+s.dog.inv.food; delete s.dog.inv.food; }
   s.dog.lastFeed = s.dog.lastFeed||'';   // 最后进食日期，用于“生病”触发判定
   s.dog.status = s.dog.status||'alive';          // alive | dead（死亡后资产冻结，仅可花 100☀️ 复活）
@@ -1234,9 +1233,9 @@ function _cacheLocal(){ try{ localStorage.setItem(SKEY, JSON.stringify(S)); }cat
 /* ============ content ============ */
 /* 以下数学/英语/语文内容均依据 IMA「文武宝贝的知识库 · 蛋蛋教学」文件夹中
    人教版(PEP)四年级上册（数学/语文）及教科版（英语）教材编写：
-   - 数学：四年级上册 8 个单元（大数的认识 → 数学广角）
-   - 英语：教科版 三年级下册 8 单元 + 四年级上册 12 单元（I like red → What's your father's job）
-   - 语文：四年级上册必背（古诗 / 文言 / 日积月累 / 课文）
+   - 数学：四年级上册 8 个单元（大数的认识 → 数学广角），含难度提升题
+   - 英语：教科版 四年级上册单元（I like red → What's your father's job），并新增「造句」模式
+   - 语文：四年级上册必背（古诗 / 文言 / 日积月累 / 课文）；三年级下册保留为复习内容
    与文件夹内对应 PDF 完全一致。 */
 const CN = [
   {
@@ -3289,6 +3288,23 @@ const EN_UNITS = [
         "你最喜欢的科目是什么？"
       ]
     ]
+  },
+  {
+    "unit": "Unit 13 四年级拓展",
+    "words": [
+      ["subject","科目"],["favourite","最喜欢的"],["weekend","周末"],["sometimes","有时"],["always","总是"],
+      ["never","从不"],["because","因为"],["weather","天气"],["spring","春天"],["winter","冬天"]
+    ],
+    "chunks": [
+      ["my favourite subject","我最喜欢的科目"],["on the weekend","在周末"],["go swimming","去游泳"],
+      ["fly a kite","放风筝"],["make a snowman","堆雪人"],["What's the weather like?","天气怎么样？"]
+    ],
+    "sentences": [
+      ["What is your favourite subject?","你最喜欢的科目是什么？"],
+      ["I like English because it is fun.","我喜欢英语因为它有趣。"],
+      ["We sometimes go swimming on the weekend.","我们周末有时去游泳。"],
+      ["In winter, we make a snowman.","冬天我们堆雪人。"]
+    ]
   }
 ];
 const EN3_UNITS = [
@@ -3436,31 +3452,33 @@ const EN3_UNITS = [
       ["Certainly.","当然可以。"],["An apple a day.","一天一个苹果（身体好）。"]
     ]
   },
-  {
-    "unit": "Review Safety",
-    "words": [
-      ["photo","照片"],["there","那里；在那里"],["cousin","表兄弟；表姐妹"],["grandfather","爷爷；外公"],["grandmother","奶奶；外婆"],
-      ["heavy","重的"],["short","矮的；短的"],["lovely","可爱的"],
-      ["many","很多"],["people","人 (们)"],["they","他（她、它）们"],["big","大的"],
-      ["any","任何的；一些"],["shop","商店"],["aren't","不是 (are not)"],["duck","鸭子"],["over","在……的上方"],["over there","在那边"],
-      ["those","那些"],["has","有 (have 的单数第三人称形式)"],["buy","买"],["fish","鱼"],["monkey","猴子"],["bird","鸟"],["chicken","小鸡"],
-      ["whose","谁的"],["these","这些"],["small","小的"],["long","长的"],["tail","尾巴"],["very","非常"],["really","真正地"],
-      ["mouse","老鼠"],["mice","老鼠 (复数)"],["pig","猪"],["horse","马"]
-    ],
-    "chunks": [
-      ["team","团队"],["road sign","路标"],["safety rules","安全守则"],["stop on red","红灯停"],
-      ["before you go","在你走之前"],["look left","向左看"],["look right","向右看"],["go on green","绿灯行"],["be careful","小心"],
-      ["What would you like to do?","你想做什么工作？"],["I'd like to ...","我想做……"]
-    ],
-    "sentences": [
-      ["Who is this cute baby?","这个可爱的宝宝是谁？"],["Is this a photo of your family?","这是你的全家福吗？"],
-      ["He is my uncle. The thin lady is my aunt.","他是我的叔叔。那位瘦瘦的女士是我的阿姨。"],["It is my cousin.","是我的表兄弟姐妹。"],
-      ["How many people are there in your family?","你家有几口人？"],["Who are they?","他们是谁？"],
-      ["My grandfather, my grandmother, my father, my mother and me.","我的爷爷、奶奶、爸爸、妈妈和我。"],["There are five.","有五口人。"],
-      ["They are lovely.","它们真可爱。"],["What are those over there?","那边的那些是什么？"],["They are ducks.","它们是鸭子。"],["Let us buy a fish.","我们买一条鱼吧。"],
-      ["Whose rabbits are these?","这些是谁的兔子？"],["The mouse has a long tail.","老鼠有一条长尾巴。"],["The pig is small.","这只猪很小。"],["Whose horse is this?","这是谁的马？"]
-    ]
-  }
+];
+/* ═══ 造句素材（新增「✍️ 造句」模式用） ═══
+   每条 {en:英文范例句, zh:中文提示, kw:必须包含的英文关键词}
+   判题规则：学生写的句子需包含 kw 且不少于 2 个单词即判对（鼓励用上目标词，不强求语法满分） */
+const EN_MAKE = [
+  {en:"I like my new schoolbag.", zh:"用英语写一句话，说说你的书包。", kw:"schoolbag"},
+  {en:"We have English and Maths today.", zh:"用英语写一句话，说说今天的课。", kw:"English"},
+  {en:"My father is a doctor.", zh:"用英语写一句话，介绍爸爸的职业。", kw:"doctor"},
+  {en:"The red T-shirt is fifty yuan.", zh:"用英语写一句话，说说这件T恤。", kw:"T-shirt"},
+  {en:"I want to be a teacher.", zh:"用英语写一句话，说说你想当什么。", kw:"teacher"},
+  {en:"She can sing and dance.", zh:"用英语写一句话，说说她会什么。", kw:"dance"},
+  {en:"There are many books in the classroom.", zh:"用英语写一句话，说说教室里有什么。", kw:"classroom"},
+  {en:"He goes to school by bus.", zh:"用英语写一句话，说说怎么去上学。", kw:"school"},
+  {en:"I like apples because they are sweet.", zh:"用英语写一句话，说说你喜欢苹果的原因。", kw:"apples"},
+  {en:"The cat is under the desk.", zh:"用英语写一句话，说说猫在哪里。", kw:"desk"},
+  {en:"We play sports after school.", zh:"用英语写一句话，说说放学后做什么。", kw:"sports"},
+  {en:"Can I help you?", zh:"用英语写一句话，主动帮助别人。", kw:"help"}
+];
+const EN3_MAKE = [
+  {en:"I get up at seven o'clock.", zh:"用英语写一句话，说说你几点起床。", kw:"get up"},
+  {en:"What colour is your hat? It is blue.", zh:"用英语写一句话，问问帽子的颜色。", kw:"colour"},
+  {en:"The crayon is on the desk.", zh:"用英语写一句话，说说蜡笔在哪里。", kw:"crayon"},
+  {en:"Happy birthday to you!", zh:"用英语写一句话，给朋友送上生日祝福。", kw:"birthday"},
+  {en:"May I have an apple?", zh:"用英语写一句话，礼貌地要一个苹果。", kw:"apple"},
+  {en:"We should listen carefully in class.", zh:"用英语写一句话，说说课堂上该怎么做。", kw:"carefully"},
+  {en:"There are five people in my family.", zh:"用英语写一句话，说说你家有几口人。", kw:"family"},
+  {en:"Look at the funny hat.", zh:"用英语写一句话，评价一顶帽子。", kw:"funny"}
 ];
 const EN_ALL_WORDS = EN_UNITS.reduce((a,u)=>a+u.words.length+((u.chunks||[]).length),0);
 
@@ -4699,7 +4717,7 @@ let cnMode='recite', cnPage=0;
 let cnQ=null;  // 语文非背诵题的一题一题状态 {idx, list, mode, rIdx?}
 let cnGrade='4s', enGrade='4s';
 let cnDS=null;
-const GRADES=[{k:'3x',n:'三年级下册'},{k:'4s',n:'四年级上册'}];
+const GRADES=[{k:'4s',n:'四年级上册'},{k:'3x',n:'三年级下册（复习）'}];
 function cnSet(){ return cnGrade==='3x'
   ? {recite:CN3, words:CN3_WORDS, syn:CN3_SYN, mean:CN3_MEAN, read:CN3_READ}
   : {recite:CN, words:CN_WORDS, syn:CN_SYN, mean:CN_MEAN, read:CN_READ}; }
@@ -6054,8 +6072,21 @@ const UNIT_MATH=[{tplId:'t-num-base',gen:MATH_TPL_HELPERS.numBase,q:'10个一千
 ];
 
 /* 《数学四年级上册》教材课后「练习」原题：计算 / 比较大小 / 单位与数的运算 */
-// 统一题库：四上 104 题 + 三下 16 题 = 120 题；不再分年级
-const MATH_BANK = UNIT_MATH.concat(UNIT3_MATH);
+// 四年级难度提升题（在四上基础上提高难度：大数/三位数乘除/角的度量/平行四边形/商变化/优化等）
+const UNIT4_HARD = [
+  {tplId:'t4h-1', q:'一个六位数，最高位是8，万位上是3，其余各位都是0，这个数是（    ）。', a:'830000', free:true, tip:'大数的认识'},
+  {tplId:'t4h-2', q:'25×40的积的末尾有（    ）个0。', a:'3', free:true, tip:'三位数乘两位数'},
+  {tplId:'t4h-3', q:'一副三角板中，最大的角是（    ）度。', a:'90', free:true, tip:'角的度量'},
+  {tplId:'t4h-4', q:'长方形相邻的两条边互相（    ）。', a:'垂直', free:true, tip:'平行四边形和梯形'},
+  {tplId:'t4h-5', q:'两个数相除，商是18，余数是7，除数最小是（    ）。', a:'8', free:true, tip:'除数是两位数的除法'},
+  {tplId:'t4h-6', q:'被除数和除数同时乘10，商（    ）。', a:'不变', free:true, tip:'商的变化规律'},
+  {tplId:'t4h-7', q:'一个数四舍五入到万位是10万，这个数最大可能是（    ）。', a:'104999', free:true, tip:'大数的认识'},
+  {tplId:'t4h-8', q:'钟面上3时整，时针和分针成（    ）角。', a:'直', free:true, tip:'角的度量'},
+  {tplId:'t4h-9', q:'表示各兴趣小组人数多少，用（    ）统计图最合适。', a:'条形', free:true, tip:'条形统计图'},
+  {tplId:'t4h-10', q:'煎3条鱼，每次只能煎2条，两面各需2分钟，最少要（    ）分钟。', a:'6', free:true, tip:'数学广角·优化'}
+];
+// 统一题库：四上 104 题 + 三下 16 题 + 难度提升 10 题 = 130 题；不再分年级
+const MATH_BANK = UNIT_MATH.concat(UNIT3_MATH).concat(UNIT4_HARD);
 const MATH_BOOK = MATH_BANK;
 /* 数学已合并三下+四上为单一题库 MATH_BANK，不再有年级切换 UI */
 function renderMath(){
@@ -6231,7 +6262,7 @@ function renderMath(){
 let enUnit='all', enMode='memory', enQueue=[], enIdx=0;
 function buildENModeSeg(){
   const seg=$('#enModeSeg'); seg.innerHTML='';
-  const opts=[{k:'memory',n:'🧠 单词记忆'},{k:'trans',n:'🌐 英译中'},{k:'dictate',n:'🎧 听写'},{k:'cards',n:'🎴 单词卡'},{k:'review',n:'📚 复习预习'},{k:'wrong',n:'📒 错题本'}];
+  const opts=[{k:'memory',n:'🧠 单词记忆'},{k:'trans',n:'🌐 英译中'},{k:'dictate',n:'🎧 听写'},{k:'make',n:'✍️ 造句'},{k:'cards',n:'🎴 单词卡'},{k:'review',n:'📚 复习预习'},{k:'wrong',n:'📒 错题本'}];
   opts.forEach(o=>{
     const b=document.createElement('button'); b.textContent=o.n; b.dataset.k=o.k;
     if(o.k===enMode)b.classList.add('on');
@@ -6239,7 +6270,7 @@ function buildENModeSeg(){
     seg.appendChild(b);
   });
   // 单词卡模式不显示单元选择（覆盖全部）
-  const uSeg=$('#enUnitSeg'); if(uSeg) uSeg.style.display=(enMode==='cards'||enMode==='wrong'?'none':'');
+  const uSeg=$('#enUnitSeg'); if(uSeg) uSeg.style.display=(enMode==='cards'||enMode==='wrong'||enMode==='make'?'none':'');
 }
 function buildENGradeSeg(){
   const seg=$('#enGradeSeg'); if(!seg)return; seg.innerHTML='';
@@ -6262,6 +6293,12 @@ function buildENSeg(){
 }
 function esc(s){return String(s).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c]);}
 function buildENQueue(){
+  // ✍️ 造句模式：不依赖单元，直接用造句素材库（按年级取 EN_MAKE / EN3_MAKE）
+  if(enMode==='make'){
+    const mk = enGrade==='3x' ? EN3_MAKE : EN_MAKE;
+    enQueue = shuffle(mk.map(s=>({type:'make', q:s.zh, a:s.en, kw:s.kw})));
+    return;
+  }
   let items=[];
   const units = enUnit==='all'?enSet():enSet().filter((_,i)=>'u'+i===enUnit);
   units.forEach(u=>{
@@ -6390,6 +6427,14 @@ function renderEN(){
       <button class="btn block mint" id="eSub">提交答案</button>
       <div class="feedback" id="eFb"></div>`;
     $('#eSp').onclick=()=>speak(it.q);
+  } else if(it.type==='make'){
+    box.innerHTML=`<div class="quiz-top"><span>✍️ 造句 ${enIdx+1}/${enQueue.length}</span><span>用「${esc(it.kw)}」写一句英文</span></div>
+      <div class="qprompt">${esc(it.q)}</div>
+      <div class="qhint">用英语写一句话，必须包含单词「<b>${esc(it.kw)}</b>」（至少 2 个词）</div>
+      <details class="qhint" style="margin:6px 0;cursor:pointer"><summary>💡 看看示例</summary><div style="padding:6px 0;color:#555">${esc(it.a)}</div></details>
+      <textarea id="eA" rows="3" placeholder="在这里写你的英文句子…" style="width:100%;font-size:16px;padding:8px;border-radius:8px;border:1px solid #ddd;resize:vertical"></textarea>
+      <button class="btn block mint" id="eSub">提交</button>
+      <div class="feedback" id="eFb"></div>`;
   } else {
     box.innerHTML=`<div class="quiz-top"><span>单词记忆·朗读 ${enIdx+1}/${enQueue.length}</span><span>每5题 ☀️+1</span></div>
       <div class="qprompt">${esc(it.q)} <button class="speak" id="eSp">🔊</button></div>
@@ -6421,6 +6466,20 @@ function renderEN(){
       if(ok){ S.engCorrect++; S.total.e++; S.today.e++; const got=maybeEngSun();
         fb.className='feedback ok'; fb.innerHTML='✅ 听写正确！单词是：<b>'+esc(it.a)+'</b>'+(got?' 🌟☀️+1':''); }
       else { enMarkWrong(it); fb.className='feedback no'; fb.innerHTML='❌ 正确单词是：<b>'+esc(it.a)+'</b>'; }
+    } else if(it.type==='make'){
+      const raw=$('#eA').value.trim();
+      const v=raw.toLowerCase();
+      const kw=String(it.kw).toLowerCase();
+      const wordCount=v.split(/[^a-z']+/).filter(Boolean).length;
+      const ok = v.indexOf(kw)>=0 && wordCount>=2;
+      const fb=$('#eFb');
+      if(ok){ S.engCorrect++; S.total.e++; S.today.e++; const got=maybeEngSun();
+        fb.className='feedback ok'; fb.innerHTML='✅ 很棒，用上了「'+esc(it.kw)+'」！'+(got?' 🌟☀️+1':''); }
+      else { enMarkWrong(it);
+        fb.className='feedback no';
+        fb.innerHTML = (v.indexOf(kw)<0)
+          ? '❌ 要包含单词「<b>'+esc(it.kw)+'</b>」哦，示例：'+esc(it.a)
+          : '❌ 多写几个词组成完整句子吧，示例：'+esc(it.a); }
     } else {
       S.engCorrect++; S.total.e++; S.today.e++; const got=maybeEngSun();
       const fb=$('#eFb'); fb.className='feedback ok'; fb.innerHTML='✅ 完成朗读！'+(got?' 🌟☀️+1':'');
@@ -6429,7 +6488,7 @@ function renderEN(){
     setTimeout(renderEN, 750);
   };
   $('#eSub').onclick=submit;
-  if(it.type!=='read'){ const e=$('#eA'); e.addEventListener('keydown',ev=>{if(ev.key==='Enter')submit();}); setTimeout(()=>e.focus(),50); }
+  if(it.type!=='read' && it.type!=='make'){ const e=$('#eA'); e.addEventListener('keydown',ev=>{if(ev.key==='Enter')submit();}); setTimeout(()=>e.focus(),50); }
 }
 function maybeEngSun(){
   if(S.engCorrect>0 && S.engCorrect%5===0){ S.sun+=1; toast('🎉 英语答对5题，☀️阳光+1！'); return true; }
@@ -6702,7 +6761,7 @@ const SHOP=[
   {key:'medicine',icon:'💊',name:'药品',price:15,grow:11,desc:'治病+喂养 +11成长',medicine:true},
 ];
 const FOOD_ITEMS=SHOP.filter(s=>s.food);     // 多种食物（像衣服一样可在超市挑选）
-const APP_VERSION='2026-08-28 09:10';         // 版本时间戳：用于比对本地/GitHub 是否一致
+const APP_VERSION='2026-08-28 18:40';         // 版本时间戳：用于比对本地/GitHub 是否一致
 function dogLevel(g){ if(g>=300)return 3; if(g>=160)return 2; if(g>=60)return 1; return 0; }
 const DOG_NAMES=['幼崽小猫','可爱小猫','帅气大猫','超级神猫'];
 const DOG_DECAY_PER_DAY=3;     // 隔两三天没喂，每天掉多少成长值
@@ -7199,7 +7258,7 @@ $('#btnReset').onclick=()=>{
 };
 window.addEventListener('beforeinstallprompt',e=>e.preventDefault());
 </script>
-<div id="verTag" title="页面版本时间戳，用于比对本地/GitHub 是否一致">v20260828.0910</div>
+<div id="verTag" title="页面版本时间戳，用于比对本地/GitHub 是否一致">v20260828.1840</div>
 <div id="syncBadge" class="sync-badge init" title="数据同步状态：云端为主存，多端一致">☁️</div>
 <div id="syncUploadBtn" title="把本机当前进度强制覆盖上传到云端（替换云端数据，多端将以本机为准）">↑ 强制上传</div>
 <div id="syncDownloadBtn" title="用云端数据覆盖本机（丢弃本机本地改动，以云端为准）——当本地旧缓存盖掉云端设定时使用">↓ 强制下载</div>
