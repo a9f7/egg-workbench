@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="zh-CN" data-app-version="20260828.1840">
+<html lang="zh-CN" data-app-version="20260831.1330">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
@@ -6085,8 +6085,170 @@ const UNIT4_HARD = [
   {tplId:'t4h-9', q:'表示各兴趣小组人数多少，用（    ）统计图最合适。', a:'条形', free:true, tip:'条形统计图'},
   {tplId:'t4h-10', q:'煎3条鱼，每次只能煎2条，两面各需2分钟，最少要（    ）分钟。', a:'6', free:true, tip:'数学广角·优化'}
 ];
-// 统一题库：四上 104 题 + 三下 16 题 + 难度提升 10 题 = 130 题；不再分年级
-const MATH_BANK = UNIT_MATH.concat(UNIT3_MATH).concat(UNIT4_HARD);
+/* ═══════════ 第二批题型生成器（四年级各单元：出题时随机换数 → 答案随之改变） ═══════════ */
+const MATH_HELPERS2 = {
+  /* 近似数：四舍五入到万位 */
+  approx(){ const n=Math.floor(Math.random()*900000)+100000;
+    return {q:`把 ${n} 四舍五入到万位，约是（    ）万。`, a:String(Math.round(n/10000)), free:true}; },
+  /* 大数的改写：整万数 → 用"万"作单位 */
+  numUnit(){ const w=Math.floor(Math.random()*90)+10;
+    return {q:`把 ${w*10000} 改写成用"万"作单位的数是（    ）万。`, a:String(w), free:true}; },
+  /* 大数的大小比较 */
+  numCmp(){ let a=Math.floor(Math.random()*900000)+100000, b=Math.floor(Math.random()*900000)+100000; if(a===b) b+=12345;
+    return {q:`在 ${a} 和 ${b} 这两个数中，较大的数是（    ）。`, a:String(Math.max(a,b)), free:true}; },
+  /* 三位数乘两位数（精确计算） */
+  mulCalc(){ const a=Math.floor(Math.random()*900)+100, b=Math.floor(Math.random()*89)+11;
+    return {q:`计算：${a} × ${b} = （    ）。`, a:String(a*b), free:true}; },
+  /* 积的末尾有几个 0 */
+  mulZero(){ const a=(Math.floor(Math.random()*8)+2)*10, b=(Math.floor(Math.random()*8)+2)*10; const p=String(a*b);
+    return {q:`${a} × ${b} 的积的末尾有（    ）个 0。`, a:String(p.length-p.replace(/0+$/,'').length), free:true}; },
+  /* 除数是两位数的除法（整除） */
+  divExact(){ const b=Math.floor(Math.random()*88)+11, c=Math.floor(Math.random()*18)+2;
+    return {q:`计算：${b*c} ÷ ${b} = （    ）。`, a:String(c), free:true}; },
+  /* 除数是两位数的除法（求余数） */
+  divRem(){ const b=Math.floor(Math.random()*80)+12, r=Math.floor(Math.random()*(b-1))+1, c=Math.floor(Math.random()*18)+2;
+    return {q:`计算 ${b*c+r} ÷ ${b}，余数是（    ）。`, a:String(r), free:true}; },
+  /* 判断商是几位数 */
+  divDigits(){ const b=Math.floor(Math.random()*88)+11, d=Math.random()<0.5?2:3;
+    const lo=d===2?10:100, hi=d===2?99:999, c=Math.floor(Math.random()*(hi-lo+1))+lo;
+    return {q:`${b*c} ÷ ${b} 的商是（    ）位数。`, a:['一','二','三','四'][d-1], free:true}; },
+  /* 商不变性质 */
+  quoRule(){ const a=Math.floor(Math.random()*80)+20, b=Math.floor(Math.random()*80)+12, k=[2,5,10][Math.floor(Math.random()*3)];
+    return {q:`已知 ${a*b} ÷ ${b} = ${a}，那么 (${a*b}×${k}) ÷ (${b}×${k}) = （    ）。`, a:String(a), free:true}; },
+  /* 面积单位：平方千米 → 公顷 */
+  areaKm2(){ const x=Math.floor(Math.random()*90)+10;
+    return {q:`${x} 平方千米 = （    ）公顷。`, a:String(x*100), free:true}; },
+  /* 面积单位：平方米 → 平方分米 */
+  areaM2(){ const x=Math.floor(Math.random()*90)+10;
+    return {q:`${x} 平方米 = （    ）平方分米。`, a:String(x*100), free:true}; },
+  /* 长度单位：千米 → 米 */
+  lenKm(){ const x=Math.floor(Math.random()*90)+10;
+    return {q:`${x} 千米 = （    ）米。`, a:String(x*1000), free:true}; },
+  /* 时间单位：时 → 分 */
+  timeHm(){ const x=Math.floor(Math.random()*8)+2;
+    return {q:`${x} 时 = （    ）分。`, a:String(x*60), free:true}; },
+  /* 速度 × 时间 = 路程 */
+  speedT(){ const v=Math.floor(Math.random()*80)+30, t=Math.floor(Math.random()*8)+2;
+    return {q:`一辆汽车每小时行驶 ${v} 千米，${t} 小时一共行驶（    ）千米。`, a:String(v*t), free:true}; },
+  /* 单价 × 数量 = 总价 */
+  priceN(){ const p=Math.floor(Math.random()*90)+10, n=Math.floor(Math.random()*8)+3;
+    return {q:`每本笔记本 ${p} 元，买 ${n} 本需要（    ）元。`, a:String(p*n), free:true}; },
+  /* 钟面整点：时针与分针的较小夹角 */
+  clockA(){ const h=Math.floor(Math.random()*11)+1, d=h*30;
+    return {q:`钟面上 ${h} 时整，时针和分针较小的夹角是（    ）度。`, a:String(Math.min(d,360-d)), free:true}; },
+  /* 一副三角板：拼角 / 差角（30/45/60/90 组合） */
+  triA(){ const c=[[30,45,75],[45,60,105],[90,30,120],[90,45,135],[90,60,150],[45,30,15]][Math.floor(Math.random()*6)];
+    return {q:`用一副三角板，把 ${c[0]}° 和 ${c[1]}° 的角${c[2]<60?'相减':'拼在一起'}，得到（    ）度的角。`, a:String(c[2]), free:true}; },
+  /* 烙饼问题（优化：n≥2 时最少 n×每面时间） */
+  pancake(){ const n=Math.floor(Math.random()*3)+3, m=3;
+    return {q:`一口锅每次最多烙 2 张饼，两面都要烙，每面需要 ${m} 分钟。烙 ${n} 张饼最少需要（    ）分钟。`, a:String(n*m), free:true}; },
+  /* 求三个数的平均数（构造和 = 3×平均数，保证整除） */
+  avg3(){ const v=Math.floor(Math.random()*80)+20;
+    return {q:`${v-3}、${v+5}、${v-2} 这三个数的平均数是（    ）。`, a:String(v), free:true}; },
+  /* 长方形周长 */
+  perimR(){ const L=Math.floor(Math.random()*90)+10, W=Math.floor(Math.random()*40)+5;
+    return {q:`一个长方形长 ${L} 米、宽 ${W} 米，它的周长是（    ）米。`, a:String(2*(L+W)), free:true}; },
+  /* 长方形面积 */
+  areaR(){ const L=Math.floor(Math.random()*80)+20, W=Math.floor(Math.random()*40)+10;
+    return {q:`一个长方形长 ${L} 米、宽 ${W} 米，它的面积是（    ）平方米。`, a:String(L*W), free:true}; },
+  /* 正方形周长 → 边长 */
+  sqSide(){ const s=Math.floor(Math.random()*40)+5;
+    return {q:`一个正方形的周长是 ${4*s} 米，它的边长是（    ）米。`, a:String(s), free:true}; }
+};
+/* ═══════════ 题库扩充（四年级各单元：随机参数化题 + 固定概念/应用题） ═══════════ */
+const MATH_MORE = [
+  /* ── 随机参数化题（有 gen，每次出题自动换数字） ── */
+  {tplId:'tm-approx',   gen:MATH_HELPERS2.approx,   q:'把 345678 四舍五入到万位，约是（    ）万。', a:'35', free:true, tip:'近似数·四舍五入'},
+  {tplId:'tm-numunit',  gen:MATH_HELPERS2.numUnit,  q:'把 450000 改写成用"万"作单位的数是（    ）万。', a:'45', free:true, tip:'大数的改写'},
+  {tplId:'tm-numcmp',   gen:MATH_HELPERS2.numCmp,   q:'在 456789 和 465789 这两个数中，较大的数是（    ）。', a:'465789', free:true, tip:'大数的大小比较'},
+  {tplId:'tm-mulcalc',  gen:MATH_HELPERS2.mulCalc,  q:'计算：234 × 56 = （    ）。', a:'13104', free:true, tip:'三位数乘两位数'},
+  {tplId:'tm-mulzero',  gen:MATH_HELPERS2.mulZero,  q:'30 × 40 的积的末尾有（    ）个 0。', a:'2', free:true, tip:'积末尾0的个数'},
+  {tplId:'tm-divexact', gen:MATH_HELPERS2.divExact, q:'计算：576 ÷ 24 = （    ）。', a:'24', free:true, tip:'除数是两位数的除法'},
+  {tplId:'tm-divrem',   gen:MATH_HELPERS2.divRem,   q:'计算 500 ÷ 30，余数是（    ）。', a:'20', free:true, tip:'有余数除法'},
+  {tplId:'tm-divdigit', gen:MATH_HELPERS2.divDigits,q:'3888 ÷ 36 的商是（    ）位数。', a:'三', free:true, tip:'商的位数'},
+  {tplId:'tm-quorule',  gen:MATH_HELPERS2.quoRule,  q:'已知 900 ÷ 25 = 36，那么 (900×10) ÷ (25×10) = （    ）。', a:'36', free:true, tip:'商不变性质'},
+  {tplId:'tm-areakm2',  gen:MATH_HELPERS2.areaKm2,  q:'25 平方千米 = （    ）公顷。', a:'2500', free:true, tip:'面积单位换算'},
+  {tplId:'tm-aream2',   gen:MATH_HELPERS2.areaM2,   q:'36 平方米 = （    ）平方分米。', a:'3600', free:true, tip:'面积单位换算'},
+  {tplId:'tm-lenkm',    gen:MATH_HELPERS2.lenKm,    q:'8 千米 = （    ）米。', a:'8000', free:true, tip:'长度单位换算'},
+  {tplId:'tm-timehm',   gen:MATH_HELPERS2.timeHm,   q:'3 时 = （    ）分。', a:'180', free:true, tip:'时间单位换算'},
+  {tplId:'tm-speedt',   gen:MATH_HELPERS2.speedT,   q:'一辆汽车每小时行驶 75 千米，6 小时一共行驶（    ）千米。', a:'450', free:true, tip:'速度×时间'},
+  {tplId:'tm-pricen',   gen:MATH_HELPERS2.priceN,   q:'每本笔记本 12 元，买 8 本需要（    ）元。', a:'96', free:true, tip:'单价×数量'},
+  {tplId:'tm-clocka',   gen:MATH_HELPERS2.clockA,   q:'钟面上 4 时整，时针和分针较小的夹角是（    ）度。', a:'120', free:true, tip:'钟面角度'},
+  {tplId:'tm-tria',     gen:MATH_HELPERS2.triA,     q:'用一副三角板，把 30° 和 45° 的角拼在一起，得到（    ）度的角。', a:'75', free:true, tip:'三角板拼角'},
+  {tplId:'tm-pancake',  gen:MATH_HELPERS2.pancake,  q:'一口锅每次最多烙 2 张饼，两面都要烙，每面需要 3 分钟。烙 3 张饼最少需要（    ）分钟。', a:'9', free:true, tip:'数学广角·优化'},
+  {tplId:'tm-avg3',     gen:MATH_HELPERS2.avg3,     q:'37、45、38 这三个数的平均数是（    ）。', a:'40', free:true, tip:'平均数'},
+  {tplId:'tm-perimr',   gen:MATH_HELPERS2.perimR,   q:'一个长方形长 25 米、宽 15 米，它的周长是（    ）米。', a:'80', free:true, tip:'长方形周长'},
+  {tplId:'tm-arear',    gen:MATH_HELPERS2.areaR,    q:'一个长方形长 35 米、宽 20 米，它的面积是（    ）平方米。', a:'700', free:true, tip:'长方形面积'},
+  {tplId:'tm-sqside',   gen:MATH_HELPERS2.sqSide,   q:'一个正方形的周长是 48 米，它的边长是（    ）米。', a:'12', free:true, tip:'正方形周长'},
+  /* ── 固定概念题 · 大数的认识 ── */
+  {tplId:'tm-c1', q:'10 个一亿是（    ）。', a:'十亿', free:true, tip:'大数的认识'},
+  {tplId:'tm-c2', q:'从个位起向左数，第五位是（    ）位。', a:'万', free:true, tip:'数位顺序'},
+  {tplId:'tm-c3', q:'从个位起向左数，第九位是（    ）位。', a:'亿', free:true, tip:'数位顺序'},
+  {tplId:'tm-c4', q:'1 亿里面有（    ）个一千万。', a:'10', free:true, tip:'大数的认识'},
+  {tplId:'tm-c5', q:'1 亿里面有（    ）个一百万。', a:'100', free:true, tip:'大数的认识'},
+  {tplId:'tm-c6', q:'最大的八位数是（    ）。', a:'99999999', free:true, tip:'大数的认识'},
+  {tplId:'tm-c7', q:'最小的九位数是（    ）。', a:'100000000', free:true, tip:'大数的认识'},
+  {tplId:'tm-c8', q:'一个数的最高位是亿位，这个数是（    ）位数。', a:'九', free:true, tip:'数位顺序'},
+  /* ── 固定概念题 · 角的度量 ── */
+  {tplId:'tm-a1', q:'1 直角 = （    ）度。', a:'90', free:true, tip:'角的度量'},
+  {tplId:'tm-a2', q:'1 平角 = （    ）度。', a:'180', free:true, tip:'角的度量'},
+  {tplId:'tm-a3', q:'1 周角 = （    ）度。', a:'360', free:true, tip:'角的度量'},
+  {tplId:'tm-a4', q:'比直角小的角叫做（    ）角。', a:'锐', free:true, tip:'角的分类'},
+  {tplId:'tm-a5', q:'大于 90° 而小于 180° 的角叫做（    ）角。', a:'钝', free:true, tip:'角的分类'},
+  {tplId:'tm-a6', q:'度量角的大小要用（    ）。', a:'量角器', free:true, tip:'角的度量'},
+  {tplId:'tm-a7', q:'角的大小与两条边的长短（    ）。', a:'无关', free:true, tip:'角的度量'},
+  {tplId:'tm-a8', q:'钟面上 6 时整，时针和分针成（    ）角。', a:'平', free:true, tip:'钟面角度'},
+  /* ── 固定概念题 · 三位数乘两位数 ── */
+  {tplId:'tm-m1', q:'三位数乘两位数，积最多是（    ）位数。', a:'五', free:true, tip:'三位数乘两位数'},
+  {tplId:'tm-m2', q:'三位数乘两位数，积最少是（    ）位数。', a:'四', free:true, tip:'三位数乘两位数'},
+  {tplId:'tm-m3', q:'150 × 60 的积的末尾有（    ）个 0。', a:'3', free:true, tip:'积末尾0的个数'},
+  {tplId:'tm-m4', q:'两个因数的积是 240，一个因数不变，另一个因数乘 3，积是（    ）。', a:'720', free:true, tip:'积的变化规律'},
+  {tplId:'tm-m5', q:'两个因数的积是 360，一个因数除以 4，另一个因数不变，积是（    ）。', a:'90', free:true, tip:'积的变化规律'},
+  /* ── 固定概念题 · 除数是两位数的除法 ── */
+  {tplId:'tm-d1', q:'计算除数是两位数的除法，要从被除数的（    ）位除起。', a:'高', free:true, tip:'除数是两位数的除法'},
+  {tplId:'tm-d2', q:'除数是两位数的除法，一般把除数看作与它接近的（    ）数来试商。', a:'整十', free:true, tip:'除数是两位数的除法'},
+  {tplId:'tm-d3', q:'在有余数的除法里，余数必须比除数（    ）。', a:'小', free:true, tip:'有余数除法'},
+  {tplId:'tm-d4', q:'验算有余数的除法：商 × 除数 + （    ） = 被除数。', a:'余数', free:true, tip:'有余数除法'},
+  {tplId:'tm-d5', q:'被除数和除数同时除以 5，商（    ）。', a:'不变', free:true, tip:'商不变性质'},
+  {tplId:'tm-d6', q:'一个数除以 32，商是 18，余数最大是（    ）。', a:'31', free:true, tip:'有余数除法'},
+  /* ── 固定概念题 · 平行四边形和梯形 ── */
+  {tplId:'tm-g1', q:'两组对边分别平行的四边形叫做（    ）。', a:'平行四边形', free:true, tip:'平行四边形定义'},
+  {tplId:'tm-g2', q:'只有一组对边平行的四边形叫做（    ）。', a:'梯形', free:true, tip:'梯形定义'},
+  {tplId:'tm-g3', q:'长方形和正方形都是特殊的（    ）。', a:'平行四边形', free:true, tip:'平行四边形定义'},
+  {tplId:'tm-g4', q:'平行四边形具有（    ）性，容易变形。', a:'不稳定', free:true, tip:'平行四边形特性'},
+  {tplId:'tm-g5', q:'从平行四边形一条边上的一点向对边画垂线，这点和垂足之间的线段叫做平行四边形的（    ）。', a:'高', free:true, tip:'平行四边形的高'},
+  {tplId:'tm-g6', q:'平行四边形有（    ）条高。', a:'无数', free:true, tip:'平行四边形的高'},
+  {tplId:'tm-g7', q:'两腰相等的梯形叫做（    ）。', a:'等腰梯形', free:true, tip:'梯形分类'},
+  {tplId:'tm-g8', q:'梯形中，不平行的一组对边叫做梯形的（    ）。', a:'腰', free:true, tip:'梯形定义'},
+  {tplId:'tm-g9', q:'长方形相对的两条边互相（    ）。', a:'平行', free:true, tip:'平行概念'},
+  {tplId:'tm-g10', q:'两条直线相交成直角，就说这两条直线互相（    ）。', a:'垂直', free:true, tip:'垂直概念'},
+  {tplId:'tm-g11', q:'在同一平面内，不相交的两条直线叫做（    ）。', a:'平行线', free:true, tip:'平行概念'},
+  /* ── 固定概念题 · 公顷和平方千米 ── */
+  {tplId:'tm-s1', q:'边长是 100 米的正方形，面积是 1（    ）。', a:'公顷', free:true, tip:'面积单位'},
+  {tplId:'tm-s2', q:'1 平方千米 = （    ）平方米。', a:'1000000', free:true, tip:'面积单位换算'},
+  {tplId:'tm-s3', q:'1 公顷 = （    ）平方米。', a:'10000', free:true, tip:'面积单位换算'},
+  {tplId:'tm-s4', q:'一块边长是 1000 米的正方形土地，面积是 1（    ）。', a:'平方千米', free:true, tip:'面积单位'},
+  /* ── 固定概念题 · 条形统计图 / 数学广角 ── */
+  {tplId:'tm-t1', q:'条形统计图是用直条的（    ）表示数量的多少。', a:'长短', free:true, tip:'条形统计图'},
+  {tplId:'tm-t2', q:'条形统计图能清楚地看出数量的（    ），便于比较。', a:'多少', free:true, tip:'条形统计图'},
+  {tplId:'tm-t3', q:'条形统计图 1 格表示 5 人，直条有 6 格表示（    ）人。', a:'30', free:true, tip:'读图'},
+  {tplId:'tm-o1', q:'合理安排时间，能同时做的事情要（    ）做。', a:'同时', free:true, tip:'数学广角·优化'},
+  {tplId:'tm-o2', q:'煮一个鸡蛋需要 8 分钟，一口锅一次可以煮 10 个鸡蛋，煮 3 个鸡蛋至少需要（    ）分钟。', a:'8', free:true, tip:'数学广角·优化'},
+  {tplId:'tm-o3', q:'沏茶：洗水壶 1 分钟，烧水 8 分钟，洗茶杯 2 分钟，找茶叶 1 分钟，沏茶 1 分钟。合理安排后最少需要（    ）分钟。', a:'10', free:true, tip:'数学广角·优化'},
+  {tplId:'tm-o4', q:'用平底锅煎饼，每次只能放 2 张，煎熟一张需要 2 分钟（正反面各 1 分钟）。煎熟 3 张饼最少需要（    ）分钟。', a:'3', free:true, tip:'数学广角·优化'},
+  /* ── 应用题 ── */
+  {tplId:'tm-p1', q:'一辆汽车 3 小时行驶 180 千米，平均每小时行驶（    ）千米。', a:'60', free:true, tip:'应用题·速度'},
+  {tplId:'tm-p2', q:'学校买了 12 个足球，每个 45 元，一共花了（    ）元。', a:'540', free:true, tip:'应用题·单价'},
+  {tplId:'tm-p3', q:'一本书有 120 页，每天看 15 页，（    ）天可以看完。', a:'8', free:true, tip:'应用题·归一'},
+  {tplId:'tm-p4', q:'四年级有 4 个班，每班 32 人，一共有（    ）人。', a:'128', free:true, tip:'应用题'},
+  {tplId:'tm-p5', q:'果园里有 8 行苹果树，每行 15 棵，一共有（    ）棵。', a:'120', free:true, tip:'应用题'},
+  {tplId:'tm-p6', q:'3 只青蛙 2 天吃 120 只害虫，1 只青蛙 1 天吃（    ）只。', a:'20', free:true, tip:'应用题·归一'},
+  {tplId:'tm-p7', q:'4 个同学每两人握一次手，一共握手（    ）次。', a:'6', free:true, tip:'搭配问题'},
+  {tplId:'tm-p8', q:'用 1、2、3 三个数字组成没有重复数字的三位数，能组成（    ）个。', a:'6', free:true, tip:'排列问题'},
+  {tplId:'tm-p9', q:'有 3 件上衣和 2 条裤子，一共有（    ）种不同的搭配方法。', a:'6', free:true, tip:'搭配问题'}
+];
+// 统一题库：四上 104 题 + 三下 16 题 + 难度提升 10 题 + 扩充 80 题 = 210 题；不再分年级
+const MATH_BANK = UNIT_MATH.concat(UNIT3_MATH).concat(UNIT4_HARD).concat(MATH_MORE);
 const MATH_BOOK = MATH_BANK;
 /* 数学已合并三下+四上为单一题库 MATH_BANK，不再有年级切换 UI */
 function renderMath(){
@@ -6761,7 +6923,7 @@ const SHOP=[
   {key:'medicine',icon:'💊',name:'药品',price:15,grow:11,desc:'治病+喂养 +11成长',medicine:true},
 ];
 const FOOD_ITEMS=SHOP.filter(s=>s.food);     // 多种食物（像衣服一样可在超市挑选）
-const APP_VERSION='2026-08-28 18:40';         // 版本时间戳：用于比对本地/GitHub 是否一致
+const APP_VERSION='2026-08-31 13:30';         // 版本时间戳：用于比对本地/GitHub 是否一致
 function dogLevel(g){ if(g>=300)return 3; if(g>=160)return 2; if(g>=60)return 1; return 0; }
 const DOG_NAMES=['幼崽小猫','可爱小猫','帅气大猫','超级神猫'];
 const DOG_DECAY_PER_DAY=3;     // 隔两三天没喂，每天掉多少成长值
@@ -7258,7 +7420,7 @@ $('#btnReset').onclick=()=>{
 };
 window.addEventListener('beforeinstallprompt',e=>e.preventDefault());
 </script>
-<div id="verTag" title="页面版本时间戳，用于比对本地/GitHub 是否一致">v20260828.1840</div>
+<div id="verTag" title="页面版本时间戳，用于比对本地/GitHub 是否一致">v20260831.1330</div>
 <div id="syncBadge" class="sync-badge init" title="数据同步状态：云端为主存，多端一致">☁️</div>
 <div id="syncUploadBtn" title="把本机当前进度强制覆盖上传到云端（替换云端数据，多端将以本机为准）">↑ 强制上传</div>
 <div id="syncDownloadBtn" title="用云端数据覆盖本机（丢弃本机本地改动，以云端为准）——当本地旧缓存盖掉云端设定时使用">↓ 强制下载</div>
