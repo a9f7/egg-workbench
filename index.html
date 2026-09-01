@@ -491,6 +491,8 @@
   .fh-furn:hover{filter:brightness(1.05)}
   .fh-cat{position:absolute;left:50%;bottom:8px;transform:translateX(-50%);text-align:center;z-index:5;transition:left .4s ease}
   .fh-cat img{width:84px;height:auto;filter:drop-shadow(0 8px 10px rgba(80,60,90,.18))}
+  /* 小猫死亡：小窝里的蛋蛋同步变黑（与主模块「蛋蛋的小猫」变灰呼应） */
+  .fh-cat.is-dead img{filter:grayscale(1) brightness(.3) contrast(1.15);opacity:.9}
   .fh-bubble{position:absolute;top:-40px;left:50%;transform:translateX(-50%) scale(.6);background:#fff;color:#7a5b6a;
     border:2px solid var(--line,#e9d3e0);border-radius:14px;padding:4px 10px;font-size:12px;font-weight:800;opacity:0;transition:.2s;pointer-events:none;white-space:nowrap}
   .fh-bubble.show{opacity:1;transform:translateX(-50%) scale(1)}
@@ -3862,7 +3864,7 @@ const EX_CHORES = [
 const EX_STUDY = [
   {id:'st_hw900', icon:'📝', name:'9:00前完成作业', desc:'赶在9点前把作业写完，太棒啦！', sun:10},
   {id:'st_hw930', icon:'✏️', name:'9:30前完成作业', desc:'9点半前完成作业，也很棒', sun:5},
-  {id:'st_exam95',icon:'💯', name:'考试95分以上',  desc:'考了95分以上，厉害！', sun:10},
+  {id:'st_exam95',icon:'💯', name:'考试95分以上',  desc:'考了95分以上，厉害！', sun:30},
   {id:'st_math85',icon:'➗', name:'数学85分以上',  desc:'数学考了85分以上，继续加油', sun:3},
 ];
 
@@ -7247,6 +7249,9 @@ function renderFurnHome(){
     el.onclick=()=>onFurnClick(f);
     room.appendChild(el);
   });
+  // 小窝的蛋蛋：小猫死亡时同步变黑
+  const fhCat=document.getElementById('fhCat');
+  if(fhCat) fhCat.classList.toggle('is-dead', S.dog.status==='dead');
 }
 function onFurnClick(f){
   const cat=document.getElementById('fhCat');
