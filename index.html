@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="zh-CN" data-app-version="20260831.1330">
+<html lang="zh-CN" data-app-version="20260901.1900">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-title" content="蛋蛋打卡">
 <meta name="theme-color" content="#ff8fb8">
 <link rel="manifest" href="data:application/manifest+json,%7B%22name%22:%22%E8%9B%8B%E8%9B%8B%E7%9A%84%E5%81%87%E6%9C%9F%E9%A2%84%E4%B9%A0%E6%89%93%E5%8D%A1%22,%22short_name%22:%22%E8%9B%8B%E8%9B%8B%E6%89%93%E5%8D%A1%22,%22start_url%22:%22.%22,%22display%22:%22standalone%22,%22background_color%22:%22%23fff7fb%22,%22theme_color%22:%22%23ff8fb8%22%7D">
-<meta name="description" content="蛋蛋的四年级学习工作台：四年级上册（含三年级下册复习）语文背诵、数学练习、英语单词记忆/英译中/听写/造句、运动打卡、阳光值与小猫养成，四年级学习好帮手。">
+<meta name="description" content="蛋蛋的四年级学习工作台：四年级上册（含三年级下册复习）语文背诵、数学练习、英语单词记忆/英译中/听写/造句、奖励打卡（运动/学习/生活习惯/家务）、阳光值与小猫养成，四年级学习好帮手。">
 <title>蛋蛋的四年级学习工作台</title>
 <style>
   :root{
@@ -524,7 +524,7 @@
     <button class="dt" data-v="math"><span class="ni">➗</span>数学</button>
     <button class="dt" data-v="english"><span class="ni">🔤</span>英语</button>
     <button class="dt" data-v="video"><span class="ni">🎬</span>视频</button>
-    <button class="dt" data-v="exercise"><span class="ni">🏃</span>运动</button>
+    <button class="dt" data-v="exercise"><span class="ni">🎁</span>奖励</button>
     <button class="dt" data-v="dog"><span class="ni">🐱</span>小猫</button>
     <button class="dt" data-v="parent"><span class="ni">🔐</span>家长</button>
   </div>
@@ -572,7 +572,7 @@
         <button data-go="chinese">📖 语文</button>
         <button data-go="math">➗ 数学</button>
         <button data-go="english">🔤 英语</button>
-        <button data-go="exercise">🏃 运动</button>
+        <button data-go="exercise">🎁 奖励</button>
         <button data-go="dog">🐱 小猫</button>
       </div>
     </div>
@@ -684,8 +684,8 @@
   <!-- EXERCISE -->
   <section class="view" id="v-exercise">
     <div class="card">
-      <h3>🏃 运动 & 🧹 家务打卡</h3>
-      <p class="muted">运动打卡 ☀️+1；家务打卡 ☀️+0.1（洗小袜子 ☀️+1）。家长也能在「家长模块」里手动加减阳光。</p>
+      <h3>🎁 奖励打卡</h3>
+      <p class="muted">🏃 运动打卡 ☀️+1（Deadbug / 吊单杠 ☀️+5）｜📚 学习打卡 ☀️+3~10｜🌙 生活习惯打卡 ☀️+1~10｜🧹 家务打卡 ☀️+0.1（洗小袜子 ☀️+1）。家长也能在「家长模块」里手动加减阳光。</p>
       <div id="exList"></div>
     </div>
   </section>
@@ -778,7 +778,7 @@
     <button data-v="math"><span class="ni">➗</span>数学</button>
     <button data-v="english"><span class="ni">🔤</span>英语</button>
     <button data-v="video"><span class="ni">🎬</span>视频</button>
-    <button data-v="exercise"><span class="ni">🏃</span>运动</button>
+    <button data-v="exercise"><span class="ni">🎁</span>奖励</button>
     <button data-v="dog"><span class="ni">🐱</span>小猫</button>
     <button data-v="parent"><span class="ni">🔐</span>家长</button>
   </nav>
@@ -1141,9 +1141,9 @@ function normalize(s){
   if(s.dog._furnSeeded){ s.dog.furn={}; delete s.dog._furnSeeded; }
   if(s.dog.inv.food){ s.dog.inv.fish=(s.dog.inv.fish||0)+s.dog.inv.food; delete s.dog.inv.food; }
   s.dog.lastFeed = s.dog.lastFeed||'';   // 最后进食日期，用于“生病”触发判定
-  s.dog.status = s.dog.status||'alive';          // alive | dead（死亡后资产冻结，仅可花 100☀️ 复活）
-  s.dog.sick = !!s.dog.sick;                     // 是否生病（需用药医治，否则久病不治会死）
-  s.dog.sickSince = s.dog.sickSince||'';         // 生病起始日，用于“久病不治”死亡判定
+  s.dog.status = s.dog.status||'alive';          // alive | dead（死亡后资产冻结，仅可花 80☀️ 复活）
+  s.dog.sick = !!s.dog.sick;                     // 是否生病（需用药医治；生病会加速成长值掉落）
+  s.dog.sickSince = s.dog.sickSince||'';         // 生病起始日（用于治愈免疫期与展示，不再用于死亡倒计时）
   s.dog.lastTickDate = s.dog.lastTickDate||todayStr();  // 上次每日结算日，避免重复扣成长
   s.dog.lastCure = s.dog.lastCure||'';            // 最近一次用药治愈日，用于治愈后短暂免疫
   // 发放：彩虹彩虹衣（c10）直接赠予衣柜，等价于赠送 20 阳光兑换（幂等，仅补发一次，阳光值不动）
@@ -3843,6 +3843,8 @@ const EX_SPORTS = [
   {id:'sp_eye',    icon:'👀', name:'眼保健操',  desc:'保护小眼睛'},
   {id:'sp_swim',   icon:'🏊', name:'游泳',      desc:'在水里划呀划'},
   {id:'sp_bad',    icon:'🏸', name:'羽毛球',    desc:'和小伙伴对打'},
+  {id:'sp_deadbug',icon:'🦵', name:'Deadbug 5组×10个', desc:'核心训练：5组，每组10个', sun:5},
+  {id:'sp_hang',   icon:'💪', name:'吊单杠 10组×30秒', desc:'吊单杠：10组，每组30秒', sun:5},
 ];
 
 /* 家务打卡项目（id 以 ch_ 开头） */
@@ -3856,15 +3858,32 @@ const EX_CHORES = [
   {id:'ch_sock',icon:'🧦',name:'洗小袜子',desc:'洗自己的小袜子', sun:1},
 ];
 
+/* 学习打卡项目（id 以 st_ 开头；阳光值按家长设定的奖励力度） */
+const EX_STUDY = [
+  {id:'st_hw900', icon:'📝', name:'9:00前完成作业', desc:'赶在9点前把作业写完，太棒啦！', sun:10},
+  {id:'st_hw930', icon:'✏️', name:'9:30前完成作业', desc:'9点半前完成作业，也很棒', sun:5},
+  {id:'st_exam95',icon:'💯', name:'考试95分以上',  desc:'考了95分以上，厉害！', sun:10},
+  {id:'st_math85',icon:'➗', name:'数学85分以上',  desc:'数学考了85分以上，继续加油', sun:3},
+];
+
+/* 生活习惯打卡项目（id 以 hb_ 开头） */
+const EX_HABIT = [
+  {id:'hb_meal20',  icon:'🍚', name:'20分钟内吃完饭', desc:'专心吃饭，不拖拉', sun:1},
+  {id:'hb_sleep22', icon:'😴', name:'10点前睡着',     desc:'早睡早起身体好', sun:10},
+  {id:'hb_sleep2230',icon:'🌙',name:'10点半前睡着',   desc:'10点半前进入梦乡', sun:3},
+];
+
 /* ============ nav ============ */
 const VIEWS=['home','chinese','math','english','video','exercise','dog','parent'];
 let parentUnlocked=false;          // 家长专区解锁状态（仅内存，刷新后需重新验证密码）
-/* ═══════ 先做数学门禁 ═══════
-   每天必须先「做对」至少 MATH_GATE_MIN 道数学题，才能进入语文/英语/打卡等其它模块。
-   计数用 S.today.m（今日已做对数学题数，每日 0 点随 today 重置；仅答对才累加，答错不计数）。 */
-const MATH_GATE_MIN = 5;
+/* ═══════ 先做数学门禁（已取消） ═══════
+   原机制：每天须先「做对」至少 MATH_GATE_MIN 道数学题，才能进入语文/英语/打卡等其它模块。
+   现已按需求取消该限制：mathGateDone() 恒为 true，所有模块随时可进。
+   保留下方函数与常量是最小改动——调用点（switchView 拦截 / 签到按钮 / 首页提示卡）会自然放行，
+   首页「先做数学」提示卡也会因 mathGateDone() 为真而自动隐藏，无需改动多处逻辑。 */
+const MATH_GATE_MIN = 5;      // 仅保留常量作历史兼容，已不再用于拦截
 function mathGateDone(){
-  return (S.today && (S.today.m||0) >= MATH_GATE_MIN);
+  return true;                // 门禁已取消：始终放行
 }
 function mathGateMsg(){
   const n = (S.today && S.today.m)||0;
@@ -6827,7 +6846,23 @@ function parseEnKey(key, enArr){
 
 /* ============ exercise ============ */
 function isSportId(id){ return id.indexOf('sp_')===0; }
-let exPageS=0, exPageC=0;
+let exPageS=0, exPageC=0, exPageSt=0, exPageH=0;
+// 打卡项按 id 前缀归类，用于取阳光值与提示文案
+function exKindOf(id){
+  if(id.indexOf('sp_')===0) return 'sport';
+  if(id.indexOf('st_')===0) return 'study';
+  if(id.indexOf('hb_')===0) return 'habit';
+  return 'chore';
+}
+function exListOf(kind){
+  return kind==='sport'?EX_SPORTS : kind==='study'?EX_STUDY : kind==='habit'?EX_HABIT : EX_CHORES;
+}
+const EX_TOAST={
+  sport:'运动打卡成功！🎉 坚持运动，棒棒哒～',
+  study:'学习打卡成功！🎉 爱学习，真棒～',
+  habit:'生活习惯打卡成功！🎉 好习惯要坚持哦～',
+  chore:'家务打卡成功！🎉 帮家里分担，真乖～'
+};
 function exPager(box,n,total,setFn){
   if(total<=1) return;
   const bar=el('div','cn-pager');
@@ -6843,8 +6878,10 @@ function renderEx(){
   const box=$('#exList'); box.innerHTML='';
   const todayEx=S.exDone[todayStr()]||{};
   const groups=[
-    {title:'🏃 运动打卡', items:EX_SPORTS, get:()=>exPageS, set:p=>exPageS=p},
-    {title:'🧹 家务打卡', items:EX_CHORES, get:()=>exPageC, set:p=>exPageC=p},
+    {title:'🏃 运动打卡', items:EX_SPORTS, get:()=>exPageS,  set:p=>exPageS=p},
+    {title:'📚 学习打卡', items:EX_STUDY,  get:()=>exPageSt, set:p=>exPageSt=p},
+    {title:'🌙 生活习惯打卡', items:EX_HABIT, get:()=>exPageH, set:p=>exPageH=p},
+    {title:'🧹 家务打卡', items:EX_CHORES, get:()=>exPageC,  set:p=>exPageC=p},
   ];
   groups.forEach(g=>{
     const title=document.createElement('div'); title.className='ex-group-title'; title.textContent=g.title;
@@ -6867,13 +6904,13 @@ function renderEx(){
   $$('#exList .chk').forEach(b=>b.onclick=()=>{
     const id=b.dataset.id;
     if((S.exDone[todayStr()]||{})[id]){ toast('今天已经打过卡啦～'); return; }
-    const isSport = isSportId(id);   // 区分运动/家务文案
-    const exItem = (isSport ? EX_SPORTS : EX_CHORES).find(x=>x.id===id);
+    const kind = exKindOf(id);                       // 运动 / 学习 / 生活习惯 / 家务
+    const exItem = exListOf(kind).find(x=>x.id===id);
     const gain = (exItem && typeof exItem.sun==='number') ? exItem.sun : 1;  // 家务（除洗小袜子=1 外）☀️+0.1
     S.exDone[todayStr()]=S.exDone[todayStr()]||{}; S.exDone[todayStr()][id]={done:true};
     S.sun = Math.round((S.sun + gain) * 10) / 10;   // 防浮点累计误差（0.1+0.1+0.1≠0.3）
     save(); renderEx(); renderHome();
-    toast((isSport ? '运动打卡成功！🎉 坚持运动，棒棒哒～' : '家务打卡成功！🎉 帮家里分担，真乖～') + ' ☀️+'+gain);
+    toast((EX_TOAST[kind]||'打卡成功！🎉') + ' ☀️+'+gain);
   });
 }
 
@@ -6923,13 +6960,15 @@ const SHOP=[
   {key:'medicine',icon:'💊',name:'药品',price:15,grow:11,desc:'治病+喂养 +11成长',medicine:true},
 ];
 const FOOD_ITEMS=SHOP.filter(s=>s.food);     // 多种食物（像衣服一样可在超市挑选）
-const APP_VERSION='2026-08-31 13:30';         // 版本时间戳：用于比对本地/GitHub 是否一致
+const APP_VERSION='2026-09-01 19:00';         // 版本时间戳：用于比对本地/GitHub 是否一致
 function dogLevel(g){ if(g>=300)return 3; if(g>=160)return 2; if(g>=60)return 1; return 0; }
 const DOG_NAMES=['幼崽小猫','可爱小猫','帅气大猫','超级神猫'];
-const DOG_DECAY_PER_DAY=3;     // 隔两三天没喂，每天掉多少成长值
+const DOG_DECAY_PER_DAY=5;     // 隔两三天没喂，每天掉多少成长值（已按要求加快掉落）
 const DOG_SICK_GROWTH=20;      // 成长值低于此阈值，生病概率上升
-const DOG_DEATH_GRACE=3;       // 生病后多少天不医治就死
-const DOG_REVIVE_COST=100;     // 复活所需阳光值
+const DOG_REVIVE_COST=80;      // 复活所需阳光值
+const DOG_REVIVE_GROWTH=40;    // 复活后保底成长值（太低会几天内再次归零 → 复活死循环）
+/* 死亡机制：不再「生病满 N 天就死」，改为「成长值掉到 0 才死亡」。
+   掉的过程中允许生病，且生病会进一步加速成长值掉落（见 tickDog）。 */
 const DOG_CURE_COOLDOWN=2;     // 用药治愈后短暂免疫期（天），避免“治愈次日又生病”的挫败感
 let catState='sit';                       // 当前随机状态（sit/play/sleep/sick/eat 互动态）
 let catEatFood=null;                      // 当前正在吃的「食物 id」（用于切换专属进食帧）
@@ -7255,8 +7294,10 @@ function tickDog(){
   const fedGap=daysBetween(d.lastFeed||'', today);          // 距上次进食的天数
   const neglected = fedGap>=2;                              // 隔两三天没喂
   // 成长衰减：被 neglect 才掉（按跨过的天数线性扣，不按总缺口复利猛扣）
+  // 生病期间掉得更快（×1.5 向上取整），但生病本身不直接致死
   if(neglected){
-    const dec=DOG_DECAY_PER_DAY*Math.min(days,30);
+    let dec=DOG_DECAY_PER_DAY*Math.min(days,30);
+    if(d.sick) dec=Math.ceil(dec*1.5);
     const before=d.growth;
     d.growth=Math.max(0, d.growth-dec);
     if(d.growth!==before) changed=true;
@@ -7264,13 +7305,15 @@ function tickDog(){
   // 生病判定：逐日掷骰（neglected 或 成长值过低 → 概率上升）；已病则保持；治愈后短暂免疫期内不掷
   const curedRecently = d.lastCure && daysBetween(d.lastCure, today) < DOG_CURE_COOLDOWN;
   for(let i=0;i<safeDays && !d.sick && !curedRecently;i++){
+    if(!d.lastFeed) break;               // 从未喂过 → 不生病（新小猫保持健康态，避免一进页面就病恹恹）
     let p=0;
     if(neglected) p+=0.45;
     if(d.growth<DOG_SICK_GROWTH) p+=0.30;
     if(Math.random()<p){ d.sick=true; d.sickSince=today; changed=true; }
   }
-  // 死亡判定：已生病且超过宽限期未医治
-  if(d.sick && daysBetween(d.sickSince||today, today)>=DOG_DEATH_GRACE){
+  // 死亡判定：成长值掉到 0 才死亡（生病不再直接致死）
+  // 需 d.lastFeed 非空：从未喂过的小猫 growth 初始就是 0，若不判断会「一进页面就死」
+  if(d.growth<=0 && d.lastFeed){
     d.status='dead'; d.sick=false; d.sickSince=''; changed=true;
   }
   d.lastTickDate=today;
@@ -7342,6 +7385,8 @@ function reviveDog(){
   if(S.sun<DOG_REVIVE_COST){ toast('☀️ 阳光不够，还差 '+(DOG_REVIVE_COST-S.sun)+' 个阳光'); return; }
   S.sun-=DOG_REVIVE_COST;
   S.dog.status='alive'; S.dog.sick=false; S.dog.sickSince='';
+  // 复活后至少给 DOG_REVIVE_GROWTH 点成长值：否则 growth 过低会在几天后再次归零死亡（复活死循环）
+  S.dog.growth=Math.max(S.dog.growth||0, DOG_REVIVE_GROWTH);
   S.dog.lastFeed=todayStr(); S.dog.lastTickDate=todayStr();   // 复活当天视为已喂，给个缓冲
   save(); renderDog(); renderHome();
   toast('✨ 小猫复活啦！要好好照顾它哦～');
@@ -7420,7 +7465,7 @@ $('#btnReset').onclick=()=>{
 };
 window.addEventListener('beforeinstallprompt',e=>e.preventDefault());
 </script>
-<div id="verTag" title="页面版本时间戳，用于比对本地/GitHub 是否一致">v20260831.1330</div>
+<div id="verTag" title="页面版本时间戳，用于比对本地/GitHub 是否一致">v20260901.1900</div>
 <div id="syncBadge" class="sync-badge init" title="数据同步状态：云端为主存，多端一致">☁️</div>
 <div id="syncUploadBtn" title="把本机当前进度强制覆盖上传到云端（替换云端数据，多端将以本机为准）">↑ 强制上传</div>
 <div id="syncDownloadBtn" title="用云端数据覆盖本机（丢弃本机本地改动，以云端为准）——当本地旧缓存盖掉云端设定时使用">↓ 强制下载</div>
