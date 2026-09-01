@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="zh-CN" data-app-version="20260901.1900">
+<html lang="zh-CN" data-app-version="20260902.0000">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
@@ -6962,7 +6962,7 @@ const SHOP=[
   {key:'medicine',icon:'💊',name:'药品',price:15,grow:11,desc:'治病+喂养 +11成长',medicine:true},
 ];
 const FOOD_ITEMS=SHOP.filter(s=>s.food);     // 多种食物（像衣服一样可在超市挑选）
-const APP_VERSION='2026-09-01 19:00';         // 版本时间戳：用于比对本地/GitHub 是否一致
+const APP_VERSION='2026-09-02 00:00';         // 版本时间戳：用于比对本地/GitHub 是否一致
 function dogLevel(g){ if(g>=300)return 3; if(g>=160)return 2; if(g>=60)return 1; return 0; }
 const DOG_NAMES=['幼崽小猫','可爱小猫','帅气大猫','超级神猫'];
 const DOG_DECAY_PER_DAY=5;     // 隔两三天没喂，每天掉多少成长值（已按要求加快掉落）
@@ -7254,7 +7254,6 @@ function renderFurnHome(){
   if(fhCat) fhCat.classList.toggle('is-dead', S.dog.status==='dead');
 }
 function onFurnClick(f){
-  if(S.dog.status==='dead') return;   // 小猫已离开：小窝的蛋蛋保持沉默，不再走动/冒泡
   const cat=document.getElementById('fhCat');
   if(cat) cat.style.left=Math.max(18,Math.min(82,f.x-5))+'%';
   const b=document.getElementById('fhBubble');
@@ -7471,7 +7470,7 @@ $('#btnReset').onclick=()=>{
 };
 window.addEventListener('beforeinstallprompt',e=>e.preventDefault());
 </script>
-<div id="verTag" title="页面版本时间戳，用于比对本地/GitHub 是否一致">v20260901.1900</div>
+<div id="verTag" title="页面版本时间戳，用于比对本地/GitHub 是否一致">v20260902.0000</div>
 <div id="syncBadge" class="sync-badge init" title="数据同步状态：云端为主存，多端一致">☁️</div>
 <div id="syncUploadBtn" title="把本机当前进度强制覆盖上传到云端（替换云端数据，多端将以本机为准）">↑ 强制上传</div>
 <div id="syncDownloadBtn" title="用云端数据覆盖本机（丢弃本机本地改动，以云端为准）——当本地旧缓存盖掉云端设定时使用">↓ 强制下载</div>
