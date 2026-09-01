@@ -7254,6 +7254,7 @@ function renderFurnHome(){
   if(fhCat) fhCat.classList.toggle('is-dead', S.dog.status==='dead');
 }
 function onFurnClick(f){
+  if(S.dog.status==='dead') return;   // 小猫已离开：小窝的蛋蛋保持沉默，不再走动/冒泡
   const cat=document.getElementById('fhCat');
   if(cat) cat.style.left=Math.max(18,Math.min(82,f.x-5))+'%';
   const b=document.getElementById('fhBubble');
